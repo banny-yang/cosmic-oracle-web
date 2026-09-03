@@ -114,16 +114,24 @@ export function ReportRunning({ error }: { error?: string }) {
 export function PaywallCard({ message }: { message: string }) {
   return (
     <section className="mt-7 rounded-2xl bg-vermilion/10 p-5 ring-1 ring-vermilion/20">
-      <p className="text-sm font-semibold text-vermilion-deep">{message}</p>
-      <p className="mt-2 text-xs leading-relaxed text-ink-soft">
-        网页端暂不支持支付。请在微信里搜索「对脉名鉴」小程序，登录同一账号（手机号或微信）购买点数后，回到这里即可继续生成。
-      </p>
-      <a
-        href="weixin://"
-        className="mt-3 inline-block rounded-xl bg-vermilion px-5 py-2 text-xs font-semibold text-paper"
-      >
-        去微信小程序
-      </a>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center">
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-vermilion-deep">{message}</p>
+          <p className="mt-2 text-xs leading-relaxed text-ink-soft">
+            网页端暂不支持支付。微信扫右侧小程序码（或在微信里搜索「对脉名鉴」），登录同一账号（手机号或微信）购买点数后，回到这里即可继续生成。
+          </p>
+          <a
+            href="weixin://"
+            className="mt-3 inline-block rounded-xl bg-vermilion px-5 py-2 text-xs font-semibold text-paper"
+          >
+            去微信小程序
+          </a>
+        </div>
+        <div className="flex shrink-0 flex-col items-center gap-1.5 rounded-xl bg-paper p-3 ring-1 ring-ink/10">
+          <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-24 rounded object-contain" />
+          <p className="text-[10px] font-medium text-ink">扫码进入小程序</p>
+        </div>
+      </div>
     </section>
   );
 }

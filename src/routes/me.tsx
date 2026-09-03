@@ -230,11 +230,17 @@ function MePage() {
           <p className="text-sm font-medium">点数余额</p>
           <p className="text-sm font-semibold tabular-nums text-vermilion-deep">{user?.tokenBalance ?? 0} 点</p>
         </div>
-        <div className="border-t border-ink/5 px-5 py-4">
-          <p className="text-sm font-medium">充值与解锁</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-            网页端暂不支持支付。请在微信里搜索「对脉名鉴」小程序，登录同一账号（手机号或微信）即可购买使用。
-          </p>
+        <div className="flex items-start gap-4 border-t border-ink/5 px-5 py-4">
+          <div className="flex-1">
+            <p className="text-sm font-medium">充值与解锁</p>
+            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+              网页端暂不支持支付。微信扫右侧小程序码（或在微信里搜索「对脉名鉴」），登录同一账号（手机号或微信）即可购买使用。
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-col items-center gap-1.5 rounded-xl bg-paper p-2.5 ring-1 ring-ink/10">
+            <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-20 rounded object-contain" />
+            <p className="text-[10px] font-medium text-ink">扫码充值</p>
+          </div>
         </div>
         <button onClick={logout} className="w-full border-t border-ink/5 px-5 py-4 text-left text-sm font-medium text-vermilion-deep">
           退出登录

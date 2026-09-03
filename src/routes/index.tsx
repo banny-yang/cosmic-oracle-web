@@ -354,18 +354,26 @@ function Index() {
 
       {/* 底部 CTA */}
       <section className="ink-in d3 mt-12">
-        <div className="flex flex-col items-center gap-4 rounded-2xl bg-ink p-8 text-center text-paper">
-          <span className="grid size-14 place-items-center rounded-xl bg-vermilion font-seal text-2xl">鉴</span>
-          <h2 className="max-w-[26ch] text-xl leading-snug font-semibold text-balance">
-            名字是送给孩子的第一件礼物，值得慢慢挑
-          </h2>
-          <Link
-            to="/naming"
-            className="w-full max-w-xs rounded-2xl bg-vermilion py-3.5 text-center text-base font-semibold text-paper transition-transform duration-300 hover:-translate-y-0.5"
-          >
-            开始为TA起名
-          </Link>
-          <p className="text-[11px] text-paper/60">网页与小程序同账号互通 · 点数通用</p>
+        <div className="flex flex-col items-center gap-6 rounded-2xl bg-ink p-8 text-center text-paper md:flex-row md:text-left">
+          <div className="flex-1">
+            <div className="flex items-center justify-center gap-3 md:justify-start">
+              <span className="grid size-11 place-items-center rounded-xl bg-vermilion font-seal text-xl">鉴</span>
+              <h2 className="max-w-[26ch] text-xl leading-snug font-semibold text-balance">
+                名字是送给孩子的第一件礼物，值得慢慢挑
+              </h2>
+            </div>
+            <Link
+              to="/naming"
+              className="mt-5 block w-full max-w-xs rounded-2xl bg-vermilion py-3.5 text-center text-base font-semibold text-paper transition-transform duration-300 hover:-translate-y-0.5"
+            >
+              开始为TA起名
+            </Link>
+            <p className="mt-3 text-[11px] text-paper/60">网页与小程序同账号互通 · 点数通用</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-center gap-2 rounded-2xl bg-paper p-4">
+            <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-32 rounded-lg object-contain md:size-36" />
+            <p className="text-[11px] font-medium text-ink">微信扫码 · 进入小程序</p>
+          </div>
         </div>
       </section>
     </AppShell>

@@ -26,29 +26,28 @@ const CLASSIC_TEXT = "沐雨栉风，润泽焕新；取「沐」之润、「秋�
 const CLASSIC_SOURCE = "《楚辞·九歌》 · 「沐雨栉风」化用";
 
 export function NamingDemo() {
-  const reducedMotion = useMemo(
+  const reduceMotion = useMemo(
     () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
     [],
   );
-  // 用户偏好减少动效：不自动播放，直接停在第五幕完整结果态
-  const [scene, setScene] = useState(reducedMotion ? 4 : 0);
+  const [scene, setScene] = useState(0);
   const [paused, setPaused] = useState(false);
   const [typed, setTyped] = useState(0);
 
-  // 幕推进
+  // 幕推进：无条件自动播放；reduce 环境仅省去幕内微动画（打字机/入场），轮换照常
   useEffect(() => {
-    if (paused || reducedMotion) return;
+    if (paused) return;
     const t = setTimeout(() => setScene((s) => (s + 1) % SCENES.length), scene === 4 ? RESULT_MS : SCENE_MS);
     return () => clearTimeout(t);
-  }, [scene, paused, reducedMotion]);
+  }, [scene, paused]);
 
-  // 第四幕打字机
+  // 第四幕打字机（reduce 环境直接整段呈现）
   useEffect(() => {
     if (scene !== 3) {
       setTyped(0);
       return;
     }
-    if (reducedMotion) {
+    if (reduceMotion) {
       setTyped(CLASSIC_TEXT.length);
       return;
     }
@@ -62,7 +61,7 @@ export function NamingDemo() {
       });
     }, 65);
     return () => clearInterval(t);
-  }, [scene, reducedMotion]);
+  }, [scene, reduceMotion]);
 
   const jump = (i: number) => setScene(i);
 

@@ -136,6 +136,15 @@
   animation: demo-card-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
+/* reduce 环境：幕轮换照常，仅去掉幕内入场/翻入微动画（内容瞬时呈现） */
+@media (prefers-reduced-motion: reduce) {
+  .demo-step,
+  .demo-tile,
+  .demo-card {
+    animation: none;
+  }
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar {

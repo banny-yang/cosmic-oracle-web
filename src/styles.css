@@ -95,6 +95,47 @@
   animation-delay: 0.28s;
 }
 
+/* 首页生成过程演示：分步浮现 / 字块浮现 / 结果卡翻入 */
+@keyframes demo-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@utility demo-step {
+  animation: demo-step-in 0.45s ease both;
+}
+@keyframes demo-tile-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@utility demo-tile {
+  animation: demo-tile-in 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes demo-card-in {
+  from {
+    opacity: 0;
+    transform: rotateX(28deg) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: rotateX(0) translateY(0);
+  }
+}
+@utility demo-card {
+  animation: demo-card-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar {

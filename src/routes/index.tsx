@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { NamingDemo } from "@/components/naming-demo";
 import { useAuth } from "@/lib/auth";
 import { get } from "@/lib/api";
 
@@ -331,6 +332,9 @@ function Index() {
           </div>
         </div>
       </section>
+
+      {/* 模拟取名过程 */}
+      <NamingDemo />
 
       {/* FAQ */}
       <section className="mt-12">

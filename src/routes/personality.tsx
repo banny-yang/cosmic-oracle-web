@@ -122,7 +122,7 @@ function Personality() {
             </section>
           ) : null}
           {flow.markdown ? (
-            <section className="ink-in mt-7 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="ink-in mt-7 max-w-[72ch] rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
               <MiniMarkdown text={flow.markdown} />
             </section>
           ) : null}

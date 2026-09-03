@@ -115,7 +115,7 @@ function RecordDetail() {
             <h2 className="text-lg font-semibold">名字方案</h2>
             <span className="text-xs text-ink-faint">{cards.length} 个</span>
           </div>
-          <div className="mt-3 space-y-4">
+          <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
             {cards.map((c) => (
               <section key={c.name} className="relative rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
                 {c.recommended ? (

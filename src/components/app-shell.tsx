@@ -7,7 +7,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background font-song text-foreground selection:bg-vermilion/20">
-      <div className="mx-auto max-w-[430px] px-5 pt-7 pb-28">
+      <div className="mx-auto max-w-[430px] px-5 pt-7 pb-28 md:max-w-3xl md:px-8 lg:max-w-5xl">
         <header className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
             <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-ink text-paper">
@@ -71,9 +71,11 @@ export function PageHeader({
       {eyebrow ? (
         <p className="text-xs tracking-[0.35em] text-vermilion-deep uppercase">{eyebrow}</p>
       ) : null}
-      <h1 className="mt-3 text-3xl leading-tight font-semibold text-balance">{title}</h1>
+      <h1 className="mt-3 max-w-[24ch] text-3xl leading-tight font-semibold text-balance md:text-4xl">
+        {title}
+      </h1>
       {desc ? (
-        <p className="mt-3 max-w-[44ch] text-sm leading-relaxed text-ink-soft text-pretty">{desc}</p>
+        <p className="mt-3 max-w-[60ch] text-sm leading-relaxed text-ink-soft text-pretty">{desc}</p>
       ) : null}
     </div>
   );

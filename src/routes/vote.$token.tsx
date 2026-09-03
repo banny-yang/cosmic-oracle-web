@@ -78,7 +78,7 @@ function VotePage() {
 
   return (
     <div className="min-h-screen bg-background font-song text-foreground selection:bg-vermilion/20">
-      <div className="mx-auto max-w-[430px] px-5 pt-7 pb-16">
+      <div className="mx-auto max-w-[430px] px-5 pt-7 pb-16 md:max-w-2xl">
         <PageHeader
           eyebrow="亲友投票"
           title={`${session?.babySurname || ""}家宝宝的名字投票`}

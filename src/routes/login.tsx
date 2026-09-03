@@ -155,7 +155,11 @@ function LoginPage() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="账号" title="登录对脉名鉴" desc="登录后同步解析记录、购买内容与亲友投票。" />
+      <PageHeader
+        eyebrow="账号"
+        title="登录对脉名鉴"
+        desc="登录后同步解析记录、购买内容与亲友投票——网页与小程序同账号互通，点数通用。"
+      />
 
       <div className="ink-in d1 mt-7 flex rounded-xl bg-paper-2 p-1 ring-1 ring-ink/10">
         {(

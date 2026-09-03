@@ -405,7 +405,7 @@ function Naming() {
             <h2 className="text-lg font-semibold">名字方案</h2>
             <span className="text-xs text-ink-faint">{cards.length} 个 · 按推荐指数排序</span>
           </div>
-          <div className="mt-3 space-y-4">
+          <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
             {cards.map((c, i) => (
               <NameCardView
                 key={c.name + i}

@@ -57,14 +57,23 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link to="/terms" className="hover:text-ink-soft">用户协议</Link>
           </p>
           <p className="text-[11px] leading-relaxed text-ink-faint">
-            © 2026 对脉科技（武汉）有限公司 ·
+            © 2026
+            <a
+              href="https://www.mihaha.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="mx-1 hover:text-ink-soft"
+            >
+              成都米哈哈科技
+            </a>
+            ·
             <a
               href="https://beian.miit.gov.cn/"
               target="_blank"
               rel="noreferrer"
               className="ml-1 hover:text-ink-soft"
             >
-              鄂ICP备XXXXXXXX号
+              蜀ICP备16031368号-7
             </a>
           </p>
         </footer>

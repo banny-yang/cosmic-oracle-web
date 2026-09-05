@@ -357,7 +357,7 @@ function Index() {
         <div className="flex flex-col items-center gap-6 rounded-2xl bg-ink p-8 text-center text-paper md:flex-row md:text-left">
           <div className="flex-1">
             <div className="flex items-center justify-center gap-3 md:justify-start">
-              <span className="grid size-11 place-items-center rounded-xl bg-vermilion font-seal text-xl">鉴</span>
+              <img src="/brand-logo.png" alt="对脉名鉴" className="size-11 shrink-0 rounded-xl object-cover" />
               <h2 className="max-w-[26ch] text-xl leading-snug font-semibold text-balance">
                 名字是送给孩子的第一件礼物，值得慢慢挑
               </h2>

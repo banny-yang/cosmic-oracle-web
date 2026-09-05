@@ -10,9 +10,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-[430px] px-5 pt-7 pb-28 md:max-w-3xl md:px-8 lg:max-w-5xl">
         <header className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-ink text-paper">
-              <span className="font-seal text-xl leading-none">鉴</span>
-            </div>
+            <img src="/brand-logo.png" alt="对脉名鉴" className="size-11 shrink-0 rounded-xl object-cover" />
             <div className="leading-tight">
               <p className="text-sm font-semibold tracking-wide">对脉名鉴</p>
               <p className="text-xs text-ink-soft">起名与姓名文化参考</p>

@@ -17,8 +17,8 @@ const SITE_TITLE = "对脉名鉴 · 起名与姓名文化参考";
 const SITE_DESC =
   "对脉名鉴：宝宝起名、姓名解析、性格契合测评与婚姻契合分析。从字义、音韵与诗句出处出发，为重要的人取一个经得起时间的名字。";
 
-/** 部署时经 VITE_UMAMI_WEBSITE_ID 注入，未配置（本地 dev）则不加载统计脚本 */
-const UMAMI_WEBSITE_ID = import.meta.env.VITE_UMAMI_WEBSITE_ID as string | undefined;
+/** 部署时经 VITE_TRACKING=1 启用统计（GoatCounter 同域脚本），本地 dev 不加载 */
+const TRACKING_ENABLED = import.meta.env.VITE_TRACKING === "1";
 
 function NotFoundComponent() {
   return (
@@ -107,14 +107,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "canonical", href: SITE_URL },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
-    scripts: UMAMI_WEBSITE_ID
+    scripts: TRACKING_ENABLED
       ? [
           {
-            src: "/umami.js",
+            src: "/count.js",
             async: true,
-            defer: true,
-            "data-website-id": UMAMI_WEBSITE_ID,
-            "data-domains": "www.oracle.duimai.net",
+            "data-goatcounter": `${SITE_URL}/count`,
           },
         ]
       : undefined,

@@ -7,6 +7,9 @@ import { getAuthUser } from "@/lib/auth";
 export const Route = createFileRoute("/marriage")({
   component: Marriage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://www.oracle.duimai.net/marriage" },
+    ],
     meta: [
       { title: "婚姻契合分析 · 对脉名鉴" },
       {

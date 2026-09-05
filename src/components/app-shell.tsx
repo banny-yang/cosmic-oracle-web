@@ -47,9 +47,27 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
         {children}
-        <p className="mt-10 text-center text-[11px] leading-relaxed text-ink-faint text-pretty">
-          本工具内容基于传统文化整理，仅作文化参考与娱乐用途，不构成任何预测或占卜建议。
-        </p>
+        <footer className="mt-10 space-y-2 text-center">
+          <p className="text-[11px] leading-relaxed text-ink-faint text-pretty">
+            本工具内容基于传统文化整理，仅作文化参考与娱乐用途，不构成任何预测或占卜建议。
+          </p>
+          <p className="text-[11px] leading-relaxed text-ink-faint">
+            <Link to="/privacy" className="hover:text-ink-soft">隐私政策</Link>
+            <span className="mx-1.5">·</span>
+            <Link to="/terms" className="hover:text-ink-soft">用户协议</Link>
+          </p>
+          <p className="text-[11px] leading-relaxed text-ink-faint">
+            © 2026 对脉科技（武汉）有限公司 ·
+            <a
+              href="https://beian.miit.gov.cn/"
+              target="_blank"
+              rel="noreferrer"
+              className="ml-1 hover:text-ink-soft"
+            >
+              鄂ICP备XXXXXXXX号
+            </a>
+          </p>
+        </footer>
       </div>
     </div>
   );

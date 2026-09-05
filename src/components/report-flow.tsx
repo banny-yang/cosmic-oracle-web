@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { post } from "@/lib/api";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { getToken } from "@/lib/auth";
+import { track } from "@/lib/track";
 
 export type ReportPhase = "form" | "running" | "done";
 
@@ -120,6 +121,9 @@ export function PaywallCard({ message }: { message: string }) {
           <p className="mt-2 text-xs leading-relaxed text-ink-soft">
             网页端暂不支持支付。微信扫右侧小程序码（或在微信里搜索「对脉名鉴」），登录同一账号（手机号或微信）购买点数后，回到这里即可继续生成。
           </p>
+          <p className="mt-1.5 text-[11px] text-ink-faint">
+            小程序充值：60 点 ¥6 · 320 点 ¥30 · 768 点 ¥72（约 0.1 元 / 点），点数双端通用。
+          </p>
           <a
             href="weixin://"
             className="mt-3 inline-block rounded-xl bg-vermilion px-5 py-2 text-xs font-semibold text-paper"
@@ -128,7 +132,7 @@ export function PaywallCard({ message }: { message: string }) {
           </a>
         </div>
         <div className="flex shrink-0 flex-col items-center gap-1.5 rounded-xl bg-paper p-3 ring-1 ring-ink/10">
-          <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-24 rounded object-contain" />
+          <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-24 rounded object-contain" onClick={() => track("mp_qr_click", { where: "paywall" })} />
           <p className="text-[10px] font-medium text-ink">扫码进入小程序</p>
         </div>
       </div>

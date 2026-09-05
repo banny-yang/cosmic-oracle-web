@@ -16,6 +16,8 @@ import { Route as MarriageRouteImport } from './routes/marriage'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as NamingRouteImport } from './routes/naming'
 import { Route as PersonalityRouteImport } from './routes/personality'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as RecordsIndexRouteImport } from './routes/records.index'
 import { Route as RecordsIdRouteImport } from './routes/records.$id'
 import { Route as VoteTokenRouteImport } from './routes/vote.$token'
@@ -55,6 +57,16 @@ const PersonalityRoute = PersonalityRouteImport.update({
   path: '/personality',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecordsIndexRoute = RecordsIndexRouteImport.update({
   id: '/records/',
   path: '/records/',
@@ -79,6 +91,8 @@ export interface FileRoutesByFullPath {
   '/me': typeof MeRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
   '/records/': typeof RecordsIndexRoute
@@ -91,6 +105,8 @@ export interface FileRoutesByTo {
   '/me': typeof MeRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
   '/records': typeof RecordsIndexRoute
@@ -104,6 +120,8 @@ export interface FileRoutesById {
   '/me': typeof MeRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
   '/records/': typeof RecordsIndexRoute
@@ -118,6 +136,8 @@ export interface FileRouteTypes {
     | '/me'
     | '/naming'
     | '/personality'
+    | '/privacy'
+    | '/terms'
     | '/records/$id'
     | '/vote/$token'
     | '/records/'
@@ -130,6 +150,8 @@ export interface FileRouteTypes {
     | '/me'
     | '/naming'
     | '/personality'
+    | '/privacy'
+    | '/terms'
     | '/records/$id'
     | '/vote/$token'
     | '/records'
@@ -142,6 +164,8 @@ export interface FileRouteTypes {
     | '/me'
     | '/naming'
     | '/personality'
+    | '/privacy'
+    | '/terms'
     | '/records/$id'
     | '/vote/$token'
     | '/records/'
@@ -155,6 +179,8 @@ export interface RootRouteChildren {
   MeRoute: typeof MeRoute
   NamingRoute: typeof NamingRoute
   PersonalityRoute: typeof PersonalityRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   RecordsIdRoute: typeof RecordsIdRoute
   VoteTokenRoute: typeof VoteTokenRoute
   RecordsIndexRoute: typeof RecordsIndexRoute
@@ -211,6 +237,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PersonalityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/records/': {
       id: '/records/'
       path: '/records'
@@ -243,6 +283,8 @@ const rootRouteChildren: RootRouteChildren = {
   MeRoute: MeRoute,
   NamingRoute: NamingRoute,
   PersonalityRoute: PersonalityRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   RecordsIdRoute: RecordsIdRoute,
   VoteTokenRoute: VoteTokenRoute,
   RecordsIndexRoute: RecordsIndexRoute,

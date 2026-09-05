@@ -4,10 +4,14 @@ import { AppShell, PageHeader } from "@/components/app-shell";
 import { NamingDemo } from "@/components/naming-demo";
 import { useAuth } from "@/lib/auth";
 import { get } from "@/lib/api";
+import { track } from "@/lib/track";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://www.oracle.duimai.net/" },
+    ],
     meta: [
       { title: "对脉名鉴 · 起名与姓名文化参考" },
       {
@@ -101,6 +105,21 @@ const steps = [
   },
 ];
 
+const pointCosts = [
+  { title: "宝宝起名", cost: "5 点 / 次" },
+  { title: "姓名解析", cost: "3 点 / 次" },
+  { title: "性格契合测评", cost: "4 点 / 次" },
+  { title: "婚姻契合分析", cost: "6 点 / 次" },
+];
+
+const topUpTiers = ["60 点 ¥6", "320 点 ¥30 · 超值", "768 点 ¥72 · 最惠"];
+
+/* 用户反馈位：当前为占位示例，正式反馈收集后替换（勿虚构真实署名） */
+const feedbacks = [
+  { text: "推荐指数和出处放在一张卡上，家里老人一看就懂，少了很多争论。", from: "二宝爸爸" },
+  { text: "把投票链接发到家庭群，一晚上就定了名字，比我们俩纠结两周强。", from: "新手妈妈" },
+];
+
 const faqs = [
   {
     q: "名字是怎么生成的？",
@@ -145,6 +164,7 @@ function Index() {
   const [social, setSocial] = useState<SocialProof | null>(null);
 
   useEffect(() => {
+    track("home_view");
     // 匿名统计（失败静默隐藏，不展示假数字）
     get<SocialProof>("/api/v1/stats/social-proof", {}, { auth: false, timeoutMs: 6000 })
       .then(setSocial)
@@ -168,6 +188,7 @@ function Index() {
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             to="/naming"
+            onClick={() => track("home_cta_click", { where: "hero" })}
             className="rounded-2xl bg-vermilion px-7 py-3 text-base font-semibold text-paper ring-1 ring-vermilion-deep/40 transition-transform duration-300 hover:-translate-y-0.5"
           >
             开始为TA起名
@@ -220,6 +241,35 @@ function Index() {
               <p className="mt-3 text-[11px] font-medium text-vermilion-deep">{f.cost}</p>
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* 点数与价格 */}
+      <section className="mt-12">
+        <h2 className="text-lg font-semibold">点数怎么算，先说清楚</h2>
+        <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-ink-soft">
+          各功能按次扣点，页面明示后才扣减；点数在网页端与小程序通用，充值在微信小程序内完成。
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {pointCosts.map((c) => (
+            <div key={c.title} className="rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5">
+              <p className="text-sm font-semibold">{c.title}</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums text-vermilion-deep">{c.cost}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 rounded-2xl bg-paper-2/60 p-5 ring-1 ring-ink/5">
+          <p className="text-sm font-medium">小程序充值档位</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {topUpTiers.map((t) => (
+              <span key={t} className="rounded-full bg-paper px-3 py-1.5 text-xs text-ink-soft ring-1 ring-ink/10">
+                {t}
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-ink-faint">
+            约 0.1 元 / 点；首次起名前可在小程序领新人点数试用。
+          </p>
         </div>
       </section>
 
@@ -336,6 +386,39 @@ function Index() {
       {/* 模拟取名过程 */}
       <NamingDemo />
 
+      {/* 信任与口碑 */}
+      <section className="mt-12">
+        <h2 className="text-lg font-semibold">被信任的方式</h2>
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="rounded-2xl bg-paper-2 p-4 text-center ring-1 ring-ink/5">
+            <p className="text-xl font-semibold tabular-nums text-ink">
+              {social?.todayCount != null ? fmt(social.todayCount) : "—"}
+            </p>
+            <p className="mt-1 text-[11px] text-ink-soft">今日已生成</p>
+          </div>
+          <div className="rounded-2xl bg-paper-2 p-4 text-center ring-1 ring-ink/5">
+            <p className="text-xl font-semibold tabular-nums text-ink">
+              {social?.namingFamilies ? fmt(social.namingFamilies) : "—"}
+            </p>
+            <p className="mt-1 text-[11px] text-ink-soft">累计服务家庭</p>
+          </div>
+          <div className="rounded-2xl bg-paper-2 p-4 text-center ring-1 ring-ink/5">
+            <p className="text-xl font-semibold tabular-nums text-ink">
+              {social?.avgMinutes ? Math.round(social.avgMinutes) : "—"}
+            </p>
+            <p className="mt-1 text-[11px] text-ink-soft">平均出案分钟</p>
+          </div>
+        </div>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          {feedbacks.map((f, i) => (
+            <figure key={i} className="rounded-2xl bg-paper-2/60 p-5 ring-1 ring-ink/5">
+              <blockquote className="text-sm leading-relaxed text-ink-soft">「{f.text}」</blockquote>
+              <figcaption className="mt-3 text-[11px] text-ink-faint">{f.from} · 示例展示</figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="mt-12">
         <h2 className="text-lg font-semibold">常被问到的</h2>
@@ -363,7 +446,8 @@ function Index() {
               </h2>
             </div>
             <Link
-              to="/naming"
+              onClick={() => track("home_cta_click", { where: "bottom" })}
+            to="/naming"
               className="mt-5 block w-full max-w-xs rounded-2xl bg-vermilion py-3.5 text-center text-base font-semibold text-paper transition-transform duration-300 hover:-translate-y-0.5"
             >
               开始为TA起名
@@ -371,11 +455,26 @@ function Index() {
             <p className="mt-3 text-[11px] text-paper/60">网页与小程序同账号互通 · 点数通用</p>
           </div>
           <div className="flex shrink-0 flex-col items-center gap-2 rounded-2xl bg-paper p-4">
-            <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-32 rounded-lg object-contain md:size-36" />
+            <img src="/mp-qrcode.jpg" onClick={() => track("mp_qr_click", { where: "home_bottom" })} alt="对脉名鉴小程序码" className="size-32 rounded-lg object-contain md:size-36" />
             <p className="text-[11px] font-medium text-ink">微信扫码 · 进入小程序</p>
           </div>
         </div>
       </section>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faqs.map((f) => ({
+              "@type": "Question",
+              name: f.q,
+              acceptedAnswer: { "@type": "Answer", text: f.a },
+            })),
+          }),
+        }}
+      />
     </AppShell>
   );
 }

@@ -3,10 +3,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
 import { get, post, apiBase } from "@/lib/api";
 import { saveAuth } from "@/lib/auth";
+import { track } from "@/lib/track";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://www.oracle.duimai.net/login" },
+    ],
     meta: [
       { title: "登录 · 对脉名鉴" },
       { name: "description", content: "手机验证码或微信扫码登录对脉名鉴，同步解析记录与购买内容。" },
@@ -95,7 +99,7 @@ function LoginPage() {
         { phone, code: smsCode },
         { auth: false },
       );
-      finish(res);
+      finish(res, "wechat");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "登录失败");
     } finally {
@@ -129,7 +133,7 @@ function LoginPage() {
         .then((r) => {
           if (r?.status === "done" && r.jwtToken) {
             stopPoll();
-            finish(r as unknown as LoginResponse);
+            finish(r as unknown as LoginResponse, "phone");
           } else if (r?.status === "expired") {
             stopPoll();
             setQrErr("二维码已过期，请重新生成");
@@ -147,7 +151,8 @@ function LoginPage() {
     setQrWaiting(false);
   };
 
-  const finish = (res: LoginResponse) => {
+  const finish = (res: LoginResponse, via: "phone" | "wechat") => {
+    track("login_success", { via });
     stopPoll();
     saveAuth(res);
     navigate({ to: redirect });

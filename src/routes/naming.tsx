@@ -2,12 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
 import { streamPost, type StreamHandle } from "@/lib/sse";
+import { track } from "@/lib/track";
 import { post } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
 export const Route = createFileRoute("/naming")({
   component: Naming,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://www.oracle.duimai.net/naming" },
+    ],
     meta: [
       { title: "宝宝起名 · 对脉名鉴" },
       {
@@ -146,6 +150,7 @@ function Naming() {
     setPicking(false);
     setPicked([]);
     setLoading(true);
+    track("naming_generate_start", { regen: exclude });
     streamRef.current = streamPost({
       path: "/api/v1/naming/generate/stream",
       data: body(exclude ? excludeRef.current : []),
@@ -158,6 +163,7 @@ function Naming() {
         } else if (ev.stage === "result" && ev.data) {
           const d = ev.data as Diagnosis;
           setCards(d.cards || []);
+          track("naming_generate_done", { cards: (d.cards || []).length });
           setDiagnosis({
             dayMasterElement: d.dayMasterElement,
             strength: d.strength,
@@ -170,6 +176,7 @@ function Naming() {
         } else if (ev.stage === "error") {
           setError(String(ev.message || ev.error || "生成失败，请重试"));
           setLoading(false);
+          track("naming_generate_error");
         } else if ((ev.stage === "ai" || ev.stage === "ai_think") && ev.delta) {
           setAiDelta(String(ev.delta).slice(0, 60));
         }

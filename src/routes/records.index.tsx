@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { track } from "@/lib/track";
 import { useEffect, useState } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { get } from "@/lib/api";
@@ -7,6 +8,9 @@ import { getToken, getAuthUser } from "@/lib/auth";
 export const Route = createFileRoute("/records/")({
   component: RecordsPage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://www.oracle.duimai.net/records/" },
+    ],
     meta: [
       { title: "解析记录 · 对脉名鉴" },
       { name: "description", content: "查看历史起名方案与解析报告。" },
@@ -45,6 +49,7 @@ function RecordsPage() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    track("records_view");
     if (!getToken()) {
       location.href = "/login?redirect=" + encodeURIComponent("/records");
       return;

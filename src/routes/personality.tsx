@@ -7,6 +7,9 @@ import { getAuthUser } from "@/lib/auth";
 export const Route = createFileRoute("/personality")({
   component: Personality,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://www.oracle.duimai.net/personality" },
+    ],
     meta: [
       { title: "性格契合测评 · 对脉名鉴" },
       {

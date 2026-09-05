@@ -12,21 +12,33 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
+const SITE_URL = "https://www.oracle.duimai.net";
+const SITE_TITLE = "对脉名鉴 · 起名与姓名文化参考";
+const SITE_DESC =
+  "对脉名鉴：宝宝起名、姓名解析、性格契合测评与婚姻契合分析。从字义、音韵与诗句出处出发，为重要的人取一个经得起时间的名字。";
+
+/** 部署时经 VITE_UMAMI_WEBSITE_ID 注入，未配置（本地 dev）则不加载统计脚本 */
+const UMAMI_WEBSITE_ID = import.meta.env.VITE_UMAMI_WEBSITE_ID as string | undefined;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
+        <h2 className="mt-4 text-xl font-semibold text-foreground">页面不存在</h2>
+        <p className="mt-2 text-sm text-muted-foreground">你要找的页面可能已被移动或删除。</p>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Link
-            to="/"
+            to="/naming"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            去起名
+          </Link>
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            回到首页
           </Link>
         </div>
       </div>
@@ -44,11 +56,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">页面没能加载出来</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          我们这边出了点问题，你可以刷新重试，或先回首页看看。
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -58,13 +68,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            重试
           </button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            回到首页
           </a>
         </div>
       </div>
@@ -77,26 +87,37 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "佳名助手 · 起名与姓名文化参考" },
-      { name: "description", content: "佳名助手：宝宝起名、姓名解析、性格契合测评与婚姻契合分析。从字义、音韵与诗句出处出发，为重要的人取一个经得起时间的名字。" },
-      { property: "og:title", content: "佳名助手 · 起名与姓名文化参考" },
-      { property: "og:description", content: "宝宝起名、姓名解析、性格契合测评与婚姻契合分析，即开即用的姓名文化小工具。" },
+      { title: SITE_TITLE },
+      { name: "description", content: SITE_DESC },
+      { property: "og:site_name", content: "对脉名鉴" },
+      { property: "og:title", content: SITE_TITLE },
+      { property: "og:description", content: SITE_DESC },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: `${SITE_URL}/og-card.jpg` },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: `${SITE_URL}/og-card.jpg` },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap",
-      },
+      { rel: "canonical", href: SITE_URL },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
+    scripts: UMAMI_WEBSITE_ID
+      ? [
+          {
+            src: "/umami.js",
+            async: true,
+            defer: true,
+            "data-website-id": UMAMI_WEBSITE_ID,
+            "data-domains": "www.oracle.duimai.net",
+          },
+        ]
+      : undefined,
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -106,7 +127,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <head>
         <HeadContent />
       </head>

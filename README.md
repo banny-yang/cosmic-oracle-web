@@ -1,24 +1,71 @@
-# Generate UI Magic
+# 对脉名鉴 · 网页端（cosmic-oracle-web）
 
-生成UI
+「对脉名鉴」起名与姓名文化工具的网页端，与微信小程序端（cosmic-oracle-miniprogram）共用同一套后端与账号体系：同一手机号或微信登录后，解析记录、点数余额与解锁内容双端互通。网页端侧重**完整功能对等 + 营销获客**（示例演示、过程可视化、小程序码引流），支付充值在小程序内完成。
 
-This project was built with [Lovable](https://lovable.dev).
+## 功能点总览
 
-## Build with Lovable
+### 1. 首页（营销 + 导流）
+- 品牌主视觉与产品主张文案；功能矩阵展示四大工具入口
+- **示例荐名**：静态示例卡（起名方案 / 姓名解析 / 婚姻契合），访客不登录即可预览成品形态
+- **取名过程自动演示**：五幕动画（录入出生信息 → 喜用判定 → 字库筛选 → 典籍推演 → 方案成型），自动循环播放、可点击跳幕、悬停暂停；将"AI 六道工序"从文字变成看得见的动态叙事
+- 常见问题 FAQ（双端互通 / 数据同步 / 充值方式说明）
+- 页尾与 CTA 处放置**小程序码**，扫码引流至小程序充值
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/165e8c83-0077-4381-81ee-124b1b636cd2).
+### 2. 登录（两种方式）
+- **手机验证码登录**：图形验证码 → 短信验证码 → JWT 会话
+- **微信扫码登录**：网页展示小程序码（体验版/正式版环境自适应），微信扫码后在手机端确认授权，网页轮询登录状态自动完成登录
+- 未登录可浏览首页与示例；进入工具、记录、我的等页面时引导登录
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+### 3. 宝宝起名（核心功能）
+- 表单：姓氏、性别、出生日期时间、出生地（用于**真太阳时校正**）、风格偏好等
+- **SSE 流式生成**：五阶段实时进度（真太阳时校正 → 喜用五行判定 → 候选字库筛选 → AI 典籍推演 → 生成完成），支持中途取消
+- 结果：名字方案卡（字义与诗句出处、五格数理、推荐指数），可挑选候选名
+- **亲友投票**：一键生成投票分享链接，家人免登录投票、实时计票
 
-## Development
+### 4. 三个解析工具（按次付费，点数解锁）
+- **姓名解析**：逐字拆解字义、音韵与诗句出处
+- **性格契合测评**：以传统性格倾向视角看相处分寸（两人出生信息对比）
+- **婚姻契合分析**：七维视角的契合指数与相处建议
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+### 5. 解析记录
+- 历史方案与报告列表
+- **详情回放**：出生五行分析 + 名字卡完整重现，只读查看
+
+### 6. 名字投票页（`/vote/:token`）
+- 免登录访客页：展示候选名与实时票数，投票后本地防重复
+- 供家人微信/群聊分享使用
+
+### 7. 我的
+- 资料管理：昵称、头像、出生信息
+- 点数余额展示；**充值引导**至小程序（扫码），网页端点数可直接消费
+- 退出登录
+
+## 技术栈
+
+- TanStack Start（React 19 + 文件式路由 + Nitro node-server）
+- Tailwind CSS v4，新中式水墨主题（宣纸/墨色/朱砂）
+- SSE 流式接口对接（`src/lib/sse.ts`）；JWT 鉴权（`src/lib/auth.ts`）
+- 运行时配置 `__RUNTIME_CONFIG__.API_BASE_URL` 指向后端（构建时可注入）
+
+## 开发与构建
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
 npm i
-npm run dev
+npm run dev        # 开发，端口 8082
+npm run build      # 产出 .output（node-server）
+```
+
+后端地址等部署事项见 [DEPLOY.md](./DEPLOY.md)。
+
+## 目录速览
+
+```
+src/
+  routes/          # 页面：index 首页 / login / naming / analysis /
+                   #       personality / marriage / records(列表+详情) /
+                   #       me / vote.$token 投票分享页
+  components/      # app-shell 全局框架、naming-demo 首页五幕演示、
+                   # report-flow 报告流程组件、ui 基础组件
+  lib/             # api 请求、sse 流式、auth 会话、错误上报
+public/            # 小程序码等静态资源
 ```

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
+import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { get, post, apiBase } from "@/lib/api";
 import { saveAuth } from "@/lib/auth";
 import { track } from "@/lib/track";
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/login")({
     ],
     meta: [
       { title: "登录 · 对脉名鉴" },
+      { property: "og:url", content: "https://www.oracle.duimai.net/login" },
       { name: "description", content: "手机验证码或微信扫码登录对脉名鉴，同步解析记录与购买内容。" },
     ],
   }),
@@ -160,6 +161,7 @@ function LoginPage() {
 
   return (
     <AppShell>
+      <BreadcrumbJsonLd name="登录" path="/login" />
       <PageHeader
         eyebrow="账号"
         title="登录对脉名鉴"

@@ -20,6 +20,13 @@ const SITE_DESC =
 /** 部署时经 VITE_TRACKING=1 启用统计（GoatCounter 同域脚本），本地 dev 不加载 */
 const TRACKING_ENABLED = import.meta.env.VITE_TRACKING === "1";
 
+/** 站长平台验证码（百度/Google/Bing），构建时经 VITE_*_SITE_VERIFICATION 注入 */
+const SITE_VERIFICATIONS = [
+  ["baidu-site-verification", import.meta.env.VITE_BAIDU_SITE_VERIFICATION as string | undefined],
+  ["google-site-verification", import.meta.env.VITE_GOOGLE_SITE_VERIFICATION as string | undefined],
+  ["msvalidate.01", import.meta.env.VITE_BING_SITE_VERIFICATION as string | undefined],
+].filter(([, v]) => !!v) as [string, string][];
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -86,6 +93,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
+      ...SITE_VERIFICATIONS.map(([name, content]) => ({ name, content })),
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: SITE_TITLE },
       { name: "description", content: SITE_DESC },
@@ -104,8 +112,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "canonical", href: SITE_URL },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      /* 毛笔字体预载：首屏印章字与标题直接渲染，Core Web Vitals */
+      {
+        rel: "preload",
+        href: "/fonts/mashanzheng.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
     ],
     scripts: TRACKING_ENABLED
       ? [

@@ -14,6 +14,8 @@ export const Route = createFileRoute("/")({
     ],
     meta: [
       { title: "对脉名鉴 · 起名与姓名文化参考" },
+      { name: "keywords", content: "宝宝起名,在线起名,诗经楚辞起名,生辰五行起名,姓名解析,名字测分,五格数理,起名工具" },
+      { property: "og:url", content: "https://www.oracle.duimai.net/" },
       {
         name: "description",
         content:
@@ -466,12 +468,29 @@ function Index() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: faqs.map((f) => ({
-              "@type": "Question",
-              name: f.q,
-              acceptedAnswer: { "@type": "Answer", text: f.a },
-            })),
+            "@graph": [
+              {
+                "@type": "FAQPage",
+                mainEntity: faqs.map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+              },
+              {
+                "@type": "WebSite",
+                name: "对脉名鉴",
+                alternateName: "对脉名鉴 · 起名与姓名文化参考",
+                url: "https://www.oracle.duimai.net",
+                inLanguage: "zh-CN",
+              },
+              {
+                "@type": "Organization",
+                name: "成都米哈哈科技",
+                url: "https://www.mihaha.com",
+                logo: "https://www.oracle.duimai.net/brand-logo.png",
+              },
+            ],
           }),
         }}
       />

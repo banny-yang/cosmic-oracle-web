@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
-import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
+import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { track } from "@/lib/track";
 import { post } from "@/lib/api";
@@ -14,6 +14,8 @@ export const Route = createFileRoute("/naming")({
     ],
     meta: [
       { title: "宝宝起名 · 对脉名鉴" },
+      { name: "keywords", content: "宝宝起名,生辰起名,诗经楚辞起名,五格数理,起名推荐指数,亲友投票起名" },
+      { property: "og:url", content: "https://www.oracle.duimai.net/naming" },
       {
         name: "description",
         content: "按姓氏、生辰与偏好流式生成有出处、有数理的名字方案，含推荐指数与亲友投票。",
@@ -227,6 +229,7 @@ function Naming() {
 
   return (
     <AppShell>
+      <BreadcrumbJsonLd name="宝宝起名" path="/naming" />
       <PageHeader eyebrow="功能一" title="宝宝起名" desc="填写姓氏与生辰偏好，为孩子拟一组有来历、有数理的名字。" />
 
       {/* 表单 */}

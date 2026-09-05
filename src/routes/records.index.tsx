@@ -12,6 +12,7 @@ export const Route = createFileRoute("/records/")({
       { rel: "canonical", href: "https://www.oracle.duimai.net/records/" },
     ],
     meta: [
+      { name: "robots", content: "noindex" },
       { title: "解析记录 · 对脉名鉴" },
       { name: "description", content: "查看历史起名方案与解析报告。" },
     ],

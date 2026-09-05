@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
+import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { getAuthUser } from "@/lib/auth";
 
@@ -12,6 +12,8 @@ export const Route = createFileRoute("/analysis")({
     ],
     meta: [
       { title: "姓名解析 · 对脉名鉴" },
+      { name: "keywords", content: "姓名解析,名字含义,字义出处,名字音律,姓名文化" },
+      { property: "og:url", content: "https://www.oracle.duimai.net/analysis" },
       {
         name: "description",
         content: "逐字拆解字义、音韵与诗句出处，看看一个名字的来路与气质。",
@@ -40,6 +42,7 @@ function Analysis() {
 
   return (
     <AppShell>
+      <BreadcrumbJsonLd name="姓名解析" path="/analysis" />
       <PageHeader
         eyebrow="功能二 · 消耗 3 点"
         title="姓名解析"

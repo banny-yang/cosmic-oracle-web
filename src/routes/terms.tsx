@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppShell, PageHeader } from "@/components/app-shell";
+import { AppShell, PageHeader, BreadcrumbJsonLd } from "@/components/app-shell";
 
 export const Route = createFileRoute("/terms")({
   component: TermsPage,
@@ -9,6 +9,7 @@ export const Route = createFileRoute("/terms")({
     ],
     meta: [
       { title: "用户协议 · 对脉名鉴" },
+      { property: "og:url", content: "https://www.oracle.duimai.net/terms" },
       {
         name: "description",
         content: "对脉名鉴用户协议：服务性质、点数与付费规则、使用规范与免责声明。",
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/terms")({
 function TermsPage() {
   return (
     <AppShell>
+      <BreadcrumbJsonLd name="用户协议" path="/terms" />
       <PageHeader
         eyebrow="法律文件"
         title="用户协议"

@@ -8,6 +8,7 @@ export const Route = createFileRoute("/me")({
   component: MePage,
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex" },
       { title: "我的 · 对脉名鉴" },
       { name: "description", content: "管理昵称头像、出生信息与登录状态。" },
     ],

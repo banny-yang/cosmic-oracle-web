@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
+import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { getAuthUser } from "@/lib/auth";
 
@@ -12,6 +12,8 @@ export const Route = createFileRoute("/personality")({
     ],
     meta: [
       { title: "性格契合测评 · 对脉名鉴" },
+      { name: "keywords", content: "性格契合,两人性格测评,相处建议,性格互补" },
+      { property: "og:url", content: "https://www.oracle.duimai.net/personality" },
       {
         name: "description",
         content: "以传统性格倾向视角看两个人相处的分寸，仅供文化参考。",
@@ -58,6 +60,7 @@ function Personality() {
 
   return (
     <AppShell>
+      <BreadcrumbJsonLd name="性格契合测评" path="/personality" />
       <PageHeader
         eyebrow="功能三 · 消耗 4 点"
         title="性格契合测评"

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppShell, PageHeader } from "@/components/app-shell";
+import { AppShell, PageHeader, BreadcrumbJsonLd } from "@/components/app-shell";
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
@@ -9,6 +9,7 @@ export const Route = createFileRoute("/privacy")({
     ],
     meta: [
       { title: "隐私政策 · 对脉名鉴" },
+      { property: "og:url", content: "https://www.oracle.duimai.net/privacy" },
       {
         name: "description",
         content: "对脉名鉴隐私政策：我们收集哪些信息、如何使用与保护、如何删除你的数据。",
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/privacy")({
 function PrivacyPage() {
   return (
     <AppShell>
+      <BreadcrumbJsonLd name="隐私政策" path="/privacy" />
       <PageHeader
         eyebrow="法律文件"
         title="隐私政策"

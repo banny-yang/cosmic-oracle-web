@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
+import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { getAuthUser } from "@/lib/auth";
 
@@ -12,6 +12,8 @@ export const Route = createFileRoute("/marriage")({
     ],
     meta: [
       { title: "婚姻契合分析 · 对脉名鉴" },
+      { name: "keywords", content: "婚姻契合,婚姻匹配,七维契合分析,夫妻相合度" },
+      { property: "og:url", content: "https://www.oracle.duimai.net/marriage" },
       {
         name: "description",
         content: "七维视角看两个人的相处契合，仅供文化参考与娱乐。",
@@ -48,6 +50,7 @@ function Marriage() {
 
   return (
     <AppShell>
+      <BreadcrumbJsonLd name="婚姻契合分析" path="/marriage" />
       <PageHeader
         eyebrow="功能四 · 消耗 6 点"
         title="婚姻契合分析"

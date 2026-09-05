@@ -8,6 +8,7 @@ export const Route = createFileRoute("/records/$id")({
   component: RecordDetail,
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex" },
       { title: "方案详情 · 对脉名鉴" },
       { name: "description", content: "历史起名方案回放：出生五行分析与名字卡。" },
     ],

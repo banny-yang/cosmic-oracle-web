@@ -106,6 +106,30 @@ export function PageHeader({
   );
 }
 
+/** 面包屑结构化数据：搜索结果展示层级路径（首页自动作为第一级） */
+export function BreadcrumbJsonLd({ name, path }: { name: string; path: string }) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { name: "首页", path: "/" },
+            { name, path },
+          ].map((it, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            name: it.name,
+            item: "https://www.oracle.duimai.net" + it.path,
+          })),
+        }),
+      }}
+    />
+  );
+}
+
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">

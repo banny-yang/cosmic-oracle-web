@@ -153,6 +153,9 @@
   .demo-card {
     animation: none;
   }
+  .banner-zoom {
+    animation: none;
+  }
 }
 
 @utility no-scrollbar {
@@ -170,4 +173,18 @@
 
 @utility bar-grow {
   animation: bar-grow 1s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* 首页 banner 轮播：活动幅面缓慢推近（ken-burns） */
+@keyframes banner-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+@utility banner-zoom {
+  animation: banner-zoom 7s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }

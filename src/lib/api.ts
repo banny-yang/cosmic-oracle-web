@@ -5,6 +5,7 @@
  * - 错误统一抛 Error（.statusCode / .message 取后端 message）
  */
 import { getToken, clearAuth } from "./auth";
+import { runtimeApiBaseUrl } from "./runtime-env";
 
 declare global {
   interface Window {
@@ -16,6 +17,8 @@ export function apiBase(): string {
   if (typeof window !== "undefined" && window.__RUNTIME_CONFIG__?.API_BASE_URL) {
     return window.__RUNTIME_CONFIG__.API_BASE_URL!;
   }
+  const runtime = runtimeApiBaseUrl();
+  if (runtime) return runtime;
   return import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080";
 }
 

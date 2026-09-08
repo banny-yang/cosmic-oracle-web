@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
+import { HeroBanner } from "@/components/hero-banner";
 import { NamingDemo } from "@/components/naming-demo";
 import { useAuth } from "@/lib/auth";
 import { get } from "@/lib/api";
@@ -42,6 +43,7 @@ interface SocialProof {
 const features = [
   {
     to: "/naming",
+    code: "BABY_NAMING",
     seal: "童",
     title: "宝宝起名",
     desc: "按生辰喜用与典籍出处，一次生成 10 个带推荐指数的名字方案，附五格数理与谐音检测，可发起亲友投票。",
@@ -50,6 +52,7 @@ const features = [
   },
   {
     to: "/analysis",
+    code: "INSIGHT_NAME",
     seal: "析",
     title: "姓名解析",
     desc: "逐字拆解字义、音韵与诗句出处，读出两个名字各自的气质与共振之处。",
@@ -58,6 +61,7 @@ const features = [
   },
   {
     to: "/personality",
+    code: "INSIGHT_PAIR",
     seal: "性",
     title: "性格契合测评",
     desc: "以传统性格倾向看两个人相处的分寸，给出有温度的相处建议。",
@@ -66,6 +70,7 @@ const features = [
   },
   {
     to: "/marriage",
+    code: "MARRIAGE_FIT",
     seal: "缘",
     title: "婚姻契合分析",
     desc: "七维评分与相处建议，把两个人的契合讲清楚、说明白。",
@@ -108,10 +113,10 @@ const steps = [
 ];
 
 const pointCosts = [
-  { title: "宝宝起名", cost: "5 点 / 次" },
-  { title: "姓名解析", cost: "3 点 / 次" },
-  { title: "性格契合测评", cost: "4 点 / 次" },
-  { title: "婚姻契合分析", cost: "6 点 / 次" },
+  { title: "宝宝起名", code: "BABY_NAMING", cost: "5 点 / 次" },
+  { title: "姓名解析", code: "INSIGHT_NAME", cost: "3 点 / 次" },
+  { title: "性格契合测评", code: "INSIGHT_PAIR", cost: "4 点 / 次" },
+  { title: "婚姻契合分析", code: "MARRIAGE_FIT", cost: "6 点 / 次" },
 ];
 
 const topUpTiers = ["60 点 ¥6", "320 点 ¥30 · 超值", "768 点 ¥72 · 最惠"];
@@ -164,6 +169,7 @@ const sampleDimensions = [
 function Index() {
   const { loggedIn } = useAuth();
   const [social, setSocial] = useState<SocialProof | null>(null);
+  const [prices, setPrices] = useState<Record<string, number> | null>(null);
 
   useEffect(() => {
     track("home_view");
@@ -171,59 +177,85 @@ function Index() {
     get<SocialProof>("/api/v1/stats/social-proof", {}, { auth: false, timeoutMs: 6000 })
       .then(setSocial)
       .catch(() => {});
+    // 点数价与扣点同源（t_feature），失败回退静态文案
+    get<{ featureCode: string; price: number }[]>(
+      "/api/v1/plans/features",
+      {},
+      { auth: false, timeoutMs: 6000 },
+    )
+      .then((list) => {
+        const map: Record<string, number> = {};
+        for (const it of Array.isArray(list) ? list : []) {
+          if (it?.featureCode) map[it.featureCode] = it.price;
+        }
+        setPrices(map);
+      })
+      .catch(() => {});
   }, []);
 
   const fmt = (n?: number) => (n == null ? "" : n >= 10000 ? (n / 10000).toFixed(1) + " 万" : String(n));
 
+  /** 功能卡点数文案：动态优先，静态兜底 */
+  const costLabel = (code: string, fallback: string) =>
+    prices && prices[code] != null ? `消耗 ${prices[code]} 点` : fallback;
+  /** 价格卡文案 */
+  const priceLabel = (code: string, fallback: string) =>
+    prices && prices[code] != null ? `${prices[code]} 点 / 次` : fallback;
+
   return (
-    <AppShell>
-      {/* Hero */}
-      <section className="ink-in mt-9 md:mt-12">
-        <p className="text-xs tracking-[0.35em] text-vermilion-deep uppercase">新中式 · 起名文化</p>
-        <h1 className="mt-4 max-w-[22ch] text-4xl leading-tight font-semibold text-balance md:text-5xl">
-          好名字，有出处、有数理、有温度
-        </h1>
-        <p className="mt-4 max-w-[52ch] text-sm leading-relaxed text-ink-soft text-pretty md:text-base">
-          从《诗经》《楚辞》到唐宋诗词，按生辰喜用与五格数理，为宝宝拟一组经得起时间考验的名字——一次生成
-          10 个方案，附推荐指数与原文出处，还能发起亲友投票一起定。
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            to="/naming"
-            onClick={() => track("home_cta_click", { where: "hero" })}
-            className="rounded-2xl bg-vermilion px-7 py-3 text-base font-semibold text-paper ring-1 ring-vermilion-deep/40 transition-transform duration-300 hover:-translate-y-0.5"
-          >
-            开始为TA起名
-          </Link>
-          <a
-            href="#sample"
-            className="rounded-2xl bg-paper-2 px-7 py-3 text-base font-medium text-ink ring-1 ring-ink/10 transition-transform duration-300 hover:-translate-y-0.5"
-          >
-            先看示例
-          </a>
-        </div>
-
-        {social ? (
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-ink-faint">
-            {social.todayCount != null ? <span>今日已生成 {fmt(social.todayCount)} 组方案</span> : null}
-            {social.namingFamilies ? <span>累计服务 {fmt(social.namingFamilies)} 个家庭</span> : null}
-            {social.avgMinutes ? <span>平均 {Math.round(social.avgMinutes)} 分钟出一批</span> : null}
-          </div>
-        ) : null}
-
-        {social?.feed?.length ? (
-          <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
-            {social.feed.slice(0, 6).map((f, i) => (
-              <span
-                key={i}
-                className="shrink-0 rounded-full bg-paper-2 px-3 py-1.5 text-[11px] text-ink-soft ring-1 ring-ink/5"
+    <AppShell
+      banner={
+        <HeroBanner>
+          {/* Hero */}
+          <div className="ink-in">
+            <p className="text-xs tracking-[0.35em] text-vermilion-deep uppercase">新中式 · 起名文化</p>
+            <h1 className="mt-4 max-w-[22ch] text-4xl leading-tight font-semibold text-balance md:text-5xl">
+              好名字，有出处、有数理、有温度
+            </h1>
+            <p className="mt-4 max-w-[52ch] text-sm leading-relaxed text-ink-soft text-pretty md:text-base">
+              从《诗经》《楚辞》到唐宋诗词，按生辰喜用与五格数理，为宝宝拟一组经得起时间考验的名字——一次生成
+              10 个方案，附推荐指数与原文出处，还能发起亲友投票一起定。
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/naming"
+                onClick={() => track("home_cta_click", { where: "hero" })}
+                className="rounded-2xl bg-vermilion px-7 py-3 text-base font-semibold text-paper ring-1 ring-vermilion-deep/40 transition-transform duration-300 hover:-translate-y-0.5"
               >
-                {f.text}
-              </span>
-            ))}
+                开始为TA起名
+              </Link>
+              <a
+                href="#sample"
+                className="rounded-2xl bg-paper-2 px-7 py-3 text-base font-medium text-ink ring-1 ring-ink/10 transition-transform duration-300 hover:-translate-y-0.5"
+              >
+                先看示例
+              </a>
+            </div>
           </div>
-        ) : null}
-      </section>
+        </HeroBanner>
+      }
+    >
+      {/* 运营数据（banner 下方的过渡条） */}
+      {social ? (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-ink-faint">
+          {social.todayCount != null ? <span>今日已生成 {fmt(social.todayCount)} 组方案</span> : null}
+          {social.namingFamilies ? <span>累计服务 {fmt(social.namingFamilies)} 个家庭</span> : null}
+          {social.avgMinutes ? <span>平均 {Math.round(social.avgMinutes)} 分钟出一批</span> : null}
+        </div>
+      ) : null}
+
+      {social?.feed?.length ? (
+        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
+          {social.feed.slice(0, 6).map((f, i) => (
+            <span
+              key={i}
+              className="shrink-0 rounded-full bg-paper-2 px-3 py-1.5 text-[11px] text-ink-soft ring-1 ring-ink/5"
+            >
+              {f.text}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       {/* 功能矩阵 */}
       <section className="mt-10">
@@ -240,7 +272,7 @@ function Index() {
               </div>
               <p className="mt-3 text-base font-semibold text-balance">{f.title}</p>
               <p className="mt-1.5 flex-1 text-xs leading-relaxed text-ink-soft">{f.desc}</p>
-              <p className="mt-3 text-[11px] font-medium text-vermilion-deep">{f.cost}</p>
+              <p className="mt-3 text-[11px] font-medium text-vermilion-deep">{costLabel(f.code, f.cost)}</p>
             </Link>
           ))}
         </div>
@@ -256,7 +288,7 @@ function Index() {
           {pointCosts.map((c) => (
             <div key={c.title} className="rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5">
               <p className="text-sm font-semibold">{c.title}</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-vermilion-deep">{c.cost}</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums text-vermilion-deep">{priceLabel(c.code, c.cost)}</p>
             </div>
           ))}
         </div>

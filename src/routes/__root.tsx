@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { runtimeApiBaseUrl } from "../lib/runtime-env";
 
 const SITE_URL = "https://www.oracle.duimai.net";
 const SITE_TITLE = "对脉名鉴 · 起名与姓名文化参考";
@@ -19,6 +20,9 @@ const SITE_DESC =
 
 /** 部署时经 VITE_TRACKING=1 启用统计（GoatCounter 同域脚本），本地 dev 不加载 */
 const TRACKING_ENABLED = import.meta.env.VITE_TRACKING === "1";
+
+/** 容器环境变量注入的后端地址（docker -e API_BASE_URL=...），仅 SSR 进程能读到 */
+const RUNTIME_API_BASE_URL = runtimeApiBaseUrl();
 
 /** 站长平台验证码（百度/Google/Bing），构建时经 VITE_*_SITE_VERIFICATION 注入 */
 const SITE_VERIFICATIONS = [
@@ -122,15 +126,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         crossOrigin: "anonymous",
       },
     ],
-    scripts: TRACKING_ENABLED
-      ? [
-          {
-            src: "/count.js",
-            async: true,
-            "data-goatcounter": `${SITE_URL}/count`,
-          },
-        ]
-      : undefined,
+    scripts: [
+      /* 运行时 API 地址：SSR 侧读容器环境变量写入 head，客户端业务代码经
+         window.__RUNTIME_CONFIG__ 读取（脚本在 body bundle 前同步执行，变量先于一切请求生效） */
+      ...(RUNTIME_API_BASE_URL
+        ? [
+            {
+              children: `window.__RUNTIME_CONFIG__=Object.assign(window.__RUNTIME_CONFIG__||{},${JSON.stringify(
+                { API_BASE_URL: RUNTIME_API_BASE_URL },
+              )});`,
+            },
+          ]
+        : []),
+      ...(TRACKING_ENABLED
+        ? [
+            {
+              src: "/count.js",
+              async: true,
+              "data-goatcounter": `${SITE_URL}/count`,
+            },
+          ]
+        : []),
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

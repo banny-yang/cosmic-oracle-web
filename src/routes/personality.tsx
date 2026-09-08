@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
+import { BirthplaceInput } from "@/components/birthplace-input";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { getAuthUser } from "@/lib/auth";
 
@@ -88,14 +89,12 @@ function Personality() {
             </Field>
           </div>
           <Field label="出生地（用于真太阳时校正）">
-            <input
-              className={inputCls}
-              inputMode="decimal"
-              value={`${lat}, ${lng}`}
-              onChange={(e) => {
-                const [a, b] = e.target.value.split(/[,，]/).map((s) => parseFloat(s.trim()));
-                if (!Number.isNaN(a)) setLat(a);
-                if (b !== undefined && !Number.isNaN(b)) setLng(b);
+            <BirthplaceInput
+              lat={lat}
+              lng={lng}
+              onPick={(v) => {
+                setLat(v.lat);
+                setLng(v.lng);
               }}
             />
           </Field>

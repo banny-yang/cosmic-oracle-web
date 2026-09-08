@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
+import { BirthplaceInput } from "@/components/birthplace-input";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { track } from "@/lib/track";
 import { post } from "@/lib/api";
@@ -212,18 +213,6 @@ function Naming() {
     }
   };
 
-  const locate = () => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLat(Math.round(pos.coords.latitude * 10000) / 10000);
-        setLng(Math.round(pos.coords.longitude * 10000) / 10000);
-      },
-      () => setFormErr("定位失败，可手动填写经纬度"),
-      { timeout: 8000 },
-    );
-  };
-
   const hasResult = cards.length > 0;
   const chips = "rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition-colors";
 
@@ -259,24 +248,14 @@ function Naming() {
             </Field>
           </div>
           <Field label="出生地（用于真太阳时校正）">
-            <div className="flex items-center gap-3">
-              <input
-                className={inputCls}
-                inputMode="decimal"
-                value={`${lat}, ${lng}`}
-                onChange={(e) => {
-                  const [a, b] = e.target.value.split(/[,，]/).map((s) => parseFloat(s.trim()));
-                  if (!Number.isNaN(a)) setLat(a);
-                  if (b !== undefined && !Number.isNaN(b)) setLng(b);
-                }}
-              />
-              <button
-                onClick={locate}
-                className="h-10 w-20 shrink-0 rounded-xl bg-paper-3 text-xs font-medium text-ink ring-1 ring-ink/10"
-              >
-                定位
-              </button>
-            </div>
+            <BirthplaceInput
+              lat={lat}
+              lng={lng}
+              onPick={(v) => {
+                setLat(v.lat);
+                setLng(v.lng);
+              }}
+            />
           </Field>
           <Field label="名字长度">
             <div className="flex gap-2">

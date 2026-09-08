@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
+import { BirthplaceInput } from "@/components/birthplace-input";
 import { get, patch, api } from "@/lib/api";
 import { getToken, getAuthUser, useAuth, updateUser, clearAuth } from "@/lib/auth";
 
@@ -198,20 +199,17 @@ function MePage() {
                 <input className={inputCls} type="time" value={bTime} onChange={(e) => setBTime(e.target.value)} />
               </Field>
             </div>
-            <Field label="出生地（纬度, 经度）">
-              <input
-                className={inputCls}
-                inputMode="decimal"
-                value={`${bLat}, ${bLng}`}
-                onChange={(e) => {
-                  const [a, b] = e.target.value.split(/[,，]/).map((s) => parseFloat(s.trim()));
-                  if (!Number.isNaN(a)) setBLat(a);
-                  if (b !== undefined && !Number.isNaN(b)) setBLng(b);
+            <Field label="出生地（搜索选择）">
+              <BirthplaceInput
+                lat={bLat}
+                lng={bLng}
+                place={bPlace}
+                onPick={(v) => {
+                  setBLat(v.lat);
+                  setBLng(v.lng);
+                  setBPlace(v.place.slice(0, 24));
                 }}
               />
-            </Field>
-            <Field label="地点名称（选填）">
-              <input className={inputCls} maxLength={24} placeholder="如：杭州" value={bPlace} onChange={(e) => setBPlace(e.target.value)} />
             </Field>
             {err && !editingName ? <p className="text-xs text-vermilion-deep">{err}</p> : null}
             <button

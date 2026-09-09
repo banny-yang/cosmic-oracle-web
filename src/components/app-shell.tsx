@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { track } from "@/lib/track";
 import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 
@@ -6,6 +8,18 @@ import { useAuth } from "@/lib/auth";
 export const shellCls = "mx-auto max-w-[430px] px-5 md:max-w-3xl md:px-8 lg:max-w-5xl";
 
 export function AppShell({ banner, children }: { banner?: ReactNode; children: ReactNode }) {
+  // 轻量前端错误监控：未捕获异常/未处理 Promise 拒绝 → 埋点
+  useEffect(() => {
+    const onErr = (e: ErrorEvent) => track("js_error", { msg: String(e.message || "").slice(0, 120), src: String(e.filename || "").slice(-60) });
+    const onRej = (e: PromiseRejectionEvent) => track("js_error", { msg: "unhandledrejection:" + String(e.reason).slice(0, 120) });
+    window.addEventListener("error", onErr);
+    window.addEventListener("unhandledrejection", onRej);
+    return () => {
+      window.removeEventListener("error", onErr);
+      window.removeEventListener("unhandledrejection", onRej);
+    };
+  }, []);
+
   const { loggedIn, user } = useAuth();
 
   return (
@@ -63,6 +77,8 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
             <Link to="/privacy" className="hover:text-ink-soft">隐私政策</Link>
             <span className="mx-1.5">·</span>
             <Link to="/terms" className="hover:text-ink-soft">用户协议</Link>
+            <span className="mx-1.5">·</span>
+            <Link to="/help" className="hover:text-ink-soft">帮助中心</Link>
           </p>
           <p className="text-[11px] leading-relaxed text-ink-faint">
             © 2026

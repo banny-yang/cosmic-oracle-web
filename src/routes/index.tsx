@@ -171,6 +171,8 @@ function Index() {
   const [social, setSocial] = useState<SocialProof | null>(null);
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
 
+  const [verse, setVerse] = useState<{ text?: string; source?: string; meaning?: string } | null>(null);
+
   useEffect(() => {
     track("home_view");
     // 匿名统计（失败静默隐藏，不展示假数字）
@@ -190,6 +192,13 @@ function Index() {
         }
         setPrices(map);
       })
+      .catch(() => {});
+  }, []);
+
+  // 今日一名：典籍语料按日轮换（公开接口，失败静默）
+  useEffect(() => {
+    get("/api/v1/naming/daily-verse", {}, { auth: false, timeoutMs: 6000 })
+      .then((r: any) => r?.text && setVerse(r))
       .catch(() => {});
   }, []);
 
@@ -235,6 +244,21 @@ function Index() {
         </HeroBanner>
       }
     >
+      {/* 今日一名（典籍内容位） */}
+      {verse?.text ? (
+        <section className="ink-in d1 mt-6 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+          <div className="flex items-baseline justify-between">
+            <p className="text-xs font-medium tracking-widest text-ink/45">今日一名 · 典籍里的好字</p>
+            <span className="text-[11px] text-ink-faint">{verse.source}</span>
+          </div>
+          <p className="mt-2 text-lg leading-relaxed text-ink">{verse.text}</p>
+          {verse.meaning ? <p className="mt-1 text-xs text-ink-soft">「{verse.meaning}」</p> : null}
+          <Link to="/naming" className="mt-3 inline-block text-xs font-medium text-vermilion-deep underline underline-offset-2">
+            用典籍为宝宝起一个有出处的名字 →
+          </Link>
+        </section>
+      ) : null}
+
       {/* 运营数据（banner 下方的过渡条） */}
       {social ? (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-ink-faint">

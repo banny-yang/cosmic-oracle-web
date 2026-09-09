@@ -6,9 +6,21 @@ import { streamPost, type StreamHandle } from "@/lib/sse";
 import { track } from "@/lib/track";
 import { post } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { setupWxShare } from "@/lib/wx-share";
 import QRCode from "qrcode";
 
 export const Route = createFileRoute("/naming")({
+  head: () => ({
+    links: [{ rel: "canonical", href: "https://www.oracle.duimai.net/naming" }],
+    meta: [
+      { title: "宝宝起名 · 对脉名鉴" },
+      { name: "description", content: "按生辰喜用与五格数理，从典籍中为宝宝取一个有出处、有数理、有温度的名字；支持五维雷达、方言谐音检测与亲友投票。" },
+      { property: "og:url", content: "https://www.oracle.duimai.net/naming" },
+      { property: "og:title", content: "宝宝起名 · 对脉名鉴" },
+      { property: "og:description", content: "一次生成 10 个有推荐指数与典籍出处的名字方案，支持亲友投票一起定。" },
+      { property: "og:image", content: "https://www.oracle.duimai.net/og-card.jpg" },
+    ],
+  }),
   component: Naming,
   head: () => ({
     links: [
@@ -305,6 +317,7 @@ function Naming() {
   const [slowHint, setSlowHint] = useState(false);
   const [excludedCount, setExcludedCount] = useState(0);
   const [poster, setPoster] = useState<{ name: string; url: string } | null>(null);
+  const [shortlist, setShortlist] = useState<string[]>([]);
   const [posterBusy, setPosterBusy] = useState(false);
   const streamRef = useRef<StreamHandle | null>(null);
 
@@ -409,6 +422,7 @@ function Naming() {
   const createVote = async () => {
     if (picked.length < 3 || picked.length > 5) return;
     setVoting(true);
+    track("vote_create", { count: picked.length });
     try {
       const res = await post<{ sessionToken?: string }>("/api/v1/naming/voting/session", {
         babySurname: surname,
@@ -429,6 +443,29 @@ function Naming() {
     const t = setTimeout(() => setSlowHint(true), 90_000);
     return () => clearTimeout(t);
   }, [loading]);
+
+  // 短名单（localStorage 持久，跨会话保留）
+  useEffect(() => {
+    try {
+      setShortlist(JSON.parse(localStorage.getItem("naming_shortlist") || "[]"));
+    } catch { /* 忽略 */ }
+  }, []);
+  const toggleShortlist = (name: string) => {
+    setShortlist((p) => {
+      const next = p.includes(name) ? p.filter((x) => x !== name) : [...p, name].slice(-12);
+      try { localStorage.setItem("naming_shortlist", JSON.stringify(next)); } catch { /* 忽略 */ }
+      track("shortlist_toggle", { name, add: !p.includes(name) });
+      return next;
+    });
+  };
+
+  // 微信内分享卡片
+  useEffect(() => {
+    setupWxShare({
+      title: "给宝宝起个有出处的好名字",
+      desc: "五行喜用 + 五格数理 + 典籍出处，一次生成 10 个名字方案",
+    });
+  }, []);
 
   const hasResult = cards.length > 0;
   const trial = !!diagnosis?.freeTrial && (diagnosis?.lockedCount ?? 0) > 0;
@@ -726,13 +763,24 @@ function Naming() {
                 只看有出处
               </label>
               <button
-                onClick={() => { setCompareMode(!compareMode); setCompareSel([]); }}
+                onClick={() => { track("compare_toggle", { on: !compareMode }); setCompareMode(!compareMode); setCompareSel([]); }}
                 className={`rounded-full px-2.5 py-1 font-medium ring-1 ${compareMode ? "bg-ink text-paper ring-ink" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
               >
                 {compareMode ? "退出对比" : `对比${compareSel.length ? `(${compareSel.length})` : ""}`}
               </button>
             </div>
           </div>
+          {shortlist.length ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-paper-2 px-4 py-2.5 text-xs ring-1 ring-ink/5">
+              <span className="text-ink/50">我的短名单（{shortlist.length}）</span>
+              {shortlist.map((nm) => (
+                <button key={nm} onClick={() => toggleShortlist(nm)} title="点击移除"
+                  className="rounded-full bg-vermilion/10 px-2.5 py-1 font-medium text-vermilion-deep ring-1 ring-vermilion/25">
+                  {nm} ✕
+                </button>
+              ))}
+            </div>
+          ) : null}
           {compareMode ? (
             <div className="mt-3 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
               {compareSel.length < 2 ? (
@@ -789,12 +837,15 @@ function Naming() {
                 compareMode={compareMode}
                 compareChecked={compareSel.includes(c.name)}
                 onCompare={() => setCompareSel((p) => p.includes(c.name) ? p.filter((x) => x !== c.name) : p.length < 3 ? [...p, c.name] : p)}
-                onListen={() => speakName(c.name)}
+                onListen={() => { track("name_listen", { name: c.name }); speakName(c.name); }}
+                onShortlist={() => toggleShortlist(c.name)}
+                shortlisted={shortlist.includes(c.name)}
                 onPoster={async () => {
                   setPosterBusy(true);
                   try {
                     const url = await buildPoster(c, infoLine, diagLine);
                     setPoster({ name: c.name, url });
+                    track("poster_open", { name: c.name });
                   } catch { /* 忽略：canvas 异常 */ }
                   finally { setPosterBusy(false); }
                 }}
@@ -815,10 +866,10 @@ function Naming() {
                     <div className="h-16 rounded-xl bg-ink/6" />
                   </div>
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-paper/45 backdrop-blur-[2px]">
-                    <span className="text-2xl">🔒</span>
+                    <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-24 rounded-lg bg-paper p-1 ring-1 ring-ink/10" />
                     <p className="text-sm font-semibold text-vermilion-deep">充值解锁全部 {diagnosis?.lockedCount} 个名字</p>
                     <p className="px-6 text-center text-[11px] leading-relaxed text-ink-soft">
-                      {diagnosis?.unlockTip || "充值点数后解锁完整名单"}<br />请前往「对脉名鉴」微信小程序充值点数
+                      微信扫码进入「对脉名鉴」小程序充值<br />点数网页端与小程序通用，登录同一账号即可
                     </p>
                   </div>
                 </div>
@@ -866,14 +917,25 @@ function Naming() {
               <p className="text-xs text-ink-soft">
                 「换一批」会自动排除已看过的名字继续推演 · 24 小时内免扣点 · 勾选 3~5 个还可发起亲友投票
               </p>
-              <button
-                onClick={() => {
-                  document.getElementById("naming-form")?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="mt-1 text-xs font-medium text-vermilion-deep underline underline-offset-2"
-              >
-                调整偏好再来一轮 →
-              </button>
+              <div className="mt-1 flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    document.getElementById("naming-form")?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="text-xs font-medium text-vermilion-deep underline underline-offset-2"
+                >
+                  调整偏好再来一轮 →
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(`https://www.oracle.duimai.net/naming`);
+                    track("invite_copy", {});
+                  }}
+                  className="text-xs font-medium text-ink-soft underline underline-offset-2"
+                >
+                  把起名工具分享给准爸妈朋友
+                </button>
+              </div>
             </div>
           ) : (
             <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl bg-vermilion/10 p-5 text-center ring-1 ring-vermilion/20">
@@ -922,6 +984,7 @@ function Naming() {
                   a.download = `起名海报_${poster.name}.png`;
                   a.href = poster.url;
                   a.click();
+                  track("poster_download", { name: poster.name });
                 }}
                 className="flex-1 rounded-xl bg-ink py-2.5 text-sm font-semibold text-paper"
               >
@@ -930,6 +993,7 @@ function Naming() {
               {typeof navigator !== "undefined" && "share" in navigator ? (
                 <button
                   onClick={async () => {
+                    track("poster_share", { name: poster.name });
                     try {
                       const blob = await (await fetch(poster.url)).blob();
                       const file = new File([blob], `起名海报_${poster.name}.png`, { type: "image/png" });
@@ -970,6 +1034,8 @@ function NameCardView({
   onCompare,
   onListen,
   onPoster,
+  onShortlist,
+  shortlisted = false,
 }: {
   c: NameCardData;
   picking: boolean;
@@ -981,6 +1047,8 @@ function NameCardView({
   onCompare?: () => void;
   onListen?: () => void;
   onPoster?: () => void;
+  onShortlist?: () => void;
+  shortlisted?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   // 名字 = 姓(1~2字) + 名;charElements 对应名字部分
@@ -1141,14 +1209,26 @@ function NameCardView({
         <span className={`text-[11px] ${c.homophoneSafe === false ? "text-vermilion-deep" : "text-ink-faint"}`}>
           {c.homophoneSafe === false ? "⚠ " + (c.safetyNote || "谐音需留意") : "✓ 谐音安全"}
         </span>
+        {onListen ? (
+          <button onClick={(e) => { e.stopPropagation(); onListen(); }}
+            className="ml-auto mr-3 text-[11px] text-ink-soft underline underline-offset-2">
+            读音试听
+          </button>
+        ) : null}
         {onPoster ? (
           <button onClick={(e) => { e.stopPropagation(); onPoster(); }}
-            className="ml-auto mr-3 text-[11px] text-ink-soft underline underline-offset-2">
+            className="mr-3 text-[11px] text-ink-soft underline underline-offset-2">
             生成海报
           </button>
         ) : null}
+        {onShortlist ? (
+          <button onClick={(e) => { e.stopPropagation(); onShortlist(); }} title="收藏到短名单"
+            className={`mr-1 text-sm transition-transform hover:scale-110 ${shortlisted ? "text-vermilion" : "text-ink/30"}`}>
+            {shortlisted ? "♥" : "♡"}
+          </button>
+        ) : null}
         {c.wuxingAnalysis ? (
-          <button onClick={(e) => { e.stopPropagation(); setOpen(!open); }} className="text-[11px] text-ink-soft underline underline-offset-2">
+          <button onClick={(e) => { e.stopPropagation(); if (!open) track("card_expand", { name: c.name }); setOpen(!open); }} className="text-[11px] text-ink-soft underline underline-offset-2">
             {open ? "收起字义" : "字义详解"}
           </button>
         ) : null}

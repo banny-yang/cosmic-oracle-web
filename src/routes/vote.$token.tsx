@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/app-shell";
 import { get, post } from "@/lib/api";
 import { track } from "@/lib/track";
+import { setupWxShare } from "@/lib/wx-share";
 
 export const Route = createFileRoute("/vote/$token")({
   component: VotePage,
   head: () => ({
+    links: [{ rel: "canonical", href: "https://www.oracle.duimai.net/vote" }],
     meta: [
+      { property: "og:image", content: "https://www.oracle.duimai.net/og-card.jpg" },
       { title: "名字投票 · 对脉名鉴" },
       {
         name: "description",
@@ -66,6 +69,14 @@ function VotePage() {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  // 微信内转发卡片（公众号配置后自动生效）
+  useEffect(() => {
+    setupWxShare({
+      title: "来帮宝宝选名字 · 对脉名鉴",
+      desc: "家人为宝宝的名字投上一票，每人一票，结果实时可见",
+    });
+  }, []);
 
   const refresh = () => {
     get<SessionView>(`/api/v1/naming/voting/${token}`, {}, { auth: false })
@@ -134,6 +145,11 @@ function VotePage() {
           title={`${session?.babySurname || ""}家宝宝的名字投票`}
           desc="点击你喜欢的名字投一票，每人限投一次。"
         />
+
+        <p className="mt-3 text-center text-xs text-ink-soft">
+          想给自己的宝宝也起一组有出处的好名字？
+          <Link to="/naming" className="font-medium text-vermilion-deep underline underline-offset-2">免费试试宝宝起名 →</Link>
+        </p>
 
         {gone ? (
           <div className="mt-7 rounded-2xl bg-paper-2 p-8 text-center ring-1 ring-ink/5">

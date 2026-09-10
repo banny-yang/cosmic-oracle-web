@@ -4,7 +4,7 @@
  * - JWT 自动附带；401 清登录态并带 redirect 跳登录页
  * - 错误统一抛 Error（.statusCode / .message 取后端 message）
  */
-import { getToken, clearAuth } from "./auth";
+import { getToken, clearAuth, updateToken } from "./auth";
 import { runtimeApiBaseUrl } from "./runtime-env";
 
 declare global {
@@ -37,16 +37,48 @@ function redirectToLogin() {
   }
 }
 
+/** 进行中的续期请求（并发 401 只触发一次）。 */
+let refreshing: Promise<boolean> | null = null;
+
+/**
+ * 静默续期（滑动登录态）：拿当前（或刚过期不久、仍在宽限期内的）JWT 换新 token。
+ * 成功返回 true——调用方可重放原请求；失败由上层走 clearAuth。
+ */
+async function tryRefreshToken(): Promise<boolean> {
+  const token = getToken();
+  if (!token) return false;
+  refreshing ??= fetch(apiBase() + "/api/v1/users/refresh-token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+  })
+    .then(async (res) => {
+      if (!res.ok) return false;
+      const body = (await res.json().catch(() => null)) as { token?: string } | null;
+      if (body?.token) {
+        updateToken(body.token);
+        return true;
+      }
+      return false;
+    })
+    .catch(() => false)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
 export interface ApiOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   data?: unknown;
   /** false = 公开端点（登录/验证码等），不带 token 也不做 401 跳转 */
   auth?: boolean;
   timeoutMs?: number;
+  /** 内部用：401 续期重放标记（避免循环重试） */
+  retried?: boolean;
 }
 
 export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Promise<T> {
-  const { method = "GET", data, auth = true, timeoutMs = 20000 } = opts;
+  const { method = "GET", data, auth = true, timeoutMs = 20000, retried = false } = opts;
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (auth) {
     const token = getToken();
@@ -69,6 +101,10 @@ export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Pro
   clearTimeout(timer);
 
   if (res.status === 401 && auth) {
+    // 先尝试静默续期（token 刚过期且在宽限期内）并重放本请求；彻底失效才清登录态
+    if (!retried && (await tryRefreshToken())) {
+      return api<T>(path, { ...opts, retried: true });
+    }
     clearAuth();
     redirectToLogin();
     throw new ApiError("登录已过期，请重新登录", 401);

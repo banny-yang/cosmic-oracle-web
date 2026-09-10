@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { track } from "@/lib/track";
 import type { ReactNode } from "react";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getToken, updateToken } from "@/lib/auth";
+import { post } from "@/lib/api";
 import { Compass } from "lucide-react";
 
 /** 内容列与 banner 内层共用同一套宽度约束，保证左对齐一致 */
@@ -31,6 +32,16 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
       window.removeEventListener("error", onErr);
       window.removeEventListener("unhandledrejection", onRej);
     };
+  }, []);
+
+  // 登录态持久化：打开页面即静默滑动续期（fire-and-forget，失败不打扰）
+  useEffect(() => {
+    if (!getToken()) return;
+    post<{ token?: string }>("/api/v1/users/refresh-token", undefined, { timeoutMs: 8000 })
+      .then((r) => {
+        if (r?.token) updateToken(r.token);
+      })
+      .catch(() => {});
   }, []);
 
   const { loggedIn, user } = useAuth();

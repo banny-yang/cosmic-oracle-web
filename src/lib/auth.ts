@@ -73,6 +73,13 @@ export function saveAuth(res: {
   emit();
 }
 
+/** 静默续期：只换 token，保留本地用户摘要（滑动续期，让登录态长期有效）。 */
+export function updateToken(jwtToken: string) {
+  if (!jwtToken) return;
+  localStorage.setItem(KEY, jwtToken);
+  emit();
+}
+
 export function updateUser(patch: Partial<AuthUser>) {
   const u = getAuthUser();
   if (!u) return;

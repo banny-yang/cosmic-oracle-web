@@ -113,14 +113,11 @@ const steps = [
 ];
 
 const pointCosts = [
-  { title: "宝宝起名", code: "BABY_NAMING", cost: "10 点 / 次" },
-  { title: "姓名解析", code: "INSIGHT_NAME", cost: "9 点 / 次" },
-  { title: "性格契合测评", code: "INSIGHT_PAIR", cost: "9 点 / 次" },
-  { title: "婚姻契合分析", code: "MARRIAGE_FIT", cost: "19 点 / 次" },
+  { title: "宝宝起名", code: "BABY_NAMING", cost: "10 点 / 次", note: "一次出 10 个名字，附出处与评分" },
+  { title: "姓名解析", code: "INSIGHT_NAME", cost: "9 点 / 次", note: "逐字拆解字义、音韵与诗句" },
+  { title: "性格契合测评", code: "INSIGHT_PAIR", cost: "9 点 / 次", note: "看两个人相处的分寸与建议" },
+  { title: "婚姻契合分析", code: "MARRIAGE_FIT", cost: "19 点 / 次", note: "七维契合评分与相处指南" },
 ];
-
-/* 充值档位兜底（接口失败时展示）；线上以 /payments/client/virtual/products 动态渲染为准 */
-const topUpTiers = ["10 点 ¥9.9", "33 点 ¥30 · 超值", "85 点 ¥68 · 最惠"];
 
 /* 用户反馈位：当前为占位示例，正式反馈收集后替换（勿虚构真实署名） */
 const feedbacks = [
@@ -172,8 +169,16 @@ function Index() {
   const [social, setSocial] = useState<SocialProof | null>(null);
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
   // 充值档位与畅享卡：公开只读接口动态渲染（1 点 = ¥1；接口失败回落静态兜底）
-  const [tierList, setTierList] = useState<string[]>(topUpTiers);
-  const [passLine, setPassLine] = useState<string>("起名畅享：24 小时 ¥39.9 · 包月 ¥99，期内生成与换一批不限次");
+  const [pointSkus, setPointSkus] = useState<{ credits: number; priceFen: number; tag?: string }[]>([
+    { credits: 10, priceFen: 990 },
+    { credits: 33, priceFen: 3000, tag: "超值" },
+    { credits: 85, priceFen: 6800, tag: "最惠" },
+  ]);
+  const [passSkus, setPassSkus] = useState<{ kind: string; priceFen: number }[]>([
+    { kind: "DAY_PASS", priceFen: 3990 },
+    { kind: "MONTH_PASS", priceFen: 9900 },
+  ]);
+  const yuan = (fen: number) => (fen % 100 ? (fen / 100).toFixed(1) : String(fen / 100));
 
   const [verse, setVerse] = useState<{ text?: string; source?: string; meaning?: string } | null>(null);
 
@@ -207,15 +212,14 @@ function Index() {
         const arr = Array.isArray(list) ? list : [];
         const points = arr
           .filter((it) => !it.kind || it.kind === "POINTS")
-          .map((it) => `${it.credits ?? ""} 点 ¥${((it.priceFen ?? 0) / 100).toFixed((it.priceFen ?? 0) % 100 ? 1 : 0)}${it.tag ? ` · ${it.tag}` : ""}`);
-        if (points.length) setTierList(points);
-        const day = arr.find((it) => it.kind === "DAY_PASS");
-        const month = arr.find((it) => it.kind === "MONTH_PASS");
-        if (day && month) {
-          setPassLine(
-            `起名畅享：24 小时 ¥${((day.priceFen ?? 0) / 100).toFixed(1)} · 包月 ¥${Math.round((month.priceFen ?? 0) / 100)}，期内生成与换一批不限次`,
-          );
-        }
+          .map((it) => ({ credits: it.credits ?? 0, priceFen: it.priceFen ?? 0, tag: it.tag }))
+          .filter((it) => it.credits > 0 && it.priceFen > 0);
+        if (points.length) setPointSkus(points);
+        const passes = arr
+          .filter((it) => it.kind === "DAY_PASS" || it.kind === "MONTH_PASS")
+          .map((it) => ({ kind: it.kind, priceFen: it.priceFen ?? 0 }))
+          .filter((it) => it.priceFen > 0);
+        if (passes.length === 2) setPassSkus(passes);
       })
       .catch(() => {});
   }, []);
@@ -335,23 +339,63 @@ function Index() {
         </p>
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
           {pointCosts.map((c) => (
-            <div key={c.title} className="rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5">
+            <div key={c.title} className="flex flex-col rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5">
               <p className="text-sm font-semibold">{c.title}</p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-vermilion-deep">{priceLabel(c.code, c.cost)}</p>
+              <p className="mt-1 text-[11px] leading-snug text-ink-faint">{c.note}</p>
             </div>
           ))}
         </div>
+
+        {/* 充值档位（卡片化）+ 扫码引导 + 畅享双卡 CTA */}
         <div className="mt-3 rounded-2xl bg-paper-2/60 p-5 ring-1 ring-ink/5">
-          <p className="text-sm font-medium">小程序充值档位</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {tierList.map((t) => (
-              <span key={t} className="rounded-full bg-paper px-3 py-1.5 text-xs text-ink-soft ring-1 ring-ink/10">
-                {t}
-              </span>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">
+                小程序充值档位
+                <span className="ml-2 text-[11px] font-normal text-ink-faint">1 点 ≈ ¥1</span>
+              </p>
+              <div className="mt-3 grid max-w-md grid-cols-3 gap-2">
+                {pointSkus.map((t, i) => (
+                  <div key={i} className={`relative rounded-xl bg-paper p-3 ring-1 ${t.tag ? "ring-vermilion/40" : "ring-ink/10"}`}>
+                    {t.tag ? (
+                      <span className="absolute -top-2 right-2 rounded-full bg-vermilion px-1.5 py-0.5 text-[10px] font-semibold text-paper">
+                        {t.tag}
+                      </span>
+                    ) : null}
+                    <p className="text-lg font-bold leading-tight tabular-nums text-ink">¥{yuan(t.priceFen)}</p>
+                    <p className="mt-0.5 text-[11px] text-ink-soft">{t.credits} 点</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex shrink-0 flex-col items-center gap-1 rounded-xl bg-paper p-3 ring-1 ring-ink/10">
+              <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-20 rounded object-contain" />
+              <p className="text-[10px] font-medium text-ink">扫码充值</p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {passSkus.map((ps) => (
+              <div
+                key={ps.kind}
+                className={`flex items-center justify-between gap-2 rounded-xl p-3.5 ring-1 ${ps.kind === "DAY_PASS" ? "bg-amber-700/8 ring-amber-600/30" : "bg-ink ring-ink"}`}
+              >
+                <div>
+                  <p className={`text-xs font-medium ${ps.kind === "DAY_PASS" ? "text-amber-800" : "text-paper/80"}`}>
+                    {ps.kind === "DAY_PASS" ? "起名畅享 · 24 小时" : "起名包月 · 30 天"}
+                  </p>
+                  <p className={`mt-1 text-base font-bold leading-none ${ps.kind === "DAY_PASS" ? "text-amber-900" : "text-paper"}`}>
+                    ¥{yuan(ps.priceFen)}
+                  </p>
+                </div>
+                <p className={`max-w-[14ch] text-right text-[11px] leading-snug ${ps.kind === "DAY_PASS" ? "text-ink-soft" : "text-paper/70"}`}>
+                  宝宝起名生成与换一批不限次
+                </p>
+              </div>
             ))}
           </div>
           <p className="mt-3 text-[11px] leading-relaxed text-ink-faint">
-            1 点 ≈ ¥1；{passLine}。首次起名免费体验 3 个精选名字。
+            首次起名免费体验 3 个精选名字；点数与畅享权益登录同一账号，网页端与小程序通用。
           </p>
         </div>
       </section>

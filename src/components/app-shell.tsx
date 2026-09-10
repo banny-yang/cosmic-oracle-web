@@ -167,10 +167,13 @@ export function BreadcrumbJsonLd({ name, path }: { name: string; path: string })
   );
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-ink-soft">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-ink-soft">
+        {required ? <span aria-hidden className="mr-1 inline-block size-1.5 rounded-full bg-vermilion align-[1px]" /> : null}
+        {label}
+      </span>
       {children}
     </label>
   );

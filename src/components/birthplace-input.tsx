@@ -17,11 +17,13 @@ export function BirthplaceInput({
   lat,
   lng,
   place = "",
+  placeholder = "输入城市或地区名，如：杭州",
   onPick,
 }: {
   lat: number;
   lng: number;
   place?: string;
+  placeholder?: string;
   onPick: (v: BirthplaceValue) => void;
 }) {
   const [keyword, setKeyword] = useState(place);
@@ -105,7 +107,7 @@ export function BirthplaceInput({
       <input
         className={inputCls}
         value={keyword}
-        placeholder="输入城市或地区名，如：杭州"
+        placeholder={placeholder}
         autoComplete="off"
         onChange={(e) => {
           setKeyword(e.target.value);

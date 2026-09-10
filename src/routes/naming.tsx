@@ -11,6 +11,7 @@ import QRCode from "qrcode";
 import {
   Baby, Users, Volume2, Image as ImageIcon, Heart, X,
   TriangleAlert, Scale, PenLine, Clock3,
+  ShieldCheck, LocateFixed, SlidersHorizontal, ChevronDown,
 } from "lucide-react";
 
 export const Route = createFileRoute("/naming")({
@@ -387,6 +388,49 @@ function Naming() {
   const [avoidText, setAvoidText] = useState("");
   const [formErr, setFormErr] = useState("");
 
+  // P1：高级选项折叠（起名偏好 + 家族避讳），标题徽标显示已选数量
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const advancedCount =
+    (generationChar.trim() ? 1 : 0) + (tabooText.trim() ? 1 : 0) + (avoidText.trim() ? 1 : 0)
+    + stylesSel.length + sourcesSel.length;
+
+  /** 浏览器定位 → 直接取经纬度（真太阳时校正只需经度，地名仅为展示）。 */
+  const locateMe = () => {
+    if (!navigator.geolocation) {
+      setFormErr("当前浏览器不支持定位，请输入城市名搜索");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude);
+        setLng(pos.coords.longitude);
+        setPlaceName("已定位当前位置");
+        setLocating(false);
+      },
+      () => {
+        setFormErr("定位失败，请输入城市名搜索");
+        setLocating(false);
+      },
+      { timeout: 8000 },
+    );
+  };
+
+  /** P2：一键填入演示数据，降低新访客尝试门槛。 */
+  const fillDemo = () => {
+    setSurname("于");
+    setGender("F");
+    setBorn(true);
+    setBirthDate(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
+    setBirthTime(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
+    setLat(23.13);
+    setLng(113.27);
+    setPlaceName("广东省广州市");
+    setNameLength("DOUBLE");
+    setFormErr("");
+  };
+
   // 生成状态
   const [loading, setLoading] = useState(false);
   const [stageIdx, setStageIdx] = useState(-1);
@@ -577,9 +621,26 @@ function Naming() {
 
       {/* 表单 */}
       {!hasResult && !loading ? (
-        <section id="naming-form" className="ink-in d1 mt-7 space-y-3 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+        <>
+        <section id="naming-form" className="ink-in d1 mt-7 space-y-4 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+          {/* P2 信任条 + 示例填充 */}
+          <div className="flex items-center justify-between gap-2 text-[11px] text-ink/50">
+            <span className="flex min-w-0 items-center gap-1.5">
+              <ShieldCheck aria-hidden className="size-3.5 shrink-0 text-emerald-700" />
+              典藏 440+ 典籍名句 · 信息仅用于本次起名
+            </span>
+            <button type="button" onClick={fillDemo} className="shrink-0 rounded-full bg-paper-3 px-2.5 py-1 text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-vermilion-deep hover:ring-vermilion/30">
+              填个示例
+            </button>
+          </div>
+
+          {/* 小节一：宝宝信息（必填区） */}
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
+            <span aria-hidden className="h-4 w-1 rounded-full bg-vermilion" />
+            宝宝信息
+          </h3>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="姓氏">
+            <Field label="姓氏" required>
               <input
                 className={inputCls}
                 maxLength={4}
@@ -588,25 +649,47 @@ function Naming() {
                 onChange={(e) => setSurname(e.target.value)}
               />
             </Field>
-            <Field label="性别">
-              <select className={inputCls} value={gender} onChange={(e) => setGender(e.target.value)}>
-                <option value="F">女</option>
-                <option value="M">男</option>
-              </select>
+            <Field label="性别" required>
+              <div className="grid grid-cols-2 gap-2">
+                {([["F", "女"], ["M", "男"]] as const).map(([v, l]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setGender(v)}
+                    className={`rounded-xl py-2.5 text-sm font-medium ring-1 transition-colors ${gender === v ? "bg-vermilion/12 text-vermilion-deep ring-vermilion/35" : "bg-paper-3 text-ink-soft ring-ink/10 hover:ring-vermilion/25"}`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
             </Field>
+          </div>
+          <div className="-mt-1 flex flex-wrap gap-1.5">
+            {["王", "李", "张", "刘", "陈", "杨", "黄", "赵", "吴", "周", "徐", "孙"].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSurname(s)}
+                className={`rounded-full px-2.5 py-1 text-xs ring-1 transition-colors ${surname === s ? "bg-ink text-paper ring-ink" : "bg-paper-3/70 text-ink-soft ring-ink/10 hover:ring-ink/25"}`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 flex gap-2">
               {([["born", "已出生"], ["unborn", "未出生 · 预产期"]] as const).map(([v, l]) => (
                 <button
                   key={v}
                   type="button"
                   onClick={() => setBorn(v === "born")}
-                  className={`${chips} ${born === (v === "born") ? "bg-ink text-paper ring-ink" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
+                  className={`${chips} flex-1 ${born === (v === "born") ? "bg-ink text-paper ring-ink" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
                 >
                   {l}
                 </button>
               ))}
             </div>
-            <Field label={born ? "出生日期" : "预产期"}>
+            <Field label={born ? "出生日期" : "预产期"} required>
               <input className={inputCls} type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
             </Field>
             {born ? (
@@ -619,114 +702,190 @@ function Naming() {
               </div>
             )}
           </div>
-          <Field label="出生地（输入关键词选择，用于真太阳时校正）">
-            <BirthplaceInput
-              lat={lat}
-              lng={lng}
-              onPick={(v) => {
-                setLat(v.lat);
-                setLng(v.lng);
-                setPlaceName(v.place || "");
-              }}
-            />
-          </Field>
-          <Field label="名字长度">
-            <div className="flex gap-2">
-              {([["DOUBLE", "双字名"], ["SINGLE", "单字名"]] as const).map(([v, l]) => (
-                <button
-                  key={v}
-                  onClick={() => setNameLength(v)}
-                  className={`${chips} ${nameLength === v ? "bg-ink text-paper ring-ink" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
-                >
-                  {l}
-                </button>
-              ))}
+          <Field label={born ? "出生地（用于真太阳时校正）" : "计划出生地（用于真太阳时校正）"} required>
+            <div className="flex items-stretch gap-2">
+              <div className="min-w-0 flex-1">
+                <BirthplaceInput
+                  lat={lat}
+                  lng={lng}
+                  place={placeName}
+                  placeholder={born ? "输入城市或地区名，如：杭州" : "计划出生地，如：杭州"}
+                  onPick={(v) => {
+                    setLat(v.lat);
+                    setLng(v.lng);
+                    setPlaceName(v.place || "");
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={locateMe}
+                disabled={locating}
+                className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-paper-3 px-3 text-xs font-medium text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-vermilion-deep hover:ring-vermilion/30 disabled:opacity-60"
+              >
+                <LocateFixed aria-hidden className={`size-3.5 ${locating ? "animate-pulse" : ""}`} />
+                {locating ? "定位中" : "定位"}
+              </button>
             </div>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="指定用字（选填）">
-              <input
-                className={inputCls}
-                maxLength={4}
-                placeholder="名字首字固定为该字"
-                value={generationChar}
-                onChange={(e) => setGenerationChar(e.target.value)}
-              />
-            </Field>
-            <Field label="避用字（选填）">
-              <input
-                className={inputCls}
-                placeholder="如：伟, 强"
-                value={tabooText}
-                onChange={(e) => setTabooText(e.target.value)}
-              />
-            </Field>
+          {/* P0 高级选项折叠：起名偏好 + 家族避讳（选填，默认收起） */}
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((v) => !v)}
+            className="flex w-full items-center justify-between rounded-xl bg-paper-3/70 px-4 py-2.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 transition-colors hover:ring-ink/25"
+          >
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal aria-hidden className="size-4" />
+              起名偏好与家族避讳（选填）
+            </span>
+            <span className="flex items-center gap-2">
+              {advancedCount > 0 ? (
+                <span className="rounded-full bg-vermilion/12 px-2 py-0.5 text-[10px] font-semibold text-vermilion-deep">已选 {advancedCount}</span>
+              ) : null}
+              <ChevronDown aria-hidden className={`size-4 transition-transform ${advancedOpen ? "rotate-180" : ""}`} />
+            </span>
+          </button>
+          {advancedOpen ? (
+            <div className="space-y-3 rounded-xl bg-paper-3/30 p-3">
+              <h4 className="flex items-center gap-2 text-xs font-semibold text-ink-soft">
+                <span aria-hidden className="h-3 w-0.5 rounded-full bg-vermilion/60" />
+                起名偏好
+              </h4>
+              <Field label="名字长度">
+                <div className="flex gap-2">
+                  {([["DOUBLE", "双字名"], ["SINGLE", "单字名"]] as const).map(([v, l]) => (
+                    <button
+                      key={v}
+                      onClick={() => setNameLength(v)}
+                      className={`${chips} ${nameLength === v ? "bg-ink text-paper ring-ink" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] text-ink/45">
+                  {nameLength === "DOUBLE" ? "双字名重名率更低、更显雅致" : "单字名更响亮利落"}
+                </p>
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Field label="指定用字（字辈）">
+                    <input
+                      className={inputCls}
+                      maxLength={4}
+                      placeholder="名字首字固定为该字"
+                      value={generationChar}
+                      onChange={(e) => setGenerationChar(e.target.value)}
+                    />
+                  </Field>
+                  {generationChar.trim() ? (
+                    <p className="mt-1 text-[11px] text-vermilion-deep">
+                      {nameLength === "SINGLE"
+                        ? `名字将为 ${surname.trim() || "□"}${generationChar.trim()}（单字即字辈）`
+                        : `名字将为 ${surname.trim() || "□"}${generationChar.trim()}□（字辈居首）`}
+                    </p>
+                  ) : null}
+                </div>
+                <Field label="避用字">
+                  <input
+                    className={inputCls}
+                    maxLength={4}
+                    placeholder="如：伟, 强"
+                    value={tabooText}
+                    onChange={(e) => setTabooText(e.target.value)}
+                  />
+                </Field>
+              </div>
+              <Field label="风格偏好（最多 3 个）">
+                <div className="flex flex-wrap gap-2">
+                  {styleTags.map((s) => (
+                    <button
+                      key={s}
+                      disabled={!stylesSel.includes(s) && stylesSel.length >= 3}
+                      title={!stylesSel.includes(s) && stylesSel.length >= 3 ? "最多选择 3 个风格" : undefined}
+                      onClick={() => setStylesSel((p) => (p.includes(s) ? p.filter((x) => x !== s) : p.length < 3 ? [...p, s] : p))}
+                      className={`${chips} ${stylesSel.includes(s) ? "bg-vermilion/15 text-vermilion-deep ring-vermilion/30" : "bg-paper-3 text-ink-soft ring-ink/10"} disabled:opacity-40`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <Field label="典籍偏好（限选一组）">
+                <div className="flex gap-2">
+                  {classicGroups.map((g, gi) => {
+                    const cnt = g.items.filter(([c2]) => sourcesSel.includes(c2)).length;
+                    return (
+                      <button
+                        key={g.name}
+                        onClick={() => {
+                          setClassicGroup(gi);
+                          // 分段互斥：切换分组清空其他组已选（组间类目不重叠）
+                          setSourcesSel((p) => p.filter((x) => g.items.some(([c2]) => x === c2)));
+                        }}
+                        className={`${chips} flex-1 ${classicGroup === gi ? "bg-ink text-paper ring-ink" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
+                      >
+                        {g.name}{cnt ? ` · ${cnt}` : ""}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {classicGroups[classicGroup].items.map(([code, label]) => (
+                    <button
+                      key={code}
+                      onClick={() => setSourcesSel((p) => (p.includes(code) ? p.filter((x) => x !== code) : [...p, code]))}
+                      className={`${chips} ${sourcesSel.includes(code) ? "bg-vermilion/15 text-vermilion-deep ring-vermilion/30" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] text-ink/45">可多选类目；切换分组会更换可选类目并清空已选</p>
+              </Field>
+              <h4 className="flex items-center gap-2 pt-1 text-xs font-semibold text-ink-soft">
+                <span aria-hidden className="h-3 w-0.5 rounded-full bg-vermilion/60" />
+                家族避讳
+              </h4>
+              <Field label="长辈避讳（最多 8 位）">
+                <input
+                  className={inputCls}
+                  maxLength={40}
+                  placeholder="祖辈/父母姓名，逗号分隔；同字同音自动规避"
+                  value={avoidText}
+                  onChange={(e) => setAvoidText(e.target.value)}
+                />
+              </Field>
+            </div>
+          ) : null}
+
+          {/* P2 提交摘要条 */}
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-paper-3/60 px-3 py-2 text-[11px] text-ink-soft">
+            <span className="min-w-0 truncate">
+              {surname.trim() || "＿"}家{gender === "M" ? "男" : "女"}宝宝 · {birthLabel}{placeName ? ` · ${shortPlace(placeName)}` : ""}
+            </span>
+            <span className="shrink-0 text-ink-faint">约 90 秒出 10 个方案</span>
           </div>
-          <Field label="长辈避讳（选填，最多 8 位）">
-            <input
-              className={inputCls}
-              maxLength={40}
-              placeholder="祖辈/父母姓名，逗号分隔；同字同音自动规避"
-              value={avoidText}
-              onChange={(e) => setAvoidText(e.target.value)}
-            />
-          </Field>
-          <Field label="风格偏好（选填，最多 3 个）">
-            <div className="flex flex-wrap gap-2">
-              {styleTags.map((s) => (
-                <button
-                  key={s}
-                  disabled={!stylesSel.includes(s) && stylesSel.length >= 3}
-                  title={!stylesSel.includes(s) && stylesSel.length >= 3 ? "最多选择 3 个风格" : undefined}
-                  onClick={() => setStylesSel((p) => (p.includes(s) ? p.filter((x) => x !== s) : p.length < 3 ? [...p, s] : p))}
-                  className={`${chips} ${stylesSel.includes(s) ? "bg-vermilion/15 text-vermilion-deep ring-vermilion/30" : "bg-paper-3 text-ink-soft ring-ink/10"} disabled:opacity-40`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </Field>
-          <Field label="典籍偏好（选填，限选一组）">
-            <div className="flex gap-2">
-              {classicGroups.map((g, gi) => {
-                const cnt = g.items.filter(([c2]) => sourcesSel.includes(c2)).length;
-                return (
-                  <button
-                    key={g.name}
-                    onClick={() => {
-                      setClassicGroup(gi);
-                      // 分段互斥：切换分组清空其他组已选（组间类目不重叠）
-                      setSourcesSel((p) => p.filter((x) => g.items.some(([c2]) => c2 === x)));
-                    }}
-                    className={`${chips} flex-1 ${classicGroup === gi ? "bg-ink text-paper ring-ink" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
-                  >
-                    {g.name}{cnt ? ` · ${cnt}` : ""}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {classicGroups[classicGroup].items.map(([code, label]) => (
-                <button
-                  key={code}
-                  onClick={() => setSourcesSel((p) => (p.includes(code) ? p.filter((x) => x !== code) : [...p, code]))}
-                  className={`${chips} ${sourcesSel.includes(code) ? "bg-vermilion/15 text-vermilion-deep ring-vermilion/30" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1.5 text-[11px] text-ink/45">可多选类目；切换分组会更换可选类目并清空已选</p>
-          </Field>
+
           {formErr ? <p className="text-xs text-vermilion-deep">{formErr}</p> : null}
           <button
             onClick={() => start(false)}
-            className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]"
+            className="hidden w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] md:block"
           >
             开始推演 · 消耗 6 点 · 24h 内换一批免费
           </button>
-          <p className="mt-2 text-center text-[11px] text-ink/50">未充值新用户首次免费体验（展示 3 个精选名字，充值解锁全部）</p>
+          <p className="hidden text-center text-[11px] text-ink/50 md:block">未充值新用户首次免费体验（展示 3 个精选名字，充值解锁全部）</p>
         </section>
+
+        {/* P1 移动端吸底提交（含安全区适配） */}
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-paper-2/95 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+          <button onClick={() => start(false)} className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]">
+            开始推演 · 消耗 6 点 · 24h 内换一批免费
+          </button>
+          <p className="mt-1 text-center text-[10px] text-ink/50">未充值新用户首次免费（展示 3 个精选名字）</p>
+        </div>
+        <div className="h-24 md:hidden" />
+      </>
       ) : null}
 
       {/* 生成进度 */}

@@ -3,9 +3,22 @@ import { useEffect } from "react";
 import { track } from "@/lib/track";
 import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
+import { Compass } from "lucide-react";
 
 /** 内容列与 banner 内层共用同一套宽度约束，保证左对齐一致 */
 export const shellCls = "mx-auto max-w-[430px] px-5 md:max-w-3xl md:px-8 lg:max-w-5xl";
+
+/** 品牌标：朱红渐变方章 + 白色罗盘（对脉意象），矢量随主题色走 */
+export function BrandMark({ className = "size-11 shrink-0 rounded-xl" }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`grid place-items-center bg-gradient-to-br from-vermilion to-vermilion-deep text-paper shadow-sm ring-1 ring-vermilion-deep/25 ${className}`}
+    >
+      <Compass className="size-[58%]" strokeWidth={1.8} />
+    </span>
+  );
+}
 
 export function AppShell({ banner, children }: { banner?: ReactNode; children: ReactNode }) {
   // 轻量前端错误监控：未捕获异常/未处理 Promise 拒绝 → 埋点
@@ -28,7 +41,7 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
         <div className={`${shellCls} pt-7 pb-4`}>
           <header className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
-              <img src="/brand-logo.png" alt="对脉名鉴" className="size-11 shrink-0 rounded-xl object-cover" />
+              <BrandMark />
               <div className="leading-snug">
                 <p className="text-lg font-semibold tracking-[0.14em]">对脉名鉴</p>
                 <p className="text-sm text-ink-soft">起名与姓名文化参考</p>

@@ -230,22 +230,38 @@ async function buildPoster(c: NameCardData, infoLine: string, diagLine: string):
     g.fillStyle = accent; g.font = "20px sans-serif";
     g.fillText(cites[0].src, W / 2, 456);
   } else if (cites.length >= 2) {
-    g.strokeStyle = "rgba(158,43,37,.3)"; g.strokeRect(60, 352, W - 120, 148);
-    g.textAlign = "left";
-    for (let i = 0; i < 2; i++) {
-      const y = 398 + i * 62;
-      if (cites[i].tag) {
-        g.fillStyle = accent; g.font = "bold 20px sans-serif";
-        g.fillText(cites[i].tag, 84, y - 14);
-      }
-      g.fillStyle = ink; g.font = "23px serif";
-      const t = cites[i].text.length > 20 ? cites[i].text.slice(0, 20) + "…" : cites[i].text;
-      g.fillText(t, 84 + (cites[i].tag ? 34 : 0), y - 12);
-      g.fillStyle = "rgba(158,43,37,.9)"; g.font = "17px sans-serif";
-      const sr = cites[i].src.length > 24 ? cites[i].src.slice(0, 24) + "…" : cites[i].src;
-      g.fillText(sr, 84, y + 12);
-    }
+    // 藏名联/同出联：徽标 + 放大居中两行诗句（名字用字朱红高亮，超宽自适应缩字号）+ 出处
+    g.strokeStyle = "rgba(158,43,37,.3)"; g.strokeRect(60, 340, W - 120, 176);
     g.textAlign = "center";
+    g.fillStyle = c.originalCouplet ? "rgba(43,36,23,.55)" : accent;
+    g.font = "18px sans-serif";
+    g.fillText(c.originalCouplet ? "✒ 原创藏名联" : "✦ 同出一联 · 字字有典", W / 2, 372);
+    const hiChars = new Set(cites.map((x) => x.tag).filter(Boolean));
+    const drawVerse = (text: string, y: number) => {
+      let size = 32;
+      g.font = `bold ${size}px serif`;
+      while (size > 20 && g.measureText(text).width > W - 160) {
+        size -= 1;
+        g.font = `bold ${size}px serif`;
+      }
+      let x = (W - g.measureText(text).width) / 2;
+      g.textAlign = "left";
+      for (const ch of text) {
+        const w = g.measureText(ch).width;
+        g.fillStyle = hiChars.has(ch) ? accent : ink;
+        g.fillText(ch, x, y);
+        x += w;
+      }
+      g.textAlign = "center";
+    };
+    drawVerse(cites[0].text, 428);
+    drawVerse(cites[1].text, 482);
+    g.fillStyle = "rgba(158,43,37,.9)"; g.font = "19px sans-serif";
+    const srcText = cites[0].src === cites[1].src
+      ? cites[0].src
+      : `${cites[0].src} ／ ${cites[1].src}`; // 历史回放的分典兜底：两出处并列
+    const src = srcText.length > 30 ? srcText.slice(0, 30) + "…" : srcText;
+    g.fillText(src, W / 2, 512);
   }
   g.fillStyle = "rgba(43,36,23,.75)"; g.font = "22px sans-serif";
   g.fillText(infoLine, W / 2, 548);

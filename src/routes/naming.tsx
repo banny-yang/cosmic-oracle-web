@@ -70,6 +70,7 @@ interface NameCardData {
   classicMeaning?: string;
   charCitations?: { char: string; citation: string; source: string }[];
   sameClassicSource?: boolean;
+  originalCouplet?: boolean;
 }
 
 const DIM_LABELS: [string, string][] = [
@@ -304,6 +305,25 @@ const ELEMENT_CLS: Record<string, string> = {
   METAL: "bg-stone-600/90 text-stone-50",
   WATER: "bg-sky-800/85 text-sky-50",
 };
+/** 五行小色点（信息卡四柱/喜用行内标注用）。 */
+const ELEMENT_DOT: Record<string, string> = {
+  WOOD: "bg-emerald-600",
+  FIRE: "bg-red-600",
+  EARTH: "bg-amber-600",
+  METAL: "bg-stone-500",
+  WATER: "bg-sky-600",
+};
+/** 地支（四柱干支第二字）→ 五行，用于四柱标签色点。 */
+const BRANCH_ELEMENT: Record<string, string> = {
+  子: "WATER", 亥: "WATER", 寅: "WOOD", 卯: "WOOD", 巳: "FIRE", 午: "FIRE",
+  丑: "EARTH", 辰: "EARTH", 未: "EARTH", 戌: "EARTH", 申: "METAL", 酉: "METAL",
+};
+/** 出生地短显示：去掉包含其它片段的冗长片段（「广州市 广东省广州市」→「广州市」）。 */
+function shortPlace(place: string) {
+  const parts = place.split(/[\s,，]+/).filter(Boolean);
+  const keep = parts.filter((p) => !parts.some((o) => o !== p && p.includes(o)));
+  return (keep.length ? keep : parts).join(" ");
+}
 
 /* ───────── 页面 ───────── */
 
@@ -508,7 +528,7 @@ function Naming() {
   const hasResult = cards.length > 0;
   const trial = !!diagnosis?.freeTrial && (diagnosis?.lockedCount ?? 0) > 0;
   const birthLabel = born ? `${birthDate || "-"} ${birthTime || ""}` : `预产期 ${birthDate || "-"}`;
-  const infoLine = `${surname}家${gender === "M" ? "男" : "女"}宝宝 · ${birthLabel}${placeName ? ` · 出生于 ${placeName}` : ""}`;
+  const infoLine = `${surname}家${gender === "M" ? "男" : "女"}宝宝 · ${birthLabel}${placeName ? ` · ${shortPlace(placeName)}` : ""}`;
   const diagLine = diagnosis
     ? `日主${ELEMENT_ZH[diagnosis.dayMasterElement || ""] || "-"} · ${STRENGTH_ZH[diagnosis.strength || ""] || "-"} · 喜用${ELEMENT_ZH[diagnosis.primaryElement || ""] || "-"}主${diagnosis.secondaryElement ? ELEMENT_ZH[diagnosis.secondaryElement] + "辅" : ""}`
     : "";
@@ -753,37 +773,94 @@ function Naming() {
         </section>
       ) : null}
 
-      {/* 五行分析 */}
+      {/* 宝宝信息 + 五行分析 */}
       {diagnosis && hasResult ? (
         <section className="ink-in d1 mt-7 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
-            <span>👶 {surname}家{gender === "M" ? "男" : "女"}宝宝</span>
-            <span className="text-ink/30">·</span>
-            <span className="text-ink-soft">{born ? `${birthDate} ${birthTime}` : `预产期 ${birthDate}`}</span>
-            {!born ? (
-              <span className="rounded bg-amber-700/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">预产期推演</span>
-            ) : null}
-            {placeName ? (<><span className="text-ink/30">·</span><span className="text-ink-soft">出生于 {placeName}</span></>) : null}
+          {/* 信息头：宝宝为纲，生日/出生地为注，层级分明 */}
+          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span aria-hidden className="text-xl leading-none">👶</span>
+                <h2 className="text-lg font-semibold tracking-wide">
+                  {surname}家{gender === "M" ? "男" : "女"}宝宝
+                </h2>
+                {!born ? (
+                  <span className="rounded-full bg-amber-700/10 px-2 py-0.5 text-[10px] font-medium text-amber-800 ring-1 ring-amber-600/25">预产期推演</span>
+                ) : null}
+              </div>
+              <p className="mt-1.5 text-xs text-ink-soft">
+                {born ? `${birthDate} ${birthTime}` : `预产期 ${birthDate}`}
+                {placeName ? ` · ${shortPlace(placeName)}` : ""}
+              </p>
+              {!born ? (
+                <p className="mt-1 max-w-md text-[11px] leading-relaxed text-ink-faint">
+                  时柱按当日午时（12:00）推演，宝宝出生后建议用实际生辰重新生成精算
+                </p>
+              ) : null}
+            </div>
           </div>
-          {!born ? (
-            <p className="mt-1 text-[11px] text-ink-faint">预产期方案：时柱按当日午时（12:00）推演，宝宝出生后建议用实际生辰重新生成精算。</p>
-          ) : null}
+
+          {/* 四柱：格位化 4 列，地支五行色点呼应 */}
           {diagnosis.pillars?.length ? (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {diagnosis.pillars.map((pl, i) => (
-                <span key={i} className="rounded bg-paper-3 px-2 py-0.5 text-xs tracking-widest">{["年", "月", "日", "时"][i]}·{pl}</span>
-              ))}
+            <div className="mt-3 grid grid-cols-4 gap-1.5">
+              {diagnosis.pillars.map((pl, i) => {
+                const el = BRANCH_ELEMENT[pl[pl.length - 1]];
+                return (
+                  <div key={i} className="rounded-xl bg-paper-3/70 px-1 py-1.5 text-center ring-1 ring-ink/5">
+                    <p className="flex items-center justify-center gap-1 text-[10px] text-ink-faint">
+                      <span className={`size-1.5 rounded-full ${ELEMENT_DOT[el] || "bg-ink/20"}`} />
+                      {["年柱", "月柱", "日柱", "时柱"][i]}
+                    </p>
+                    <p className="mt-0.5 text-base font-semibold tracking-[0.25em] text-ink">{pl}</p>
+                  </div>
+                );
+              })}
             </div>
           ) : null}
-          <h2 className="mt-4 text-base font-semibold">五行分析</h2>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            <span className="rounded-full bg-paper-3 px-3 py-1.5">日主 · {ELEMENT_ZH[diagnosis.dayMasterElement || ""] || "-"}</span>
-            <span className="rounded-full bg-paper-3 px-3 py-1.5">{STRENGTH_ZH[diagnosis.strength || ""] || "-"}</span>
-            <span className="rounded-full bg-paper-3 px-3 py-1.5">
-              喜用 · {(ELEMENT_ZH[diagnosis.primaryElement || ""] || "-") + "主"}
-              {diagnosis.secondaryElement ? " · " + (ELEMENT_ZH[diagnosis.secondaryElement] || "") + "辅" : ""}
+
+          {/* 五行分析：核心结论胶囊 + 能量刻度 */}
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-3 px-3 py-1.5 font-medium">
+              <span className={`size-2 rounded-full ${ELEMENT_DOT[diagnosis.dayMasterElement || ""] || "bg-ink/25"}`} />
+              日主 {ELEMENT_ZH[diagnosis.dayMasterElement || ""] || "-"}
             </span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-paper-3 px-3 py-1.5">
+              {STRENGTH_ZH[diagnosis.strength || ""] || "-"}
+              {(() => {
+                const m = /能量指数\s*(\d+)%/.exec(diagnosis.reason || "");
+                if (!m) return null;
+                const pct = Math.min(100, Math.max(0, Number(m[1])));
+                return (
+                  <>
+                    <span className="inline-flex h-1.5 w-12 overflow-hidden rounded-full bg-ink/10">
+                      <span className="h-full rounded-full bg-vermilion/70" style={{ width: `${pct}%` }} />
+                    </span>
+                    <span className="tabular-nums text-[11px] text-ink-faint">{pct}%</span>
+                  </>
+                );
+              })()}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-3 px-3 py-1.5 font-medium">
+              喜用
+              <span className="inline-flex items-center gap-1">
+                <span className={`size-2 rounded-full ${ELEMENT_DOT[diagnosis.primaryElement || ""] || "bg-ink/25"}`} />
+                {ELEMENT_ZH[diagnosis.primaryElement || ""] || "-"}主
+              </span>
+              {diagnosis.secondaryElement ? (
+                <span className="inline-flex items-center gap-1">
+                  <span className={`size-2 rounded-full ${ELEMENT_DOT[diagnosis.secondaryElement] || "bg-ink/25"}`} />
+                  {ELEMENT_ZH[diagnosis.secondaryElement] || "-"}辅
+                </span>
+              ) : null}
+            </span>
+            {diagnosis.climateElement ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-3 px-3 py-1.5 text-ink-soft">
+                <span className={`size-2 rounded-full ${ELEMENT_DOT[diagnosis.climateElement] || "bg-ink/25"}`} />
+                调候{ELEMENT_ZH[diagnosis.climateElement] || ""} +
+              </span>
+            ) : null}
           </div>
+
           {diagnosis.criticalBoundary?.note ? (
             <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
               ⏱ {diagnosis.criticalBoundary.note}
@@ -793,7 +870,7 @@ function Naming() {
             <p className="mt-2 text-xs text-ink/55">👪 {diagnosis.avoidSummary}</p>
           ) : null}
           {diagnosis.reason ? (
-            <p className="mt-3 text-xs leading-relaxed text-ink-soft">{diagnosis.reason}</p>
+            <p className="mt-3 border-t border-ink/5 pt-2.5 text-[11px] leading-relaxed text-ink-faint">{diagnosis.reason}</p>
           ) : null}
         </section>
       ) : null}
@@ -1258,15 +1335,24 @@ function NameCardView({
 
       {c.charCitations?.length ? (
         <div className="mt-3 space-y-2">
-          <span
-            title={c.sameClassicSource ? "两字同出一典（同句或同联上下句），逐字校验通过" : "校验规则：每字引文正文均包含该字，出处核验通过"}
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${c.sameClassicSource ? "bg-amber-700/12 text-amber-800 ring-1 ring-amber-600/30" : "bg-emerald-800/10 text-emerald-800"}`}
-          >
-            {c.sameClassicSource ? "✦ 同出一联 · 字字有典" : "✓ 字字有典 · 已校验"}
-          </span>
-          {c.sameClassicSource && c.charCitations.length >= 2 ? (
-            // 同典：整联一次展示（上下句分行），名字用字高亮
-            <div className="rounded-xl bg-paper-3/60 p-3">
+          {c.originalCouplet ? (
+            <span
+              title="两字未能同出真实典籍，已按鹤顶格原创藏名联：一字居上句之首、一字居下句之首"
+              className="inline-flex items-center gap-1 rounded-full bg-ink/8 px-2 py-0.5 text-[10px] font-medium text-ink-soft ring-1 ring-ink/15"
+            >
+              ✒ 藏名一联 · 原创嵌名
+            </span>
+          ) : (
+            <span
+              title={c.sameClassicSource ? "两字同出一典（同句或同联上下句），逐字校验通过" : "校验规则：每字引文正文均包含该字，出处核验通过"}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${c.sameClassicSource ? "bg-amber-700/12 text-amber-800 ring-1 ring-amber-600/30" : "bg-emerald-800/10 text-emerald-800"}`}
+            >
+              {c.sameClassicSource ? "✦ 同出一联 · 字字有典" : "✓ 字字有典 · 已校验"}
+            </span>
+          )}
+          {(c.sameClassicSource || c.originalCouplet) && c.charCitations.length >= 2 ? (
+            // 同典/藏名联：整联一次展示（上下句分行），名字用字高亮
+            <div className={`rounded-xl p-3 ${c.originalCouplet ? "bg-paper-3/60 ring-1 ring-ink/8" : "bg-paper-3/60"}`}>
               <div className="flex items-center gap-1.5">
                 {c.charCitations.map((cc) => (
                   <span key={cc.char} className="grid size-6 place-items-center rounded-full bg-vermilion/10 text-xs font-semibold text-vermilion-deep ring-1 ring-vermilion/25">
@@ -1284,6 +1370,9 @@ function NameCardView({
               ))}
               {c.charCitations[0].source ? (
                 <p className="mt-1 text-xs font-medium text-vermilion-deep">「{c.charCitations[0].source}」</p>
+              ) : null}
+              {c.originalCouplet ? (
+                <p className="mt-1 text-[10px] text-ink-faint">原创藏名联，非典籍原文</p>
               ) : null}
             </div>
           ) : (

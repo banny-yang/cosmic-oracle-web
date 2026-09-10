@@ -325,6 +325,8 @@ function Naming() {
     `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
   );
   const [birthTime, setBirthTime] = useState(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
+  // 出生状态：已出生填出生日期+时间；未出生填预产期（按当日午时 12:00 推演）
+  const [born, setBorn] = useState(true);
   const [lat, setLat] = useState(39.9);
   const [lng, setLng] = useState(116.4);
   const [nameLength, setNameLength] = useState<"DOUBLE" | "SINGLE">("DOUBLE");
@@ -375,7 +377,7 @@ function Naming() {
   const body = (exclude: string[]) => ({
     surname,
     gender,
-    birthTime: `${birthDate}T${birthTime}:00`,
+    birthTime: `${birthDate}T${born ? birthTime || "12:00" : "12:00"}:00`,
     latitude: lat,
     longitude: lng,
     nameLength,
@@ -395,7 +397,7 @@ function Naming() {
   const start = (exclude: boolean) => {
     setFormErr("");
     if (!surname.trim()) return setFormErr("请输入宝宝姓氏");
-    if (!birthDate) return setFormErr("请选择出生日期");
+    if (!birthDate) return setFormErr(born ? "请选择出生日期" : "请选择预产期");
     if (!getToken()) {
       location.href = "/login?redirect=" + encodeURIComponent("/naming");
       return;
@@ -505,7 +507,8 @@ function Naming() {
 
   const hasResult = cards.length > 0;
   const trial = !!diagnosis?.freeTrial && (diagnosis?.lockedCount ?? 0) > 0;
-  const infoLine = `${surname}家${gender === "M" ? "男" : "女"}宝宝 · ${birthDate || "-"} ${birthTime || ""}${placeName ? ` · 出生于 ${placeName}` : ""}`;
+  const birthLabel = born ? `${birthDate || "-"} ${birthTime || ""}` : `预产期 ${birthDate || "-"}`;
+  const infoLine = `${surname}家${gender === "M" ? "男" : "女"}宝宝 · ${birthLabel}${placeName ? ` · 出生于 ${placeName}` : ""}`;
   const diagLine = diagnosis
     ? `日主${ELEMENT_ZH[diagnosis.dayMasterElement || ""] || "-"} · ${STRENGTH_ZH[diagnosis.strength || ""] || "-"} · 喜用${ELEMENT_ZH[diagnosis.primaryElement || ""] || "-"}主${diagnosis.secondaryElement ? ELEMENT_ZH[diagnosis.secondaryElement] + "辅" : ""}`
     : "";
@@ -543,12 +546,30 @@ function Naming() {
                 <option value="M">男</option>
               </select>
             </Field>
-            <Field label="出生日期">
+            <div className="col-span-2 flex gap-2">
+              {([["born", "👶 已出生"], ["unborn", "🤰 未出生·预产期"]] as const).map(([v, l]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setBorn(v === "born")}
+                  className={`${chips} ${born === (v === "born") ? "bg-ink text-paper ring-ink" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+            <Field label={born ? "出生日期" : "预产期"}>
               <input className={inputCls} type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
             </Field>
-            <Field label="出生时间">
-              <input className={inputCls} type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} />
-            </Field>
+            {born ? (
+              <Field label="出生时间">
+                <input className={inputCls} type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} />
+              </Field>
+            ) : (
+              <div className="flex items-end pb-1">
+                <p className="text-[11px] leading-snug text-ink-faint">预产期方案按当日午时（12:00）推演，宝宝出生后可用实际生辰重新生成精算</p>
+              </div>
+            )}
           </div>
           <Field label="出生地（输入关键词选择，用于真太阳时校正）">
             <BirthplaceInput
@@ -738,9 +759,15 @@ function Naming() {
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
             <span>👶 {surname}家{gender === "M" ? "男" : "女"}宝宝</span>
             <span className="text-ink/30">·</span>
-            <span className="text-ink-soft">{birthDate} {birthTime}</span>
+            <span className="text-ink-soft">{born ? `${birthDate} ${birthTime}` : `预产期 ${birthDate}`}</span>
+            {!born ? (
+              <span className="rounded bg-amber-700/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">预产期推演</span>
+            ) : null}
             {placeName ? (<><span className="text-ink/30">·</span><span className="text-ink-soft">出生于 {placeName}</span></>) : null}
           </div>
+          {!born ? (
+            <p className="mt-1 text-[11px] text-ink-faint">预产期方案：时柱按当日午时（12:00）推演，宝宝出生后建议用实际生辰重新生成精算。</p>
+          ) : null}
           {diagnosis.pillars?.length ? (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {diagnosis.pillars.map((pl, i) => (

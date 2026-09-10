@@ -1474,13 +1474,16 @@ function NameCardView({
             </div>
           ) : null}
 
-          {c.dialectCheckPassed !== undefined ? (
-            <p className={`text-[11px] ${c.dialectCheckPassed ? "text-amber-700" : "text-vermilion-deep"}`}>
-              {c.dialectCheckPassed
-                ? `已通过普通话 + ${(c.dialectChecks ?? []).filter((d) => d.status === "passed").length} 方言谐音检测`
-                : "方言谐音检测存在风险提示"}
-            </p>
-          ) : null}
+          {(() => {
+            if (c.dialectCheckPassed === undefined) return null;
+            if (!c.dialectCheckPassed) {
+              return <p className="text-[11px] text-vermilion-deep">方言谐音检测存在风险提示</p>;
+            }
+            const passedCount = (c.dialectChecks ?? []).filter((d) => d.status === "passed").length;
+            // 无方言数据通过（0 条）时不显示，避免「+ 0 方言」的空洞表述
+            if (passedCount === 0) return null;
+            return <p className="text-[11px] text-amber-700">已通过普通话 + {passedCount} 方言谐音检测</p>;
+          })()}
 
           {c.wuxingAnalysis ? (
             <p className="border-t border-ink/5 pt-2 text-xs leading-relaxed text-ink-soft">

@@ -80,6 +80,18 @@ const DIM_LABELS: [string, string][] = [
   ["zodiac", "生肖契合"],
 ];
 
+/** 典故引文中高亮名字用字（PRD 出处展示规范：整联一次展示 + 选中字高亮）。 */
+function highlightNameChars(text: string, chars: string[]) {
+  const set = new Set(chars.filter((c) => c && c.length === 1));
+  return Array.from(text).map((ch, i) =>
+    set.has(ch) ? (
+      <span key={i} className="font-bold text-vermilion-deep">{ch}</span>
+    ) : (
+      <span key={i}>{ch}</span>
+    )
+  );
+}
+
 /** 五维雷达（纯 SVG 五边形，无依赖）。 */
 function DimRadar({ scores, size = 150 }: { scores: Record<string, number>; size?: number }) {
   const cx = size / 2;
@@ -1225,17 +1237,43 @@ function NameCardView({
           >
             {c.sameClassicSource ? "✦ 同出一联 · 字字有典" : "✓ 字字有典 · 已校验"}
           </span>
-          {c.charCitations.map((cc) => (
-            <div key={cc.char + cc.citation} className="flex items-start gap-2 rounded-xl bg-paper-3/60 p-3">
-              <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-vermilion/10 text-xs font-semibold text-vermilion-deep ring-1 ring-vermilion/25">
-                {cc.char}
-              </span>
-              <div className="min-w-0">
-                {cc.source ? <p className="text-xs font-medium text-vermilion-deep">「{cc.source}」</p> : null}
-                <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">{cc.citation}</p>
+          {c.sameClassicSource && c.charCitations.length >= 2 ? (
+            // 同典：整联一次展示（上下句分行），名字用字高亮
+            <div className="rounded-xl bg-paper-3/60 p-3">
+              <div className="flex items-center gap-1.5">
+                {c.charCitations.map((cc) => (
+                  <span key={cc.char} className="grid size-6 place-items-center rounded-full bg-vermilion/10 text-xs font-semibold text-vermilion-deep ring-1 ring-vermilion/25">
+                    {cc.char}
+                  </span>
+                ))}
+                {c.classicMeaning ? (
+                  <span className="ml-1 text-[11px] text-ink-faint">「{c.classicMeaning}」</span>
+                ) : null}
               </div>
+              {Array.from(new Set(c.charCitations.map((cc) => cc.citation))).map((t) => (
+                <p key={t} className="mt-1.5 text-sm leading-loose text-ink">
+                  {highlightNameChars(t, c.charCitations!.map((cc) => cc.char))}
+                </p>
+              ))}
+              {c.charCitations[0].source ? (
+                <p className="mt-1 text-xs font-medium text-vermilion-deep">「{c.charCitations[0].source}」</p>
+              ) : null}
             </div>
-          ))}
+          ) : (
+            c.charCitations.map((cc) => (
+              <div key={cc.char + cc.citation} className="flex items-start gap-2 rounded-xl bg-paper-3/60 p-3">
+                <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-vermilion/10 text-xs font-semibold text-vermilion-deep ring-1 ring-vermilion/25">
+                  {cc.char}
+                </span>
+                <div className="min-w-0">
+                  {cc.source ? <p className="text-xs font-medium text-vermilion-deep">「{cc.source}」</p> : null}
+                  <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
+                    {highlightNameChars(cc.citation, [cc.char])}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       ) : c.classicCitation ? (
         <div className="mt-3 rounded-xl bg-paper-3/60 p-3">

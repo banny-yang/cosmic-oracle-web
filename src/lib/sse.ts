@@ -57,13 +57,23 @@ export function streamPost(opts: StreamOptions): StreamHandle {
       });
       if (!res.ok || !res.body) {
         let message = `连接失败（${res.status}）`;
+        let code: string | undefined;
+        let extra: Record<string, unknown> = {};
         try {
           const body = await res.json();
           if (body && (body.message || body.error)) message = body.message || body.error;
+          if (body && typeof body.error_code === "string") code = body.error_code;
+          if (body && typeof body === "object") {
+            extra = { dayPriceFen: body.dayPriceFen, monthPriceFen: body.monthPriceFen };
+          }
         } catch {
           // 非 JSON 错误体
         }
-        fail(new Error(message));
+        const err = new Error(message) as Error & { code?: string; dayPriceFen?: number; monthPriceFen?: number };
+        if (code) err.code = code;
+        if (extra.dayPriceFen != null) err.dayPriceFen = Number(extra.dayPriceFen);
+        if (extra.monthPriceFen != null) err.monthPriceFen = Number(extra.monthPriceFen);
+        fail(err);
         return;
       }
 

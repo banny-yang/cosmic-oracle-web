@@ -4,7 +4,8 @@ import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/compo
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { track } from "@/lib/track";
-import { post } from "@/lib/api";
+import { post, get } from "@/lib/api";
+import { useFeaturePrice } from "@/lib/use-feature-price";
 import { getToken } from "@/lib/auth";
 import { setupWxShare } from "@/lib/wx-share";
 import QRCode from "qrcode";
@@ -77,6 +78,16 @@ interface NameCardData {
   sameClassicSource?: boolean;
   originalCouplet?: boolean;
 }
+
+/** 起名畅享权益状态（GET /api/v1/naming/pass/status）。 */
+type PassStatus = {
+  active?: boolean;
+  passType?: string;
+  expiresAtEpochMs?: number;
+  dayPriceFen?: number;
+  monthPriceFen?: number;
+  batchLockEnabled?: boolean;
+};
 
 const DIM_LABELS: [string, string][] = [
   ["bazi", "八字喜用"],
@@ -431,6 +442,17 @@ function Naming() {
     setFormErr("");
   };
 
+  // 畅享权益：挂载/结果返回时刷新（徽标与升级弹层价格）
+  const namingPrice = useFeaturePrice("BABY_NAMING", 10);
+  const [passInfo, setPassInfo] = useState<PassStatus | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const refreshPass = () => {
+    get<PassStatus>("/api/v1/naming/pass/status", {}, { timeoutMs: 6000 })
+      .then((r) => setPassInfo(r || null))
+      .catch(() => {});
+  };
+  useEffect(refreshPass, []);
+
   // 生成状态
   const [loading, setLoading] = useState(false);
   const [stageIdx, setStageIdx] = useState(-1);
@@ -530,6 +552,7 @@ function Naming() {
           track("naming_generate_done", { cards: (d.cards || []).length });
           setDiagnosis((prev) => ({ ...(prev || {}), ...d, aiGenerated: d.aiGenerated !== false }));
           setLoading(false);
+          refreshPass();
         } else if (ev.stage === "error") {
           setError(String(ev.message || ev.error || "生成失败，请重试"));
           setLoading(false);
@@ -539,6 +562,17 @@ function Naming() {
         }
       },
       onError: (e) => {
+        const code = (e as Error & { code?: string }).code;
+        if (code === "NAMING_BATCH_LOCKED") {
+          // 单次 10 个名字已出完：换一批需畅享卡/包月，或再付一次点数生成新一批
+          const err = e as Error & { dayPriceFen?: number; monthPriceFen?: number };
+          if (err.dayPriceFen) setPassInfo((p) => ({ ...(p || {}), dayPriceFen: err.dayPriceFen }) as PassStatus);
+          if (err.monthPriceFen) setPassInfo((p) => ({ ...(p || {}), monthPriceFen: err.monthPriceFen }) as PassStatus);
+          setUpgradeOpen(true);
+          setLoading(false);
+          track("naming_batch_locked");
+          return;
+        }
         setError(e.message || "连接中断，请重试");
         setLoading(false);
       },
@@ -617,7 +651,7 @@ function Naming() {
   return (
     <AppShell>
       <BreadcrumbJsonLd name="宝宝起名" path="/naming" />
-      <PageHeader eyebrow="功能一" title="宝宝起名" desc="填写姓氏与生辰偏好，为孩子拟一组有来历、有数理的名字。" />
+      <PageHeader eyebrow={`功能一 · 消耗 ${namingPrice} 点`} title="宝宝起名" desc="填写姓氏与生辰偏好，为孩子拟一组有来历、有数理的名字。" />
 
       {/* 表单 */}
       {!hasResult && !loading ? (
@@ -872,7 +906,7 @@ function Naming() {
             onClick={() => start(false)}
             className="hidden w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] md:block"
           >
-            开始推演 · 消耗 6 点 · 24h 内换一批免费
+            开始推演 · 消耗 {namingPrice} 点 · 单次 10 个名字
           </button>
           <p className="hidden text-center text-[11px] text-ink/50 md:block">未充值新用户首次免费体验（展示 3 个精选名字，充值解锁全部）</p>
         </section>
@@ -880,7 +914,7 @@ function Naming() {
         {/* P1 移动端吸底提交（含安全区适配） */}
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-paper-2/95 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden">
           <button onClick={() => start(false)} className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]">
-            开始推演 · 消耗 6 点 · 24h 内换一批免费
+            开始推演 · 消耗 {namingPrice} 点 · 单次 10 个名字
           </button>
           <p className="mt-1 text-center text-[10px] text-ink/50">未充值新用户首次免费（展示 3 个精选名字）</p>
         </div>
@@ -1070,7 +1104,19 @@ function Naming() {
       {hasResult ? (
         <>
           <div className="mt-8 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold">名字方案</h2>
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              名字方案
+              {passInfo?.active ? (
+                <span
+                  title={passInfo.passType === "MONTH" ? "包月畅享：30 天内生成与换一批不限次" : "畅享中：24 小时内生成与换一批不限次"}
+                  className="rounded-full bg-amber-700/12 px-2 py-0.5 text-[10px] font-medium text-amber-800 ring-1 ring-amber-600/30"
+                >
+                  {passInfo.passType === "MONTH"
+                    ? `包月畅享 · 至 ${new Date(passInfo.expiresAtEpochMs || 0).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}`
+                    : `畅享中 · 剩余 ${Math.max(1, Math.round(((passInfo.expiresAtEpochMs || 0) - Date.now()) / 3600000))}h`}
+                </span>
+              ) : null}
+            </h2>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {trial ? (
                 <span className="rounded-full bg-vermilion/10 px-2.5 py-1 font-medium text-vermilion-deep ring-1 ring-vermilion/25">
@@ -1248,7 +1294,7 @@ function Naming() {
             <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl bg-paper-2 p-5 text-center ring-1 ring-ink/5">
               <p className="text-sm font-medium">对这批名字不满意？</p>
               <p className="text-xs text-ink-soft">
-                「换一批」会自动排除已看过的名字继续推演 · 24 小时内免扣点 · 勾选 3~5 个还可发起亲友投票
+                「换一批」会自动排除已看过的名字继续推演{passInfo?.active ? " · 畅享期内不限次" : " · 畅享卡/包月期内不限次"} · 勾选 3~5 个还可发起亲友投票
               </p>
               <div className="mt-1 flex items-center gap-4">
                 <button
@@ -1296,6 +1342,53 @@ function Naming() {
       ) : null}
 
       {/* 海报预览弹框 */}
+      {/* 换一批升级弹层：单次 10 个名字出完 → 畅享卡/包月 或 再付一次点数 */}
+      {upgradeOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
+          onClick={() => setUpgradeOpen(false)}
+        >
+          <div
+            className="ink-in w-full max-w-md rounded-2xl bg-paper p-5 ring-1 ring-ink/10 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold">本批 10 个名字已生成完毕</h3>
+                <p className="mt-1 text-xs text-ink-soft">换一批继续推演需开通畅享，也可以再次付费生成新一批</p>
+              </div>
+              <button onClick={() => setUpgradeOpen(false)} className="text-ink/50 hover:text-ink" title="关闭">
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2 text-left">
+              <div className="rounded-xl bg-amber-50 p-3 ring-1 ring-amber-600/25">
+                <p className="text-[11px] font-medium text-amber-800">24 小时畅享</p>
+                <p className="mt-0.5 text-xl font-bold text-amber-900">¥{((passInfo?.dayPriceFen ?? 3990) / 100).toFixed(1)}</p>
+                <p className="mt-1 text-[11px] leading-snug text-ink-soft">当日不限次生成与换批</p>
+              </div>
+              <div className="rounded-xl bg-paper-3 p-3 ring-1 ring-ink/10">
+                <p className="text-[11px] font-medium text-ink-soft">包月畅享</p>
+                <p className="mt-0.5 text-xl font-bold text-ink">¥{((passInfo?.monthPriceFen ?? 9900) / 100).toFixed(0)}</p>
+                <p className="mt-1 text-[11px] leading-snug text-ink-soft">30 天不限次，适合慢慢挑</p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center gap-3 rounded-xl bg-paper-3/60 p-3">
+              <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-20 shrink-0 rounded-lg bg-paper ring-1 ring-ink/10" />
+              <p className="text-[11px] leading-relaxed text-ink-soft">
+                微信扫码进入「对脉名鉴」小程序，在「我的-充值」页选择畅享卡/包月支付；权益与点数登录同一账号通用。
+              </p>
+            </div>
+            <button
+              onClick={() => { setUpgradeOpen(false); start(false); }}
+              className="mt-3 w-full rounded-xl bg-ink py-2.5 text-sm font-semibold text-paper"
+            >
+              或再付 {namingPrice} 点生成新一批（不排除已看过）
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {poster ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm"

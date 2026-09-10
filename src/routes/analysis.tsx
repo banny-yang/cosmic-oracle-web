@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { getAuthUser } from "@/lib/auth";
+import { useFeaturePrice } from "@/lib/use-feature-price";
 
 export const Route = createFileRoute("/analysis")({
   component: Analysis,
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/analysis")({
 });
 
 function Analysis() {
+  const price = useFeaturePrice("INSIGHT_NAME", 9);
   const flow = useReportFlow();
   const [nameA, setNameA] = useState("");
   const [nameB, setNameB] = useState("");
@@ -44,7 +46,7 @@ function Analysis() {
     <AppShell>
       <BreadcrumbJsonLd name="姓名解析" path="/analysis" />
       <PageHeader
-        eyebrow="功能二 · 消耗 3 点"
+        eyebrow={`功能二 · 消耗 ${price} 点`}
         title="姓名解析"
         desc="逐字拆解字义与音韵的来路，读出一个名字的气质。"
       />

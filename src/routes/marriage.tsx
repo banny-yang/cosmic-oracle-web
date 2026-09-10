@@ -4,6 +4,7 @@ import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/compo
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { getAuthUser } from "@/lib/auth";
+import { useFeaturePrice } from "@/lib/use-feature-price";
 
 export const Route = createFileRoute("/marriage")({
   component: Marriage,
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/marriage")({
 });
 
 function Marriage() {
+  const price = useFeaturePrice("MARRIAGE_FIT", 19);
   const flow = useReportFlow();
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
@@ -53,7 +55,7 @@ function Marriage() {
     <AppShell>
       <BreadcrumbJsonLd name="婚姻契合分析" path="/marriage" />
       <PageHeader
-        eyebrow="功能四 · 消耗 6 点"
+        eyebrow={`功能四 · 消耗 ${price} 点`}
         title="婚姻契合分析"
         desc="七维视角看两个人的相处契合，仅供文化参考与娱乐。"
       />

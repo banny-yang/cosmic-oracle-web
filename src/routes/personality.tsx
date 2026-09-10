@@ -4,6 +4,7 @@ import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/compo
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { getAuthUser } from "@/lib/auth";
+import { useFeaturePrice } from "@/lib/use-feature-price";
 
 export const Route = createFileRoute("/personality")({
   component: Personality,
@@ -31,6 +32,7 @@ const relations = [
 ];
 
 function Personality() {
+  const price = useFeaturePrice("INSIGHT_PAIR", 9);
   const flow = useReportFlow();
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
@@ -63,7 +65,7 @@ function Personality() {
     <AppShell>
       <BreadcrumbJsonLd name="性格契合测评" path="/personality" />
       <PageHeader
-        eyebrow="功能三 · 消耗 4 点"
+        eyebrow={`功能三 · 消耗 ${price} 点`}
         title="性格契合测评"
         desc="以性格倾向看两个人相处的分寸，仅供文化参考。"
       />

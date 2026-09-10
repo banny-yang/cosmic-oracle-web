@@ -324,6 +324,14 @@ function shortPlace(place: string) {
   const keep = parts.filter((p) => !parts.some((o) => o !== p && p.includes(o)));
   return (keep.length ? keep : parts).join(" ");
 }
+/** 非首选卡的名字五行角标降饱和样式（首选卡保留实色，见 ELEMENT_CLS）。 */
+const ELEMENT_SOFT: Record<string, string> = {
+  WOOD: "bg-emerald-700/8 text-emerald-800 ring-emerald-700/25",
+  FIRE: "bg-red-700/8 text-red-800 ring-red-700/25",
+  EARTH: "bg-amber-700/10 text-amber-800 ring-amber-700/25",
+  METAL: "bg-stone-600/8 text-stone-700 ring-stone-500/30",
+  WATER: "bg-sky-700/8 text-sky-800 ring-sky-700/25",
+};
 
 /* ───────── 页面 ───────── */
 
@@ -992,6 +1000,7 @@ function Naming() {
                 picked={picked.includes(c.name)}
                 onPick={() => togglePick(c.name)}
                 wuge={wugeCells(c)}
+                xiPrimary={diagnosis?.primaryElement}
               />
             ))}
           </div>
@@ -1176,6 +1185,7 @@ function NameCardView({
   onPoster,
   onShortlist,
   shortlisted = false,
+  xiPrimary,
 }: {
   c: NameCardData;
   picking: boolean;
@@ -1189,6 +1199,7 @@ function NameCardView({
   onPoster?: () => void;
   onShortlist?: () => void;
   shortlisted?: boolean;
+  xiPrimary?: string;
 }) {
   const [open, setOpen] = useState(false);
   // 名字 = 姓(1~2字) + 名;charElements 对应名字部分
@@ -1199,13 +1210,68 @@ function NameCardView({
     [c, givenStart],
   );
 
+  // P1 亮点条：五维各留一词一分的结论，次要明细全部折叠进详情
+  const wugeVerdict = c.wugeWarning ? "偏弱" : "顺畅";
+  const classicVerdict = c.originalCouplet
+    ? "藏名一联"
+    : c.sameClassicSource
+      ? "同出一联"
+      : c.charCitations?.length
+        ? "字字有典"
+        : c.classicCitation
+          ? "有典可循"
+          : "暂无出处";
+  const classicGold = c.sameClassicSource === true;
+  const highlights = [
+    {
+      label: "五行喜用",
+      value: c.dimensionScores?.bazi != null ? String(c.dimensionScores.bazi) : "-",
+      dot: ELEMENT_DOT[xiPrimary || ""] || "bg-ink/25",
+      cls: "text-ink-soft ring-ink/10",
+    },
+    {
+      label: "数理",
+      value: wugeVerdict,
+      dot: c.wugeWarning ? "bg-amber-600" : "bg-emerald-600",
+      cls: c.wugeWarning ? "text-amber-800 ring-amber-700/25 bg-amber-700/8" : "text-emerald-800 ring-emerald-800/15 bg-emerald-800/5",
+    },
+    {
+      label: "音律",
+      value: c.dimensionScores?.phonetics != null ? String(c.dimensionScores.phonetics) : "-",
+      dot: "bg-vermilion/60",
+      cls: "text-ink-soft ring-ink/10",
+    },
+    {
+      label: "文化",
+      value: classicVerdict,
+      dot: classicGold ? "bg-amber-600" : "bg-ink/25",
+      cls: classicGold
+        ? "text-amber-800 ring-amber-600/30 bg-amber-700/12"
+        : c.originalCouplet
+          ? "text-ink-soft ring-ink/15"
+          : "text-ink-soft ring-ink/10",
+    },
+    {
+      label: "谐音",
+      value: c.homophoneSafe === false ? "需留意" : "安全",
+      dot: c.homophoneSafe === false ? "bg-vermilion" : "bg-emerald-600",
+      cls: c.homophoneSafe === false
+        ? "text-vermilion-deep ring-vermilion/30 bg-vermilion/8"
+        : "text-ink-soft ring-ink/10",
+    },
+  ];
+  const toggleDetails = () => {
+    if (!open) track("card_expand", { name: c.name });
+    setOpen(!open);
+  };
+
   return (
     <section
-      className={`group relative rounded-2xl p-5 ring-1 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(158,43,37,0.12)] ${c.recommended ? "bg-gradient-to-b from-amber-50/80 to-paper-2 ring-vermilion/25 hover:ring-vermilion/45" : "bg-paper-2 ring-ink/5 hover:ring-vermilion/30"}`}
+      className={`group relative rounded-2xl p-5 ring-1 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(158,43,37,0.12)] ${c.recommended ? "bg-gradient-to-b from-amber-50/80 to-paper-2 ring-2 ring-amber-600/45 hover:ring-amber-600/70" : "bg-paper-2 ring-ink/5 hover:ring-vermilion/30"}`}
       onClick={picking ? onPick : undefined}
     >
       {c.recommended ? (
-        <span className="absolute -top-2.5 left-4 rounded-full bg-vermilion px-2.5 py-0.5 text-[10px] font-semibold text-paper">今日主推</span>
+        <span className="absolute -top-2.5 left-4 rounded-full bg-amber-700 px-2.5 py-0.5 text-[10px] font-semibold text-amber-50 shadow-sm">首选方案</span>
       ) : null}
       {compareMode ? (
         <button
@@ -1225,13 +1291,6 @@ function NameCardView({
         </span>
       ) : null}
 
-      {c.recommended ? (
-        <span className="absolute top-0 right-5 flex flex-col items-center rounded-b-lg bg-vermilion px-2 py-1.5 font-seal text-xs leading-tight text-paper">
-          <span>推</span>
-          <span>荐</span>
-        </span>
-      ) : null}
-
       <div className={`flex flex-wrap items-center gap-3 ${picking ? "pl-8" : ""}`}>
         <div className="flex items-end gap-1.5">
           {c.name.split("").map((ch, i) => {
@@ -1242,7 +1301,9 @@ function NameCardView({
                 <span className="font-seal text-4xl leading-none text-ink">{ch}</span>
                 {el ? (
                   <span
-                    className={`absolute -top-1 -right-2.5 rounded px-1 text-[9px] leading-4 ${ELEMENT_CLS[el] || "bg-ink/80 text-paper"}`}
+                    className={`absolute -top-1 -right-2.5 rounded px-1 text-[9px] leading-4 ring-1 ${c.recommended
+                      ? ELEMENT_CLS[el] || "bg-ink/80 text-paper ring-ink/30"
+                      : ELEMENT_SOFT[el] || "bg-ink/10 text-ink-soft ring-ink/15"}`}
                   >
                     {ELEMENT_ZH[el] || ""}
                   </span>
@@ -1253,14 +1314,7 @@ function NameCardView({
         </div>
       </div>
 
-      <p className="mt-2 flex items-center gap-1.5 text-xs tracking-wide text-ink-soft">
-        {c.pinyin}
-        {onListen ? (
-          <button onClick={(e) => { e.stopPropagation(); onListen(); }} title="读音试听（连读两遍）"
-            className="text-ink/40 transition-colors hover:text-vermilion-deep">🔊</button>
-        ) : null}
-        {c.classicMeaning ? <span className="ml-auto text-[11px] text-vermilion-deep/80">「{c.classicMeaning}」</span> : null}
-      </p>
+      <p className="mt-2 text-xs tracking-wide text-ink-soft">{c.pinyin}</p>
 
       {c.recommended ? (
         <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
@@ -1272,66 +1326,21 @@ function NameCardView({
         </div>
       ) : null}
 
-      {c.dimensionScores && Object.keys(c.dimensionScores).length ? (
-        <div className="mt-3 flex items-center gap-4 rounded-xl bg-paper-3/50 p-3 text-ink-soft">
-          <div className="shrink-0 text-vermilion-deep/80">
-            <DimRadar scores={c.dimensionScores} size={150} />
-          </div>
-          <div className="min-w-0 flex-1 space-y-1.5">
-            {DIM_LABELS.map(([k, label]) => {
-              const v = Math.min(100, Math.max(0, c.dimensionScores?.[k] ?? 60));
-              return (
-                <div key={k} className="flex items-center gap-2">
-                  <span className="w-14 shrink-0 text-[11px] text-ink/55">{label}</span>
-                  <div className="h-1.5 flex-1 overflow-hidden rounded bg-ink/10">
-                    <div className="h-full rounded bg-vermilion-deep/70" style={{ width: `${v}%` }} />
-                  </div>
-                  <span className="w-7 text-right text-[11px] font-semibold tabular-nums text-ink-soft">{v}</span>
-                </div>
-              );
-            })}
-            {c.fusionNote ? <p className="pt-0.5 text-[11px] leading-relaxed text-ink/55">⚖ {c.fusionNote}</p> : null}
-            {c.wugeWarning ? <p className="text-[11px] leading-relaxed text-amber-700">· {c.wugeWarning}</p> : null}
-            {c.phoneticNotes?.length ? (
-              <div className="flex flex-wrap gap-1 pt-0.5">
-                {c.phoneticNotes.map((n) => (
-                  <span key={n} className="rounded bg-vermilion/10 px-1.5 py-0.5 text-[10px] text-vermilion-deep">{n}</span>
-                ))}
-              </div>
-            ) : null}
-            {c.dialectCheckPassed !== undefined ? (
-              <p className={`pt-0.5 text-[11px] ${c.dialectCheckPassed ? "text-amber-700" : "text-vermilion-deep"}`}>
-                {c.dialectCheckPassed
-                  ? `已通过普通话 + ${(c.dialectChecks ?? []).filter((d) => d.status === "passed").length} 方言谐音检测`
-                  : "方言谐音检测存在风险提示"}
-              </p>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      {wuge.length ? (
-        <div className="mt-3 grid grid-cols-5 gap-1.5">
-          {wuge.map((g) => (
-            <div key={g.label} className="rounded-lg bg-paper-3 py-1.5 text-center">
-              <p className="text-sm font-semibold tabular-nums">
-                {g.value}
-                <span className="text-[10px] font-normal text-ink-soft">画</span>
-              </p>
-              <p className="text-[10px] text-ink-soft">{g.label}</p>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {c.sanCai ? (
-        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-soft">
-          <span>三才</span>
-          {c.sanCai.split("").map((ch, i) => (
-            <span key={i} className="rounded bg-paper-3 px-1.5 py-0.5">{ch}</span>
-          ))}
-        </div>
-      ) : null}
+      {/* P1 亮点条：一词结论，点击展开详情；移动端横向滚动 */}
+      <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 text-[11px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {highlights.map((h) => (
+          <button
+            key={h.label}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); if (!open) toggleDetails(); }}
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-paper-3/70 px-2.5 py-1 transition-colors hover:bg-paper-3 ${h.cls}`}
+          >
+            <span className={`size-1.5 rounded-full ${h.dot}`} />
+            {h.label}
+            <span className="font-semibold tabular-nums">{h.value}</span>
+          </button>
+        ))}
+      </div>
 
       {c.charCitations?.length ? (
         <div className="mt-3 space-y-2">
@@ -1400,40 +1409,133 @@ function NameCardView({
           ) : null}
           {c.classicSource ? <p className="text-xs font-medium text-vermilion-deep">「{c.classicSource}」</p> : null}
           <p className="mt-1 text-xs leading-relaxed text-ink-soft">{c.classicCitation}</p>
+          {c.classicMeaning ? <p className="mt-1 text-[11px] text-ink-faint">「{c.classicMeaning}」</p> : null}
         </div>
       ) : null}
 
-      <div className="mt-3 flex items-center justify-between">
-        <span className={`text-[11px] ${c.homophoneSafe === false ? "text-vermilion-deep" : "text-ink-faint"}`}>
-          {c.homophoneSafe === false ? "⚠ " + (c.safetyNote || "谐音需留意") : "✓ 谐音安全"}
-        </span>
-        {onListen ? (
-          <button onClick={(e) => { e.stopPropagation(); onListen(); }}
-            className="ml-auto mr-3 text-[11px] text-ink-soft underline underline-offset-2">
-            读音试听
-          </button>
-        ) : null}
-        {onPoster ? (
-          <button onClick={(e) => { e.stopPropagation(); onPoster(); }}
-            className="mr-3 text-[11px] text-ink-soft underline underline-offset-2">
-            生成海报
-          </button>
-        ) : null}
-        {onShortlist ? (
-          <button onClick={(e) => { e.stopPropagation(); onShortlist(); }} title="收藏到短名单"
-            className={`mr-1 text-sm transition-transform hover:scale-110 ${shortlisted ? "text-vermilion" : "text-ink/30"}`}>
-            {shortlisted ? "♥" : "♡"}
-          </button>
-        ) : null}
-        {c.wuxingAnalysis ? (
-          <button onClick={(e) => { e.stopPropagation(); if (!open) track("card_expand", { name: c.name }); setOpen(!open); }} className="text-[11px] text-ink-soft underline underline-offset-2">
-            {open ? "收起字义" : "字义详解"}
-          </button>
-        ) : null}
-      </div>
-      {open && c.wuxingAnalysis ? (
-        <p className="mt-2 text-xs leading-relaxed text-ink-soft">{c.wuxingAnalysis}</p>
+      {/* P1 折叠详情：五维评分 / 五格三才 / 方言 / 音律 / 字义全部收纳于此 */}
+      {open ? (
+        <div className="mt-3 space-y-3 rounded-xl bg-paper-3/40 p-3">
+          {c.dimensionScores && Object.keys(c.dimensionScores).length ? (
+            <div className="flex items-center gap-4 text-ink-soft">
+              <div className="shrink-0 text-vermilion-deep/80">
+                <DimRadar scores={c.dimensionScores} size={130} />
+              </div>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                {DIM_LABELS.map(([k, label]) => {
+                  const v = Math.min(100, Math.max(0, c.dimensionScores?.[k] ?? 60));
+                  return (
+                    <div key={k} className="flex items-center gap-2">
+                      <span className="w-14 shrink-0 text-[11px] text-ink/55">{label}</span>
+                      <div className="h-1.5 flex-1 overflow-hidden rounded bg-ink/10">
+                        <div className="h-full rounded bg-vermilion-deep/70" style={{ width: `${v}%` }} />
+                      </div>
+                      <span className="w-7 text-right text-[11px] font-semibold tabular-nums text-ink-soft">{v}</span>
+                    </div>
+                  );
+                })}
+                {c.fusionNote ? <p className="pt-0.5 text-[11px] leading-relaxed text-ink/55">⚖ {c.fusionNote}</p> : null}
+                {c.wugeWarning ? <p className="text-[11px] leading-relaxed text-amber-700">· {c.wugeWarning}</p> : null}
+              </div>
+            </div>
+          ) : null}
+
+          {wuge.length || c.sanCai ? (
+            <div className="flex flex-wrap items-center gap-3">
+              {wuge.length ? (
+                <div className="grid flex-1 grid-cols-5 gap-1.5">
+                  {wuge.map((g) => (
+                    <div key={g.label} className="rounded-lg bg-paper-3 py-1.5 text-center">
+                      <p className="text-sm font-semibold tabular-nums">
+                        {g.value}
+                        <span className="text-[10px] font-normal text-ink-soft">画</span>
+                      </p>
+                      <p className="text-[10px] text-ink-soft">{g.label}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {c.sanCai ? (
+                <div className="flex items-center gap-1.5 text-[11px] text-ink-soft">
+                  <span>三才</span>
+                  {c.sanCai.split("").map((ch, i) => (
+                    <span key={i} className="rounded bg-paper-3 px-1.5 py-0.5">{ch}</span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {c.phoneticNotes?.length ? (
+            <div className="flex flex-wrap gap-1">
+              {c.phoneticNotes.map((n) => (
+                <span key={n} className="rounded bg-vermilion/10 px-1.5 py-0.5 text-[10px] text-vermilion-deep">{n}</span>
+              ))}
+            </div>
+          ) : null}
+
+          {c.dialectCheckPassed !== undefined ? (
+            <p className={`text-[11px] ${c.dialectCheckPassed ? "text-amber-700" : "text-vermilion-deep"}`}>
+              {c.dialectCheckPassed
+                ? `已通过普通话 + ${(c.dialectChecks ?? []).filter((d) => d.status === "passed").length} 方言谐音检测`
+                : "方言谐音检测存在风险提示"}
+            </p>
+          ) : null}
+
+          {c.wuxingAnalysis ? (
+            <p className="border-t border-ink/5 pt-2 text-xs leading-relaxed text-ink-soft">
+              <span className="mr-1 font-medium text-ink">字义详解</span>
+              {c.wuxingAnalysis}
+            </p>
+          ) : null}
+        </div>
       ) : null}
+
+      {/* P2 操作组：图标化常驻（试听 / 海报 / 收藏 / 详情） */}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        {c.homophoneSafe === false ? (
+          <span className="min-w-0 truncate text-[11px] text-vermilion-deep">
+            ⚠ {c.safetyNote || "谐音需留意"}
+          </span>
+        ) : (
+          <span className="text-[11px] text-ink-faint">✓ 谐音安全</span>
+        )}
+        <div className="ml-auto flex items-center gap-1.5">
+          {onListen ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onListen(); }}
+              title="读音试听（连读两遍）"
+              className="grid size-8 place-items-center rounded-full bg-paper-3 text-sm text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-vermilion-deep hover:ring-vermilion/40"
+            >
+              🔊
+            </button>
+          ) : null}
+          {onPoster ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onPoster(); }}
+              title="生成海报"
+              className="grid size-8 place-items-center rounded-full bg-paper-3 text-sm text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-vermilion-deep hover:ring-vermilion/40"
+            >
+              🖼
+            </button>
+          ) : null}
+          {onShortlist ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onShortlist(); }}
+              title={shortlisted ? "移出短名单" : "收藏到短名单"}
+              className={`grid size-8 place-items-center rounded-full text-sm ring-1 transition-all hover:scale-105 ${shortlisted ? "bg-vermilion/10 text-vermilion ring-vermilion/35" : "bg-paper-3 text-ink/35 ring-ink/10 hover:text-vermilion-deep hover:ring-vermilion/40"}`}
+            >
+              {shortlisted ? "♥" : "♡"}
+            </button>
+          ) : null}
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleDetails(); }}
+            className="inline-flex h-8 items-center gap-1 rounded-full bg-paper-3 px-3 text-[11px] text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-vermilion-deep hover:ring-vermilion/40"
+          >
+            {open ? "收起详情 ▴" : "评分 · 数理 · 字义 ▾"}
+          </button>
+        </div>
+      </div>
     </section>
   );
 }

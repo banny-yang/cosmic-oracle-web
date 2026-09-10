@@ -68,6 +68,8 @@ interface NameCardData {
   phoneticNotes?: string[];
   classicVerified?: boolean;
   classicMeaning?: string;
+  charCitations?: { char: string; citation: string; source: string }[];
+  sameClassicSource?: boolean;
 }
 
 const DIM_LABELS: [string, string][] = [
@@ -202,13 +204,35 @@ async function buildPoster(c: NameCardData, infoLine: string, diagLine: string):
   g.fillText(c.name, W / 2, 250);
   g.fillStyle = "rgba(43,36,23,.6)"; g.font = "24px sans-serif";
   g.fillText([c.pinyin].filter(Boolean).join(" · "), W / 2, 306);
-  if (c.classicCitation) {
+  const cites = (c.charCitations?.length
+    ? c.charCitations.map((cc) => ({ tag: cc.char, text: cc.citation, src: cc.source }))
+    : c.classicCitation
+      ? [{ tag: "", text: c.classicCitation, src: [c.classicSource, c.classicMeaning ? `「${c.classicMeaning}」` : ""].filter(Boolean).join("  ") }]
+      : []) as { tag: string; text: string; src: string }[];
+  if (cites.length === 1) {
     g.strokeStyle = "rgba(158,43,37,.3)"; g.strokeRect(60, 360, W - 120, 128);
     g.fillStyle = ink; g.font = "26px serif";
-    const cite = c.classicCitation.length > 26 ? c.classicCitation.slice(0, 26) + "…" : c.classicCitation;
+    const cite = cites[0].text.length > 26 ? cites[0].text.slice(0, 26) + "…" : cites[0].text;
     g.fillText(cite, W / 2, 412);
     g.fillStyle = accent; g.font = "20px sans-serif";
-    g.fillText([c.classicSource, c.classicMeaning ? `「${c.classicMeaning}」` : ""].filter(Boolean).join("  "), W / 2, 456);
+    g.fillText(cites[0].src, W / 2, 456);
+  } else if (cites.length >= 2) {
+    g.strokeStyle = "rgba(158,43,37,.3)"; g.strokeRect(60, 352, W - 120, 148);
+    g.textAlign = "left";
+    for (let i = 0; i < 2; i++) {
+      const y = 398 + i * 62;
+      if (cites[i].tag) {
+        g.fillStyle = accent; g.font = "bold 20px sans-serif";
+        g.fillText(cites[i].tag, 84, y - 14);
+      }
+      g.fillStyle = ink; g.font = "23px serif";
+      const t = cites[i].text.length > 20 ? cites[i].text.slice(0, 20) + "…" : cites[i].text;
+      g.fillText(t, 84 + (cites[i].tag ? 34 : 0), y - 12);
+      g.fillStyle = "rgba(158,43,37,.9)"; g.font = "17px sans-serif";
+      const sr = cites[i].src.length > 24 ? cites[i].src.slice(0, 24) + "…" : cites[i].src;
+      g.fillText(sr, 84, y + 12);
+    }
+    g.textAlign = "center";
   }
   g.fillStyle = "rgba(43,36,23,.75)"; g.font = "22px sans-serif";
   g.fillText(infoLine, W / 2, 548);
@@ -1193,7 +1217,27 @@ function NameCardView({
         </div>
       ) : null}
 
-      {c.classicCitation ? (
+      {c.charCitations?.length ? (
+        <div className="mt-3 space-y-2">
+          <span
+            title={c.sameClassicSource ? "两字同出一典（同句或同联上下句），逐字校验通过" : "校验规则：每字引文正文均包含该字，出处核验通过"}
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${c.sameClassicSource ? "bg-amber-700/12 text-amber-800 ring-1 ring-amber-600/30" : "bg-emerald-800/10 text-emerald-800"}`}
+          >
+            {c.sameClassicSource ? "✦ 同出一联 · 字字有典" : "✓ 字字有典 · 已校验"}
+          </span>
+          {c.charCitations.map((cc) => (
+            <div key={cc.char + cc.citation} className="flex items-start gap-2 rounded-xl bg-paper-3/60 p-3">
+              <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-vermilion/10 text-xs font-semibold text-vermilion-deep ring-1 ring-vermilion/25">
+                {cc.char}
+              </span>
+              <div className="min-w-0">
+                {cc.source ? <p className="text-xs font-medium text-vermilion-deep">「{cc.source}」</p> : null}
+                <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">{cc.citation}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : c.classicCitation ? (
         <div className="mt-3 rounded-xl bg-paper-3/60 p-3">
           {c.classicVerified ? (
             <span title="校验规则：引文正文包含名字用字，出处核验通过" className="mb-1 inline-flex items-center gap-1 rounded-full bg-emerald-800/10 px-2 py-0.5 text-[10px] font-medium text-emerald-800">

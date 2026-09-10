@@ -47,7 +47,7 @@ const features = [
     seal: "童",
     title: "宝宝起名",
     desc: "按生辰喜用与典籍出处，一次生成 10 个带推荐指数的名字方案，附五格数理与谐音检测，可发起亲友投票。",
-    cost: "消耗 5 点",
+    cost: "消耗 10 点",
     delay: "d1",
   },
   {
@@ -56,7 +56,7 @@ const features = [
     seal: "析",
     title: "姓名解析",
     desc: "逐字拆解字义、音韵与诗句出处，读出两个名字各自的气质与共振之处。",
-    cost: "消耗 3 点",
+    cost: "消耗 9 点",
     delay: "d1",
   },
   {
@@ -65,7 +65,7 @@ const features = [
     seal: "性",
     title: "性格契合测评",
     desc: "以传统性格倾向看两个人相处的分寸，给出有温度的相处建议。",
-    cost: "消耗 4 点",
+    cost: "消耗 9 点",
     delay: "d2",
   },
   {
@@ -74,7 +74,7 @@ const features = [
     seal: "缘",
     title: "婚姻契合分析",
     desc: "七维评分与相处建议，把两个人的契合讲清楚、说明白。",
-    cost: "消耗 6 点",
+    cost: "消耗 19 点",
     delay: "d2",
   },
 ] as const;
@@ -113,13 +113,14 @@ const steps = [
 ];
 
 const pointCosts = [
-  { title: "宝宝起名", code: "BABY_NAMING", cost: "5 点 / 次" },
-  { title: "姓名解析", code: "INSIGHT_NAME", cost: "3 点 / 次" },
-  { title: "性格契合测评", code: "INSIGHT_PAIR", cost: "4 点 / 次" },
-  { title: "婚姻契合分析", code: "MARRIAGE_FIT", cost: "6 点 / 次" },
+  { title: "宝宝起名", code: "BABY_NAMING", cost: "10 点 / 次" },
+  { title: "姓名解析", code: "INSIGHT_NAME", cost: "9 点 / 次" },
+  { title: "性格契合测评", code: "INSIGHT_PAIR", cost: "9 点 / 次" },
+  { title: "婚姻契合分析", code: "MARRIAGE_FIT", cost: "19 点 / 次" },
 ];
 
-const topUpTiers = ["60 点 ¥6", "320 点 ¥30 · 超值", "768 点 ¥72 · 最惠"];
+/* 充值档位兜底（接口失败时展示）；线上以 /payments/client/virtual/products 动态渲染为准 */
+const topUpTiers = ["10 点 ¥9.9", "33 点 ¥30 · 超值", "85 点 ¥68 · 最惠"];
 
 /* 用户反馈位：当前为占位示例，正式反馈收集后替换（勿虚构真实署名） */
 const feedbacks = [
@@ -170,6 +171,9 @@ function Index() {
   const { loggedIn } = useAuth();
   const [social, setSocial] = useState<SocialProof | null>(null);
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
+  // 充值档位与畅享卡：公开只读接口动态渲染（1 点 = ¥1；接口失败回落静态兜底）
+  const [tierList, setTierList] = useState<string[]>(topUpTiers);
+  const [passLine, setPassLine] = useState<string>("起名畅享：24 小时 ¥39.9 · 包月 ¥99，期内生成与换一批不限次");
 
   const [verse, setVerse] = useState<{ text?: string; source?: string; meaning?: string } | null>(null);
 
@@ -191,6 +195,27 @@ function Index() {
           if (it?.featureCode) map[it.featureCode] = it.price;
         }
         setPrices(map);
+      })
+      .catch(() => {});
+    // 充值档位（点数 + 畅享卡）动态读取：管理端/配置调价后官网同步生效
+    get<{ productId: string; title?: string; credits?: number; priceFen?: number; tag?: string; kind?: string }[]>(
+      "/api/v1/payments/client/virtual/products",
+      {},
+      { auth: false, timeoutMs: 6000 },
+    )
+      .then((list) => {
+        const arr = Array.isArray(list) ? list : [];
+        const points = arr
+          .filter((it) => !it.kind || it.kind === "POINTS")
+          .map((it) => `${it.credits ?? ""} 点 ¥${((it.priceFen ?? 0) / 100).toFixed((it.priceFen ?? 0) % 100 ? 1 : 0)}${it.tag ? ` · ${it.tag}` : ""}`);
+        if (points.length) setTierList(points);
+        const day = arr.find((it) => it.kind === "DAY_PASS");
+        const month = arr.find((it) => it.kind === "MONTH_PASS");
+        if (day && month) {
+          setPassLine(
+            `起名畅享：24 小时 ¥${((day.priceFen ?? 0) / 100).toFixed(1)} · 包月 ¥${Math.round((month.priceFen ?? 0) / 100)}，期内生成与换一批不限次`,
+          );
+        }
       })
       .catch(() => {});
   }, []);
@@ -319,14 +344,14 @@ function Index() {
         <div className="mt-3 rounded-2xl bg-paper-2/60 p-5 ring-1 ring-ink/5">
           <p className="text-sm font-medium">小程序充值档位</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {topUpTiers.map((t) => (
+            {tierList.map((t) => (
               <span key={t} className="rounded-full bg-paper px-3 py-1.5 text-xs text-ink-soft ring-1 ring-ink/10">
                 {t}
               </span>
             ))}
           </div>
           <p className="mt-3 text-[11px] leading-relaxed text-ink-faint">
-            约 0.1 元 / 点；首次起名前可在小程序领新人点数试用。
+            1 点 ≈ ¥1；{passLine}。首次起名免费体验 3 个精选名字。
           </p>
         </div>
       </section>

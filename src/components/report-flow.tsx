@@ -3,7 +3,7 @@
  * 点数不足/购买失败 → 统一展示「去小程序解锁」引导卡。
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { post } from "@/lib/api";
+import { post, get } from "@/lib/api";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { getToken } from "@/lib/auth";
 import { track } from "@/lib/track";
@@ -112,10 +112,12 @@ export function ReportRunning({ error }: { error?: string }) {
   );
 }
 
-/** 点数不足 / 支付引导卡：动态生成直达小程序充值页的小程序码（失败回落静态码） */
+/** 点数不足 / 支付引导卡：动态生成直达小程序充值页的小程序码（失败回落静态码）；充值档位动态读取 */
 export function PaywallCard({ message }: { message: string }) {
   const [qr, setQr] = useState<string | null>(null);
   const [link, setLink] = useState("");
+  // 充值档位与畅享卡价格公开只读接口（管理端/配置调价后这里同步生效）
+  const [tiersText, setTiersText] = useState("10 点 ¥9.9 · 33 点 ¥30 · 85 点 ¥68（1 点 ≈ ¥1）");
 
   useEffect(() => {
     post<{ qrCodeBase64?: string; urlLink?: string }>("/api/v1/users/wechat/login-ticket", {
@@ -125,6 +127,17 @@ export function PaywallCard({ message }: { message: string }) {
       .then((r) => {
         if (r?.qrCodeBase64) setQr(r.qrCodeBase64);
         if (r?.urlLink) setLink(r.urlLink);
+      })
+      .catch(() => {});
+    get<{ kind?: string; credits?: number; priceFen?: number }[]>("/api/v1/payments/client/virtual/products", {}, { auth: false, timeoutMs: 6000 })
+      .then((list) => {
+        const arr = Array.isArray(list) ? list : [];
+        const points = arr.filter((it) => !it.kind || it.kind === "POINTS");
+        if (!points.length) return;
+        const text = points
+          .map((it) => `${it.credits ?? ""} 点 ¥${((it.priceFen ?? 0) / 100).toFixed((it.priceFen ?? 0) % 100 ? 1 : 0)}`)
+          .join(" · ");
+        setTiersText(`${text}（1 点 ≈ ¥1）`);
       })
       .catch(() => {});
   }, []);
@@ -138,7 +151,7 @@ export function PaywallCard({ message }: { message: string }) {
             微信扫右侧小程序码直达充值页（或在微信里搜索「对脉名鉴」），用同一微信登录后购买点数，回到这里即可继续生成。
           </p>
           <p className="mt-1.5 text-[11px] text-ink-faint">
-            小程序充值：60 点 ¥6 · 320 点 ¥30 · 768 点 ¥72（约 0.1 元 / 点），点数双端通用。
+            小程序充值：{tiersText}，点数双端通用。
           </p>
           <a
             href={link || "weixin://"}

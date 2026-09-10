@@ -8,6 +8,10 @@ import { post } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { setupWxShare } from "@/lib/wx-share";
 import QRCode from "qrcode";
+import {
+  Baby, Users, Volume2, Image as ImageIcon, Heart, X,
+  TriangleAlert, Scale, PenLine, Clock3,
+} from "lucide-react";
 
 export const Route = createFileRoute("/naming")({
   head: () => ({
@@ -591,7 +595,7 @@ function Naming() {
               </select>
             </Field>
             <div className="col-span-2 flex gap-2">
-              {([["born", "👶 已出生"], ["unborn", "🤰 未出生·预产期"]] as const).map(([v, l]) => (
+              {([["born", "已出生"], ["unborn", "未出生 · 预产期"]] as const).map(([v, l]) => (
                 <button
                   key={v}
                   type="button"
@@ -804,7 +808,7 @@ function Naming() {
           <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span aria-hidden className="text-xl leading-none">👶</span>
+                <Baby aria-hidden className="size-5 text-ink-soft" />
                 <h2 className="text-lg font-semibold tracking-wide">
                   {surname}家{gender === "M" ? "男" : "女"}宝宝
                 </h2>
@@ -886,12 +890,16 @@ function Naming() {
           </div>
 
           {diagnosis.criticalBoundary?.note ? (
-            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
-              ⏱ {diagnosis.criticalBoundary.note}
+            <p className="mt-3 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
+              <Clock3 aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+              {diagnosis.criticalBoundary.note}
             </p>
           ) : null}
           {diagnosis.avoidSummary ? (
-            <p className="mt-2 text-xs text-ink/55">👪 {diagnosis.avoidSummary}</p>
+            <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-ink/55">
+              <Users aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+              {diagnosis.avoidSummary}
+            </p>
           ) : null}
           {diagnosis.reason ? (
             <p className="mt-3 border-t border-ink/5 pt-2.5 text-[11px] leading-relaxed text-ink-faint">{diagnosis.reason}</p>
@@ -939,8 +947,9 @@ function Naming() {
               <span className="text-ink/50">我的短名单（{shortlist.length}）</span>
               {shortlist.map((nm) => (
                 <button key={nm} onClick={() => toggleShortlist(nm)} title="点击移除"
-                  className="rounded-full bg-vermilion/10 px-2.5 py-1 font-medium text-vermilion-deep ring-1 ring-vermilion/25">
-                  {nm} ✕
+                  className="inline-flex items-center gap-1 rounded-full bg-vermilion/10 px-2.5 py-1 font-medium text-vermilion-deep ring-1 ring-vermilion/25">
+                  {nm}
+                  <X aria-hidden className="size-3" />
                 </button>
               ))}
             </div>
@@ -1139,7 +1148,9 @@ function Naming() {
           >
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold">起名海报 · {poster.name}</p>
-              <button onClick={() => setPoster(null)} className="text-ink/50 hover:text-ink">✕</button>
+              <button onClick={() => setPoster(null)} className="text-ink/50 hover:text-ink" title="关闭">
+                <X className="size-4" />
+              </button>
             </div>
             <img src={poster.url} alt={`起名海报 ${poster.name}`} className="mt-3 max-h-[64vh] w-full rounded-xl object-contain" />
             <div className="mt-4 flex gap-2">
@@ -1365,7 +1376,8 @@ function NameCardView({
               title="两字未能同出真实典籍，已按鹤顶格原创藏名联：一字居上句之首、一字居下句之首"
               className="inline-flex items-center gap-1 rounded-full bg-ink/8 px-2 py-0.5 text-[10px] font-medium text-ink-soft ring-1 ring-ink/15"
             >
-              ✒ 藏名一联 · 原创嵌名
+              <PenLine aria-hidden className="size-3" />
+              藏名一联 · 原创嵌名
             </span>
           ) : (
             <span
@@ -1450,7 +1462,12 @@ function NameCardView({
                     </div>
                   );
                 })}
-                {c.fusionNote ? <p className="pt-0.5 text-[11px] leading-relaxed text-ink/55">⚖ {c.fusionNote}</p> : null}
+                {c.fusionNote ? (
+                  <p className="flex items-start gap-1.5 pt-0.5 text-[11px] leading-relaxed text-ink/55">
+                    <Scale aria-hidden className="mt-0.5 size-3 shrink-0" />
+                    {c.fusionNote}
+                  </p>
+                ) : null}
                 {c.wugeWarning ? <p className="text-[11px] leading-relaxed text-amber-700">· {c.wugeWarning}</p> : null}
               </div>
             </div>
@@ -1513,8 +1530,9 @@ function NameCardView({
       {/* P2 操作组：图标化常驻（试听 / 海报 / 收藏 / 详情） */}
       <div className="mt-3 flex items-center justify-between gap-2">
         {c.homophoneSafe === false ? (
-          <span className="min-w-0 truncate text-[11px] text-vermilion-deep">
-            ⚠ {c.safetyNote || "谐音需留意"}
+          <span className="flex min-w-0 items-start gap-1 text-[11px] leading-snug text-vermilion-deep">
+            <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
+            {c.safetyNote || "谐音需留意"}
           </span>
         ) : (
           <span className="text-[11px] text-ink-faint">✓ 谐音安全</span>
@@ -1524,27 +1542,27 @@ function NameCardView({
             <button
               onClick={(e) => { e.stopPropagation(); onListen(); }}
               title="读音试听（连读两遍）"
-              className="grid size-8 place-items-center rounded-full bg-paper-3 text-sm text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-vermilion-deep hover:ring-vermilion/40"
+              className="grid size-8 place-items-center rounded-full bg-paper-3 text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-vermilion-deep hover:ring-vermilion/40"
             >
-              🔊
+              <Volume2 aria-hidden className="size-4" />
             </button>
           ) : null}
           {onPoster ? (
             <button
               onClick={(e) => { e.stopPropagation(); onPoster(); }}
               title="生成海报"
-              className="grid size-8 place-items-center rounded-full bg-paper-3 text-sm text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-vermilion-deep hover:ring-vermilion/40"
+              className="grid size-8 place-items-center rounded-full bg-paper-3 text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-vermilion-deep hover:ring-vermilion/40"
             >
-              🖼
+              <ImageIcon aria-hidden className="size-4" />
             </button>
           ) : null}
           {onShortlist ? (
             <button
               onClick={(e) => { e.stopPropagation(); onShortlist(); }}
               title={shortlisted ? "移出短名单" : "收藏到短名单"}
-              className={`grid size-8 place-items-center rounded-full text-sm ring-1 transition-all hover:scale-105 ${shortlisted ? "bg-vermilion/10 text-vermilion ring-vermilion/35" : "bg-paper-3 text-ink/35 ring-ink/10 hover:text-vermilion-deep hover:ring-vermilion/40"}`}
+              className={`grid size-8 place-items-center rounded-full ring-1 transition-all hover:scale-105 ${shortlisted ? "bg-vermilion/10 text-vermilion ring-vermilion/35" : "bg-paper-3 text-ink/35 ring-ink/10 hover:text-vermilion-deep hover:ring-vermilion/40"}`}
             >
-              {shortlisted ? "♥" : "♡"}
+              <Heart aria-hidden className={`size-4 ${shortlisted ? "fill-current" : ""}`} />
             </button>
           ) : null}
           <button

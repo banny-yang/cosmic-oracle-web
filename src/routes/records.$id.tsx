@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { get } from "@/lib/api";
 import { getToken, getAuthUser } from "@/lib/auth";
+import { TriangleAlert } from "lucide-react";
 
 export const Route = createFileRoute("/records/$id")({
   component: RecordDetail,
@@ -142,9 +143,14 @@ function RecordDetail() {
                     <p className="mt-1 text-xs leading-relaxed text-ink-soft">{c.classicCitation}</p>
                   </div>
                 ) : null}
-                <p className={`mt-3 text-[11px] ${c.homophoneSafe === false ? "text-vermilion-deep" : "text-ink-faint"}`}>
-                  {c.homophoneSafe === false ? "⚠ " + (c.safetyNote || "谐音需留意") : "✓ 谐音安全"}
-                </p>
+                {c.homophoneSafe === false ? (
+                  <p className="mt-3 flex items-start gap-1 text-[11px] leading-snug text-vermilion-deep">
+                    <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
+                    {c.safetyNote || "谐音需留意"}
+                  </p>
+                ) : (
+                  <p className="mt-3 text-[11px] text-ink-faint">✓ 谐音安全</p>
+                )}
               </section>
             ))}
           </div>

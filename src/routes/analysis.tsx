@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
-import { NameSummaryCard, useReportDetail } from "@/components/report-summary-cards";
+import { NameSummaryCard, useReportDetail, type ReportDetail } from "@/components/report-summary-cards";
+import { ReportPosterButtons, buildNamePoster } from "@/components/report-poster";
 import { getAuthUser } from "@/lib/auth";
 import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
@@ -92,6 +93,25 @@ function Analysis() {
             </section>
           ) : null}
           <NameSummaryCard detail={detail} />
+          <ReportPosterButtons
+            fileName={`姓名共振_${nameA}×${nameB}`}
+            trackKey="name_poster"
+            build={async () => {
+              const meta = detail?.reportMetadataJson ? JSON.parse(detail.reportMetadataJson) : {};
+              const score = Number(meta.pair_resonance_rate ?? meta.resonance_compatibility_rate ?? detail?.riskLevel ?? 75);
+              const names = Array.isArray(meta.partner_names) && meta.partner_names.length
+                ? meta.partner_names.map(String)[0].split(" · ")
+                : [meta.seeker_name ?? nameA, meta.partner_name ?? nameB];
+              return buildNamePoster(
+                names[0] || nameA, (names[1] ?? nameB) || nameB,
+                score,
+                Array.isArray(meta.partner_names) && meta.partner_names.length > 1 ? "平均姓名契合度" : "双人姓名契合度",
+                typeof meta.three_talents === "string" ? meta.three_talents : null,
+                meta.resonance_type === "harmonic_healing" ? "良性共振" : meta.resonance_type === "neutral_balance" ? "中性平衡" : meta.resonance_type === "malignant_excitation" ? "恶性亢奋" : null,
+                typeof meta.energy_mantra === "string" ? meta.energy_mantra : detail?.annualMantra ?? null,
+              );
+            }}
+          />
           {flow.markdown ? (
             <section className="ink-in mt-5 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
               <MiniMarkdown text={flow.markdown} />

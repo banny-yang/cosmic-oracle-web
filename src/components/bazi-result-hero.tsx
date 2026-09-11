@@ -54,7 +54,7 @@ function PillarColumn({ pillar }: { pillar: string }) {
   );
 }
 
-function PersonCard({ person, side }: { person?: BaziPerson; side: "male" | "female" }) {
+function PersonCard({ person, side }: { person?: BaziPerson | undefined; side: "male" | "female" }) {
   const label = side === "male" ? "男方" : "女方";
   const dm = dayMasterZh(person?.dayMaster);
   return (
@@ -92,8 +92,8 @@ export function BaziResultHero({
   const style = LEVEL_STYLE[data.level] ?? LEVEL_STYLE["一般"];
   const R = 56;
   const C = 2 * Math.PI * R;
-  const best = data.items.reduce((a, b) => (b.score > a.score ? b : a), data.items[0]);
-  const worst = data.items.reduce((a, b) => (b.score < a.score ? b : a), data.items[0]);
+  const best = data.items.reduce<{ label: string; score: number } | null>((a, b) => (!a || b.score > a.score ? b : a), null);
+  const worst = data.items.reduce<{ label: string; score: number } | null>((a, b) => (!a || b.score < a.score ? b : a), null);
 
   return (
     <section className="ink-in relative mt-7 overflow-hidden rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/10">

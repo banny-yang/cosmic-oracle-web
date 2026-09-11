@@ -446,6 +446,8 @@ function Naming() {
   const namingPrice = useFeaturePrice("BABY_NAMING", 10);
   const [passInfo, setPassInfo] = useState<PassStatus | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  // insufficient=余额不足引导充值/畅享；locked=换批锁定（兼容旧后端码）
+  const [upgradeMode, setUpgradeMode] = useState<"insufficient" | "locked">("insufficient");
   const refreshPass = () => {
     get<PassStatus>("/api/v1/naming/pass/status", {}, { timeoutMs: 6000 })
       .then((r) => setPassInfo(r || null))
@@ -573,11 +575,20 @@ function Naming() {
       },
       onError: (e) => {
         const code = (e as Error & { code?: string }).code;
+        if (code === "ERR_INSUFFICIENT_BALANCE") {
+          // 余额不足：弹充值/畅享引导（首免试用由服务端放行，不会走到这里）
+          setUpgradeMode("insufficient");
+          setUpgradeOpen(true);
+          setLoading(false);
+          track("naming_insufficient");
+          return;
+        }
         if (code === "NAMING_BATCH_LOCKED") {
           // 单次 10 个名字已出完：换一批需畅享卡/包月，或再付一次点数生成新一批
           const err = e as Error & { dayPriceFen?: number; monthPriceFen?: number };
           if (err.dayPriceFen) setPassInfo((p) => ({ ...(p || {}), dayPriceFen: err.dayPriceFen }) as PassStatus);
           if (err.monthPriceFen) setPassInfo((p) => ({ ...(p || {}), monthPriceFen: err.monthPriceFen }) as PassStatus);
+          setUpgradeMode("locked");
           setUpgradeOpen(true);
           setLoading(false);
           track("naming_batch_locked");
@@ -1291,7 +1302,11 @@ function Naming() {
                   title={trial ? "充值解锁后可换一批（小程序充值点数）" : undefined}
                   className="flex-1 rounded-xl bg-ink py-3 text-sm font-semibold text-paper disabled:opacity-40"
                 >
-                  {trial ? "充值解锁后可换一批" : `换一批${excludedCount ? `（已排除 ${excludedCount} 个）` : ""}`}
+                  {trial
+                    ? "充值解锁后可换一批"
+                    : passInfo?.active
+                      ? `换一批${excludedCount ? `（已排除 ${excludedCount} 个）` : ""}`
+                      : `换一批 · 再付 ${namingPrice} 点${excludedCount ? `（已排除 ${excludedCount} 个）` : ""}`}
                 </button>
                 <button onClick={() => setPicking(true)} className="flex-1 rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper">
                   发起亲友投票
@@ -1304,7 +1319,7 @@ function Naming() {
             <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl bg-paper-2 p-5 text-center ring-1 ring-ink/5">
               <p className="text-sm font-medium">对这批名字不满意？</p>
               <p className="text-xs text-ink-soft">
-                「换一批」会自动排除已看过的名字继续推演{passInfo?.active ? " · 畅享期内不限次" : " · 畅享卡/包月期内不限次"} · 勾选 3~5 个还可发起亲友投票
+                「换一批」自动排除已看过的名字{passInfo?.active ? " · 畅享期内不限次" : ` · 每次再付 ${namingPrice} 点`} · 勾选 3~5 个还可发起亲友投票
               </p>
               <div className="mt-1 flex items-center gap-4">
                 <button
@@ -1364,8 +1379,14 @@ function Naming() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-semibold">本批 10 个名字已生成完毕</h3>
-                <p className="mt-1 text-xs text-ink-soft">换一批继续推演需开通畅享，也可以再次付费生成新一批</p>
+                <h3 className="text-base font-semibold">
+                  {upgradeMode === "insufficient" ? "点数不足" : "本批 10 个名字已生成完毕"}
+                </h3>
+                <p className="mt-1 text-xs text-ink-soft">
+                  {upgradeMode === "insufficient"
+                    ? `本次生成需 ${namingPrice} 点，可充值点数或开通畅享（期内不限次）`
+                    : "换一批继续推演需开通畅享，也可以再次付费生成新一批"}
+                </p>
               </div>
               <button onClick={() => setUpgradeOpen(false)} className="text-ink/50 hover:text-ink" title="关闭">
                 <X className="size-4" />
@@ -1389,12 +1410,14 @@ function Naming() {
                 微信扫码进入「对脉名鉴」小程序，在「我的-充值」页选择畅享卡/包月支付；权益与点数登录同一账号通用。
               </p>
             </div>
-            <button
-              onClick={() => { setUpgradeOpen(false); start(false); }}
-              className="mt-3 w-full rounded-xl bg-ink py-2.5 text-sm font-semibold text-paper"
-            >
-              或再付 {namingPrice} 点生成新一批（不排除已看过）
-            </button>
+            {upgradeMode === "locked" ? (
+              <button
+                onClick={() => { setUpgradeOpen(false); start(false); }}
+                className="mt-3 w-full rounded-xl bg-ink py-2.5 text-sm font-semibold text-paper"
+              >
+                或再付 {namingPrice} 点生成新一批（不排除已看过）
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}

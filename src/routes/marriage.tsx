@@ -300,8 +300,8 @@ function Marriage() {
 }
 
 const LEVEL_HEX: Record<string, string> = {
-  极佳: "#059669", 良好: "#059669", 中上: "#0284c7",
-  一般: "#d97706", 偏低: "#e11d48",
+  极佳: "#047857", 良好: "#047857", 中上: "#1d4ed8",
+  一般: "#b45309", 偏低: "#be123c",
 };
 
 /** 合婚海报（canvas → PNG dataURL，含 Web 推广二维码） */
@@ -373,7 +373,7 @@ async function buildMarriagePoster(data: BaziPreviewData): Promise<string> {
     const bx1 = 240, bx2 = 540, byy = y - 6;
     g.fillStyle = "rgba(43,36,23,.1)";
     g.beginPath(); g.roundRect(bx1, byy, bx2 - bx1, 12, 6); g.fill();
-    const hex = it.score >= 80 ? "#059669" : it.score >= 70 ? "#0284c7" : it.score >= 60 ? "#d97706" : "#e11d48";
+    const hex = it.score >= 80 ? "#047857" : it.score >= 70 ? "#1d4ed8" : it.score >= 60 ? "#b45309" : "#be123c";
     g.fillStyle = hex;
     g.beginPath(); g.roundRect(bx1, byy, Math.max(12, (bx2 - bx1) * it.score / 100), 12, 6); g.fill();
     g.textAlign = "right"; g.fillStyle = ink; g.font = "bold 21px sans-serif";

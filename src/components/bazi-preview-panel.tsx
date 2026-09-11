@@ -29,7 +29,7 @@ const LEVEL_COLOR: Record<string, string> = {
 };
 
 export function scoreColor(score: number): string {
-  return score >= 80 ? "bg-emerald-500" : score >= 70 ? "bg-sky-500" : score >= 60 ? "bg-amber-500" : "bg-rose-400";
+  return score >= 80 ? "bg-emerald-700" : score >= 70 ? "bg-blue-800" : score >= 60 ? "bg-amber-700" : "bg-rose-700";
 }
 
 /**

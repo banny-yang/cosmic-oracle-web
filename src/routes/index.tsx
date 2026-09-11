@@ -16,12 +16,12 @@ export const Route = createFileRoute("/")({
     ],
     meta: [
       { title: "对脉名鉴 · 起名与姓名文化参考" },
-      { name: "keywords", content: "宝宝起名,在线起名,诗经楚辞起名,生辰五行起名,姓名解析,名字测分,五格数理,起名工具" },
+      { name: "keywords", content: "宝宝起名,在线起名,诗经楚辞起名,生辰五行起名,姓名共振,名字测分,五格数理,起名工具" },
       { property: "og:url", content: "https://www.oracle.duimai.net/" },
       {
         name: "description",
         content:
-          "宝宝起名、姓名解析、性格契合测评与八字合婚。按生辰喜用与五格数理，从典籍中为宝宝取一个有出处、有数理、有温度的名字。",
+          "宝宝起名、姓名共振、缘分伴侣匹配与八字合婚。按生辰喜用与五格数理，从典籍中为宝宝取一个有出处、有数理、有温度的名字。",
       },
       { property: "og:title", content: "对脉名鉴 · 好名字,有出处、有数理、有温度" },
       {
@@ -55,7 +55,7 @@ const features = [
     to: "/analysis",
     code: "INSIGHT_NAME",
     seal: "析",
-    title: "姓名解析",
+    title: "姓名共振",
     desc: "逐字拆解字义、音韵与诗句出处，读出两个名字各自的气质与共振之处。",
     cost: "消耗 9 点",
     delay: "d1",
@@ -64,7 +64,7 @@ const features = [
     to: "/personality",
     code: "INSIGHT_PAIR",
     seal: "性",
-    title: "性格契合测评",
+    title: "缘分伴侣匹配",
     desc: "以传统性格倾向看两个人相处的分寸，给出有温度的相处建议。",
     cost: "消耗 9 点",
     delay: "d2",
@@ -115,8 +115,8 @@ const steps = [
 
 const pointCosts = [
   { title: "宝宝起名", code: "BABY_NAMING", cost: "10 点 / 次", note: "一次出 10 个名字，附出处与评分" },
-  { title: "姓名解析", code: "INSIGHT_NAME", cost: "9 点 / 次", note: "逐字拆解字义、音韵与诗句" },
-  { title: "性格契合测评", code: "INSIGHT_PAIR", cost: "9 点 / 次", note: "看两个人相处的分寸与建议" },
+  { title: "姓名共振", code: "INSIGHT_NAME", cost: "9 点 / 次", note: "逐字拆解字义、音韵与诗句" },
+  { title: "缘分伴侣匹配", code: "INSIGHT_PAIR", cost: "9 点 / 次", note: "看两个人相处的分寸与建议" },
   { title: "八字合婚", code: "MARRIAGE_FIT", cost: "19 点 / 次", note: "七维契合评分与相处指南" },
 ];
 

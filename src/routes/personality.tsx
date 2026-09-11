@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
+import { CompatibilitySummaryCard, useReportDetail } from "@/components/report-summary-cards";
 import { getAuthUser } from "@/lib/auth";
 import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
@@ -14,8 +15,8 @@ export const Route = createFileRoute("/personality")({
       { rel: "canonical", href: "https://www.oracle.duimai.net/personality" },
     ],
     meta: [
-      { title: "性格契合测评 · 对脉名鉴" },
-      { name: "keywords", content: "性格契合,两人性格测评,相处建议,性格互补" },
+      { title: "缘分伴侣匹配 · 对脉名鉴" },
+      { name: "keywords", content: "缘分伴侣匹配,恋爱伴侣,创业合伙,亲子教育,职场助力,契合度测评" },
       { property: "og:url", content: "https://www.oracle.duimai.net/personality" },
       {
         name: "description",
@@ -26,16 +27,17 @@ export const Route = createFileRoute("/personality")({
 });
 
 const relations = [
-  { value: "ROMANTIC", label: "恋人 / 伴侣" },
-  { value: "BUSINESS", label: "事业伙伴" },
-  { value: "PARENT_CHILD", label: "亲子" },
-  { value: "CAREER_MENTOR", label: "师长" },
+  { value: "ROMANTIC", label: "恋爱伴侣" },
+  { value: "BUSINESS", label: "创业合伙" },
+  { value: "PARENT_CHILD", label: "亲子教育" },
+  { value: "CAREER_MENTOR", label: "职场贵人" },
 ];
 
 function Personality() {
   const price = useFeaturePrice("INSIGHT_PAIR", 9);
   const featureEnabled = useFeatureEnabled("INSIGHT_PAIR");
   const flow = useReportFlow();
+  const detail = useReportDetail(flow.reportId, flow.phase === "done" && !flow.error);
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("10:00");
@@ -65,14 +67,14 @@ function Personality() {
 
   return (
     <AppShell>
-      <BreadcrumbJsonLd name="性格契合测评" path="/personality" />
+      <BreadcrumbJsonLd name="缘分伴侣匹配" path="/personality" />
       {featureEnabled === false ? (
-        <FeatureClosed title="性格契合测评" />
+        <FeatureClosed title="缘分伴侣匹配" />
       ) : (
         <>
       <PageHeader
         eyebrow={`功能三 · 消耗 ${price} 点`}
-        title="性格契合测评"
+        title="缘分伴侣匹配"
         desc="以性格倾向看两个人相处的分寸，仅供文化参考。"
       />
 
@@ -134,8 +136,9 @@ function Personality() {
               <p className="text-sm text-vermilion-deep">{flow.error}</p>
             </section>
           ) : null}
+          <CompatibilitySummaryCard detail={detail} />
           {flow.markdown ? (
-            <section className="ink-in mt-7 max-w-[72ch] rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="ink-in mt-5 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
               <MiniMarkdown text={flow.markdown} />
             </section>
           ) : null}

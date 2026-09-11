@@ -16,7 +16,7 @@ import { runtimeApiBaseUrl } from "../lib/runtime-env";
 const SITE_URL = "https://www.oracle.duimai.net";
 const SITE_TITLE = "对脉名鉴 · 起名与姓名文化参考";
 const SITE_DESC =
-  "对脉名鉴：宝宝起名、姓名解析、性格契合测评与八字合婚。从字义、音韵与诗句出处出发，为重要的人取一个经得起时间的名字。";
+  "对脉名鉴：宝宝起名、姓名共振、缘分伴侣匹配与八字合婚。从字义、音韵与诗句出处出发，为重要的人取一个经得起时间的名字。";
 
 /** 部署时经 VITE_TRACKING=1 启用统计（GoatCounter 同域脚本），本地 dev 不加载 */
 const TRACKING_ENABLED = import.meta.env.VITE_TRACKING === "1";

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
+import { NameSummaryCard, useReportDetail } from "@/components/report-summary-cards";
 import { getAuthUser } from "@/lib/auth";
 import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
@@ -13,8 +14,8 @@ export const Route = createFileRoute("/analysis")({
       { rel: "canonical", href: "https://www.oracle.duimai.net/analysis" },
     ],
     meta: [
-      { title: "姓名解析 · 对脉名鉴" },
-      { name: "keywords", content: "姓名解析,名字含义,字义出处,名字音律,姓名文化" },
+      { title: "姓名共振 · 对脉名鉴" },
+      { name: "keywords", content: "姓名共振,名字含义,字义出处,名字音律,姓名文化" },
       { property: "og:url", content: "https://www.oracle.duimai.net/analysis" },
       {
         name: "description",
@@ -28,6 +29,7 @@ function Analysis() {
   const price = useFeaturePrice("INSIGHT_NAME", 9);
   const featureEnabled = useFeatureEnabled("INSIGHT_NAME");
   const flow = useReportFlow();
+  const detail = useReportDetail(flow.reportId, flow.phase === "done" && !flow.error);
   const [nameA, setNameA] = useState("");
   const [nameB, setNameB] = useState("");
   const [err, setErr] = useState("");
@@ -35,25 +37,24 @@ function Analysis() {
   const submit = () => {
     setErr("");
     if (!nameA.trim()) return setErr("请输入要解析的姓名");
-    if (!nameB.trim()) return setErr("请输入对比姓名（姓名解析为双名对照）");
+    if (!nameB.trim()) return setErr("请输入对比姓名（姓名共振为双名对照）");
     flow.run({
       userId: getAuthUser()?.userId,
       reportType: "NAME",
-      fullLegalName: nameA.trim(),
-      matchPartnerName: nameB.trim(),
+      namePairs: [{ personA: nameA.trim(), personB: nameB.trim() }],
     });
   };
 
   return (
     <AppShell>
-      <BreadcrumbJsonLd name="姓名解析" path="/analysis" />
+      <BreadcrumbJsonLd name="姓名共振" path="/analysis" />
       {featureEnabled === false ? (
-        <FeatureClosed title="姓名解析" />
+        <FeatureClosed title="姓名共振" />
       ) : (
         <>
       <PageHeader
         eyebrow={`功能二 · 消耗 ${price} 点`}
-        title="姓名解析"
+        title="姓名共振"
         desc="逐字拆解字义与音韵的来路，读出一个名字的气质。"
       />
 
@@ -90,8 +91,9 @@ function Analysis() {
               <p className="text-sm text-vermilion-deep">{flow.error}</p>
             </section>
           ) : null}
+          <NameSummaryCard detail={detail} />
           {flow.markdown ? (
-            <section className="ink-in mt-7 max-w-[72ch] rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="ink-in mt-5 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
               <MiniMarkdown text={flow.markdown} />
             </section>
           ) : null}

@@ -30,7 +30,13 @@ export function streamPost(opts: StreamOptions): StreamHandle {
   const fail = (err: Error) => {
     if (aborted) return;
     aborted = true;
-    controller.abort().catch?.(() => {});
+    // abort() 返回 undefined——旧写法 undefined.catch?.() 会抛 TypeError，
+    // 把 onError 一起吞掉（SSE 返回非 200 时 UI 卡在「正在生成」的根因）
+    try {
+      controller.abort();
+    } catch {
+      // 已完成的请求 abort 无副作用
+    }
     onError?.(err);
   };
 

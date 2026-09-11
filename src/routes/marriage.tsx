@@ -6,6 +6,8 @@ import { FeatureClosed } from "@/components/feature-closed";
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { BaziPreviewPanel, type BaziPreviewData } from "@/components/bazi-preview-panel";
+import { BaziResultHero } from "@/components/bazi-result-hero";
+import { PenLine } from "lucide-react";
 import { getAuthUser } from "@/lib/auth";
 import { post } from "@/lib/api";
 
@@ -143,6 +145,7 @@ function Marriage() {
         </>
       ) : flow.phase === "running" ? (
         <>
+          {preview ? <BaziPreviewPanel data={preview} embedded /> : null}
           <ReportRunning error={flow.error} />
           {flow.markdown ? (
             <section className="mt-4 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
@@ -152,6 +155,10 @@ function Marriage() {
         </>
       ) : (
         <>
+          {preview ? <BaziResultHero data={preview} persons={preview.persons} /> : null}
+          {preview ? (
+            <BaziPreviewPanel data={preview} embedded />
+          ) : null}
           {flow.needPay ? <PaywallCard message={flow.error} /> : null}
           {!flow.needPay && flow.error ? (
             <section className="mt-7 rounded-2xl bg-paper-2 p-5 text-center ring-1 ring-ink/5">
@@ -159,8 +166,17 @@ function Marriage() {
             </section>
           ) : null}
           {flow.markdown ? (
-            <section className="ink-in mt-7 max-w-[72ch] rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
-              <MiniMarkdown text={flow.markdown} />
+            <section className="bazi-report ink-in relative mt-5 max-w-[72ch] overflow-hidden rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5 [&_h2]:mt-7 [&_h2]:border-l-2 [&_h2]:border-vermilion [&_h2]:pl-2.5 [&_h3]:mt-6 [&_h3]:border-l-2 [&_h3]:border-vermilion/40 [&_h3]:pl-2.5">
+              <div className="mb-1 flex items-center gap-2 text-xs font-medium text-ink-faint">
+                <PenLine className="size-3.5" />
+                AI 深度解读
+              </div>
+              <MiniMarkdown text={splitDisclaimer(flow.markdown).body} />
+              {splitDisclaimer(flow.markdown).disclaimer ? (
+                <p className="mt-5 border-t border-ink/5 pt-3 text-[11px] leading-relaxed text-ink-faint">
+                  {splitDisclaimer(flow.markdown).disclaimer}
+                </p>
+              ) : null}
             </section>
           ) : null}
           <button onClick={flow.reset} className="mt-5 w-full rounded-xl bg-ink py-3 text-sm font-semibold text-paper">
@@ -172,4 +188,17 @@ function Marriage() {
       )}
     </AppShell>
   );
+}
+
+/** 报告尾部免责声明段落分离：命中最末含免责关键词的段落降级为脚注 */
+function splitDisclaimer(markdown: string): { body: string; disclaimer: string } {
+  const blocks = markdown.split(/\n\n+/);
+  const re = /仅供文化参考|不构成任何决策依据|For cultural reference|not a basis for any decision/;
+  for (let i = blocks.length - 1; i >= Math.max(0, blocks.length - 3); i--) {
+    if (re.test(blocks[i])) {
+      const disclaimer = blocks[i].replace(/^#+\s*/, "").replace(/^[-*]\s+/gm, "").trim();
+      return { body: blocks.slice(0, i).join("\n\n"), disclaimer };
+    }
+  }
+  return { body: markdown, disclaimer: "" };
 }

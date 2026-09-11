@@ -17,6 +17,7 @@ export interface BaziPreviewData {
   level: string;
   summary: string;
   items: BaziPreviewItem[];
+  persons?: { name: string; pillars: string[]; dayMaster?: string | null }[];
 }
 
 const LEVEL_COLOR: Record<string, string> = {
@@ -40,11 +41,14 @@ export function BaziPreviewPanel({
   price,
   onBuy,
   buying,
+  embedded,
 }: {
   data: BaziPreviewData;
-  price: number;
-  onBuy: () => void;
+  price?: number;
+  onBuy?: () => void;
   buying?: boolean;
+  /** 报告页嵌入模式：隐藏购买按钮与免责（英雄卡已有） */
+  embedded?: boolean;
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   return (
@@ -73,7 +77,10 @@ export function BaziPreviewPanel({
               <span className="w-5 shrink-0 text-xs text-ink-faint tabular-nums">
                 {String(idx + 1).padStart(2, "0")}
               </span>
-              <span className="w-20 shrink-0 text-sm font-medium">{it.label}</span>
+              <span className="w-24 shrink-0 text-sm font-medium">
+                {it.label}
+                <span className="ml-1 text-[9px] font-normal text-ink-faint">{it.weight}%</span>
+              </span>
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">
                 <div className={`h-full rounded-full ${scoreColor(it.score)}`} style={{ width: `${it.score}%` }} />
               </div>
@@ -104,17 +111,21 @@ export function BaziPreviewPanel({
           </div>
         ))}
       </div>
-      <p className="mt-3 text-[10px] leading-relaxed text-ink-faint">
-        评分为传统合婚规则的量化模型，仅供文化参考与娱乐。
-      </p>
-      <button
-        onClick={onBuy}
-        disabled={buying}
-        className="mt-3 w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] disabled:opacity-60"
-      >
-        {buying ? <Loader2 className="mr-1 inline size-4 animate-spin" /> : null}
-        生成 AI 深度解读 · 消耗 {price} 点
-      </button>
+      {!embedded ? (
+        <>
+          <p className="mt-3 text-[10px] leading-relaxed text-ink-faint">
+            评分为传统合婚规则的量化模型，仅供文化参考与娱乐。
+          </p>
+          <button
+            onClick={onBuy}
+            disabled={buying}
+            className="mt-3 w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] disabled:opacity-60"
+          >
+            {buying ? <Loader2 className="mr-1 inline size-4 animate-spin" /> : null}
+            生成 AI 深度解读 · 消耗 {price} 点
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }

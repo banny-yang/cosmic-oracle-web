@@ -1059,7 +1059,7 @@ function Naming() {
                       <span className={`size-1.5 rounded-full ${ELEMENT_DOT[el] || "bg-ink/20"}`} />
                       {["年柱", "月柱", "日柱", "时柱"][i]}
                     </p>
-                    <p className="mt-0.5 text-base font-semibold tracking-[0.25em] text-ink">{pl}</p>
+                    <p className="mt-0.5 font-seal text-lg leading-relaxed tracking-[0.2em] text-ink">{pl}</p>
                   </div>
                 );
               })}

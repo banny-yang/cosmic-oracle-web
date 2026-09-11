@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
-import { useFeatureEnabled } from "@/lib/use-feature-price";
+import { useFeatureEnabled, useFeaturePrice } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
 import { BirthplaceInput } from "@/components/birthplace-input";
-import { BaziPreviewPanel } from "@/components/bazi-preview-panel";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
+import { BaziPreviewPanel, type BaziPreviewData } from "@/components/bazi-preview-panel";
 import { getAuthUser } from "@/lib/auth";
-import { useFeaturePrice } from "@/lib/use-feature-price";
+import { post } from "@/lib/api";
 
 export const Route = createFileRoute("/marriage")({
   component: Marriage,
@@ -21,37 +21,64 @@ export const Route = createFileRoute("/marriage")({
       { property: "og:url", content: "https://www.oracle.duimai.net/marriage" },
       {
         name: "description",
-        content: "十项传统合婚视角看两个人的契合，仅供文化参考与娱乐。",
+        content: "输入男方女方八字与出生地，十项传统合婚维度即时速览，AI 深度解读，仅供文化参考与娱乐。",
       },
     ],
   }),
 });
 
+interface Party {
+  name: string;
+  date: string;
+  time: string;
+  lat: number;
+  lng: number;
+}
+
+const MALE: Party = { name: "", date: "", time: "12:00", lat: 39.9, lng: 116.4 };
+const FEMALE: Party = { name: "", date: "", time: "12:00", lat: 31.2, lng: 121.5 };
+
 function Marriage() {
   const featureEnabled = useFeatureEnabled("MARRIAGE_FIT");
   const price = useFeaturePrice("MARRIAGE_FIT", 19);
   const flow = useReportFlow();
-  const [name, setName] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("10:00");
-  const [lat, setLat] = useState(39.9);
-  const [lng, setLng] = useState(116.4);
+  const [male, setMale] = useState<Party>(MALE);
+  const [female, setFemale] = useState<Party>(FEMALE);
+  const [preview, setPreview] = useState<BaziPreviewData | null>(null);
+  const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const submit = () => {
+  const partyPayload = (p: Party, fallbackName: string) => ({
+    name: p.name.trim() || fallbackName,
+    birthTime: `${p.date}T${p.time}:00`,
+    latitude: p.lat,
+    longitude: p.lng,
+  });
+
+  /** 立即合婚：引擎十项即时输出（免费） */
+  const runPreview = () => {
     setErr("");
-    if (!date) return setErr("请选择对方出生日期");
+    if (!male.date) return setErr("请选择男方出生日期");
+    if (!female.date) return setErr("请选择女方出生日期");
+    setLoading(true);
+    setPreview(null);
+    post<BaziPreviewData>(
+      "/api/v1/reports/marriage-fit/preview",
+      { personA: partyPayload(male, "男方"), personB: partyPayload(female, "女方") },
+      { auth: false, timeoutMs: 15000 },
+    )
+      .then(setPreview)
+      .catch((e: Error) => setErr(e.message || "合婚失败，请稍后再试"))
+      .finally(() => setLoading(false));
+  };
+
+  /** AI 深度解读：购买后流式生成（双人出生信息随单提交，引擎按录入两人排盘） */
+  const buyReport = () => {
+    if (!male.date || !female.date) return runPreview();
     flow.run({
       userId: getAuthUser()?.userId,
       reportType: "MARRIAGE_FIT",
-      partners: [
-        {
-          name: name.trim() || "对方",
-          birthTime: `${date}T${time}:00`,
-          latitude: lat,
-          longitude: lng,
-        },
-      ],
+      partners: [partyPayload(male, "男方"), partyPayload(female, "女方")],
     });
   };
 
@@ -65,48 +92,56 @@ function Marriage() {
       <PageHeader
         eyebrow={`功能四 · 消耗 ${price} 点`}
         title="八字合婚"
-        desc="十项传统合婚视角看两个人的契合，仅供文化参考与娱乐。"
+        desc="输入双方八字与出生地，十项传统合婚维度即时呈现，AI 逐项解读，仅供文化参考与娱乐。"
       />
 
       {flow.phase === "form" ? (
-        <ReportForm>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="对方称呼（选填）">
-              <input className={inputCls} maxLength={12} placeholder="如：阿沅" value={name} onChange={(e) => setName(e.target.value)} />
-            </Field>
-            <Field label="对方出生日期">
-              <input className={inputCls} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </Field>
-            <Field label="出生时间">
-              <input className={inputCls} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-            </Field>
-            <Field label="出生地（用于真太阳时校正）">
-              <BirthplaceInput
-                lat={lat}
-                lng={lng}
-                onPick={(v) => {
-                  setLat(v.lat);
-                  setLng(v.lng);
-                }}
-              />
-            </Field>
-          </div>
-          <p className="text-[11px] leading-relaxed text-ink-faint">
-            需要本人的出生信息（在「我的」页维护）；对方信息仅用于本次分析。
-          </p>
-          {err ? <p className="text-xs text-vermilion-deep">{err}</p> : null}
-          <button
-            onClick={submit}
-            className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]"
-          >
-            开始分析
-          </button>
-        </ReportForm>
-      ) : null}
-      {flow.phase === "form" ? (
-        <BaziPreviewPanel partnerBirth={{ date, time, lat, lng }} />
-      ) : null}
-      {flow.phase === "running" ? (
+        <>
+          <ReportForm>
+            <p className="text-sm font-semibold">男方</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="称呼（选填）">
+                <input className={inputCls} maxLength={12} placeholder="如：沈知远" value={male.name} onChange={(e) => setMale({ ...male, name: e.target.value })} />
+              </Field>
+              <Field label="出生日期" required>
+                <input className={inputCls} type="date" value={male.date} onChange={(e) => setMale({ ...male, date: e.target.value })} />
+              </Field>
+              <Field label="出生时间">
+                <input className={inputCls} type="time" value={male.time} onChange={(e) => setMale({ ...male, time: e.target.value })} />
+              </Field>
+              <Field label="出生地（真太阳时校正）">
+                <BirthplaceInput lat={male.lat} lng={male.lng} onPick={(v) => setMale({ ...male, lat: v.lat, lng: v.lng })} />
+              </Field>
+            </div>
+            <p className="mt-4 text-sm font-semibold">女方</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="称呼（选填）">
+                <input className={inputCls} maxLength={12} placeholder="如：林知微" value={female.name} onChange={(e) => setFemale({ ...female, name: e.target.value })} />
+              </Field>
+              <Field label="出生日期" required>
+                <input className={inputCls} type="date" value={female.date} onChange={(e) => setFemale({ ...female, date: e.target.value })} />
+              </Field>
+              <Field label="出生时间">
+                <input className={inputCls} type="time" value={female.time} onChange={(e) => setFemale({ ...female, time: e.target.value })} />
+              </Field>
+              <Field label="出生地（真太阳时校正）">
+                <BirthplaceInput lat={female.lat} lng={female.lng} onPick={(v) => setFemale({ ...female, lat: v.lat, lng: v.lng })} />
+              </Field>
+            </div>
+            {err ? <p className="text-xs text-vermilion-deep">{err}</p> : null}
+            <button
+              onClick={runPreview}
+              disabled={loading}
+              className="w-full rounded-xl bg-ink py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] disabled:opacity-60"
+            >
+              {loading ? "正在推算十项…" : "立即合婚 · 免费十项速览"}
+            </button>
+          </ReportForm>
+          {preview ? (
+            <BaziPreviewPanel data={preview} price={price} onBuy={buyReport} buying={loading} />
+          ) : null}
+        </>
+      ) : flow.phase === "running" ? (
         <>
           <ReportRunning error={flow.error} />
           {flow.markdown ? (
@@ -129,7 +164,7 @@ function Marriage() {
             </section>
           ) : null}
           <button onClick={flow.reset} className="mt-5 w-full rounded-xl bg-ink py-3 text-sm font-semibold text-paper">
-            再分析一次
+            再合一次
           </button>
         </>
       )}

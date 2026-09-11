@@ -561,6 +561,16 @@ function Naming() {
           setAiDelta(String(ev.delta).slice(0, 60));
         }
       },
+      onDone: () => {
+        // 流结束但未收到 result/error 事件（服务端异常关闭等）：解除加载态防止「永远生成中」
+        setLoading((prev) => {
+          if (prev) {
+            setError("生成流已结束但未收到结果，请重试");
+            track("naming_generate_done_missing", {});
+          }
+          return false;
+        });
+      },
       onError: (e) => {
         const code = (e as Error & { code?: string }).code;
         if (code === "NAMING_BATCH_LOCKED") {

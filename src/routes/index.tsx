@@ -247,7 +247,7 @@ function Index() {
           {/* Hero */}
           <div className="ink-in">
             <p className="text-xs tracking-[0.35em] text-vermilion-deep uppercase">新中式 · 起名文化</p>
-            <h1 className="mt-4 max-w-[22ch] text-4xl leading-tight font-semibold text-balance md:text-5xl">
+            <h1 className="mt-4 max-w-[22ch] text-3xl leading-tight font-semibold text-balance min-[360px]:text-4xl md:text-5xl">
               好名字，有出处、有数理、有温度
             </h1>
             <p className="mt-4 max-w-[52ch] text-sm leading-relaxed text-ink-soft text-pretty md:text-base">

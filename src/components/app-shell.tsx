@@ -4,6 +4,7 @@ import { track } from "@/lib/track";
 import type { ReactNode } from "react";
 import { useAuth, getToken, updateToken } from "@/lib/auth";
 import { post } from "@/lib/api";
+import { History } from "lucide-react";
 
 /** 内容列与 banner 内层共用同一套宽度约束，保证左对齐一致 */
 export const shellCls = "mx-auto max-w-[430px] px-5 md:max-w-3xl md:px-8 lg:max-w-5xl";
@@ -48,26 +49,30 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
     <div className="min-h-screen bg-background font-song text-foreground selection:bg-vermilion/20">
       <div className="relative overflow-hidden border-b border-ink/5 bg-paper-2/60">
         <div className={`${shellCls} pt-7 pb-4`}>
-          <header className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3">
+          <header className="flex items-center justify-between gap-2">
+            <Link to="/" className="flex min-w-0 items-center gap-3">
               <BrandMark />
-              <div className="leading-snug">
-                <p className="text-lg font-semibold tracking-[0.14em]">对脉名鉴</p>
-                <p className="text-sm text-ink-soft">起名与姓名文化参考</p>
+              <div className="min-w-0 leading-snug">
+                <p className="truncate text-lg font-semibold tracking-[0.06em] min-[430px]:tracking-[0.14em]">对脉名鉴</p>
+                {/* 小屏省略副标题：与右侧两个胶囊（解析记录+点数）抢宽度会换行挤压 */}
+                <p className="hidden truncate text-sm text-ink-soft min-[430px]:block">起名与姓名文化参考</p>
               </div>
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               {loggedIn ? (
                 <>
                   <Link
                     to="/records"
-                    className="rounded-full bg-paper-2 px-3.5 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-ink"
+                    aria-label="解析记录"
+                    className="flex items-center rounded-full bg-paper-2 px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-ink min-[430px]:px-3.5"
                   >
-                    解析记录
+                    {/* <360px 只留图标，为品牌名腾出宽度 */}
+                    <History className="size-4 min-[360px]:hidden" />
+                    <span className="hidden min-[360px]:inline">解析记录</span>
                   </Link>
                   <Link
                     to="/me"
-                    className="flex items-center gap-1.5 rounded-full bg-vermilion/10 px-3.5 py-1.5 ring-1 ring-vermilion/20"
+                    className="flex items-center gap-1.5 rounded-full bg-vermilion/10 px-3 py-1.5 ring-1 ring-vermilion/20 min-[430px]:px-3.5"
                   >
                     <span className="size-1.5 rounded-full bg-vermilion" />
                     <span className="text-base font-semibold tabular-nums">

@@ -4,20 +4,18 @@ import { track } from "@/lib/track";
 import type { ReactNode } from "react";
 import { useAuth, getToken, updateToken } from "@/lib/auth";
 import { post } from "@/lib/api";
-import { Compass } from "lucide-react";
 
 /** 内容列与 banner 内层共用同一套宽度约束，保证左对齐一致 */
 export const shellCls = "mx-auto max-w-[430px] px-5 md:max-w-3xl md:px-8 lg:max-w-5xl";
 
-/** 品牌标：朱红渐变方章 + 白色罗盘（对脉意象），矢量随主题色走 */
+/** 品牌标：与微信小程序同源的朱红方章图标 */
 export function BrandMark({ className = "size-11 shrink-0 rounded-xl" }: { className?: string }) {
   return (
-    <span
-      aria-hidden
-      className={`grid place-items-center bg-gradient-to-br from-vermilion to-vermilion-deep text-paper shadow-sm ring-1 ring-vermilion-deep/25 ${className}`}
-    >
-      <Compass className="size-[58%]" strokeWidth={1.8} />
-    </span>
+    <img
+      src="/brand-logo.png"
+      alt="对脉名鉴"
+      className={`shadow-sm ring-1 ring-vermilion-deep/25 ${className}`}
+    />
   );
 }
 

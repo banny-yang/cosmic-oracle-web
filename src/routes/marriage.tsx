@@ -166,7 +166,7 @@ function Marriage() {
             </section>
           ) : null}
           {flow.markdown ? (
-            <section className="bazi-report ink-in relative mt-5 max-w-[72ch] overflow-hidden rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5 [&_h2]:mt-7 [&_h2]:border-l-2 [&_h2]:border-vermilion [&_h2]:pl-2.5 [&_h3]:mt-6 [&_h3]:border-l-2 [&_h3]:border-vermilion/40 [&_h3]:pl-2.5">
+            <section className="bazi-report ink-in relative mt-5 overflow-hidden rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5 [&_h2]:mt-7 [&_h2]:border-l-2 [&_h2]:border-vermilion [&_h2]:pl-2.5 [&_h3]:mt-6 [&_h3]:border-l-2 [&_h3]:border-vermilion/40 [&_h3]:pl-2.5">
               <div className="mb-1 flex items-center gap-2 text-xs font-medium text-ink-faint">
                 <PenLine className="size-3.5" />
                 AI 深度解读

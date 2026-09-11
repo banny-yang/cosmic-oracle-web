@@ -39,28 +39,39 @@ function Personality() {
   const featureEnabled = useFeatureEnabled("INSIGHT_PAIR");
   const flow = useReportFlow();
   const detail = useReportDetail(flow.reportId, flow.phase === "done" && !flow.error);
-  const [name, setName] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("10:00");
-  const [lat, setLat] = useState(39.9);
-  const [lng, setLng] = useState(116.4);
+  const [nameA, setNameA] = useState("");
+  const [dateA, setDateA] = useState("");
+  const [timeA, setTimeA] = useState("12:00");
+  const [latA, setLatA] = useState(39.9);
+  const [lngA, setLngA] = useState(116.4);
+  const [nameB, setNameB] = useState("");
+  const [dateB, setDateB] = useState("");
+  const [timeB, setTimeB] = useState("12:00");
+  const [latB, setLatB] = useState(31.2);
+  const [lngB, setLngB] = useState(121.5);
   const [relation, setRelation] = useState("ROMANTIC");
   const [err, setErr] = useState("");
 
   const submit = () => {
     setErr("");
-    if (!name.trim()) return setErr("请输入对方姓名");
-    if (!date) return setErr("请选择对方出生日期");
+    if (!dateA) return setErr("请选择我方出生日期");
+    if (!dateB) return setErr("请选择对方出生日期");
     flow.run({
       userId: getAuthUser()?.userId,
       reportType: "COMPATIBILITY",
       partners: [
         {
-          name: name.trim(),
-          birthTime: `${date}T${time}:00`,
-          latitude: lat,
-          longitude: lng,
+          name: nameA.trim() || "我方",
+          birthTime: `${dateA}T${timeA}:00`,
+          latitude: latA,
+          longitude: lngA,
           relationshipType: relation,
+        },
+        {
+          name: nameB.trim() || "对方",
+          birthTime: `${dateB}T${timeB}:00`,
+          latitude: latB,
+          longitude: lngB,
         },
       ],
     });
@@ -81,43 +92,50 @@ function Personality() {
 
       {flow.phase === "form" ? (
         <ReportForm>
+          <Field label="匹配关系">
+            <select className={inputCls} value={relation} onChange={(e) => setRelation(e.target.value)}>
+              {relations.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </Field>
+          <p className="mt-2 text-sm font-semibold">我方</p>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="对方姓名">
-              <input className={inputCls} maxLength={12} placeholder="如：林之遥" value={name} onChange={(e) => setName(e.target.value)} />
+            <Field label="称呼（选填）">
+              <input className={inputCls} maxLength={12} placeholder="如：沈知远" value={nameA} onChange={(e) => setNameA(e.target.value)} />
             </Field>
-            <Field label="关系">
-              <select className={inputCls} value={relation} onChange={(e) => setRelation(e.target.value)}>
-                {relations.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="对方出生日期">
-              <input className={inputCls} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Field label="出生日期" required>
+              <input className={inputCls} type="date" value={dateA} onChange={(e) => setDateA(e.target.value)} />
             </Field>
             <Field label="出生时间">
-              <input className={inputCls} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+              <input className={inputCls} type="time" value={timeA} onChange={(e) => setTimeA(e.target.value)} />
+            </Field>
+            <Field label="出生地（真太阳时校正）">
+              <BirthplaceInput lat={latA} lng={lngA} onPick={(v) => { setLatA(v.lat); setLngA(v.lng); }} />
             </Field>
           </div>
-          <Field label="出生地（用于真太阳时校正）">
-            <BirthplaceInput
-              lat={lat}
-              lng={lng}
-              onPick={(v) => {
-                setLat(v.lat);
-                setLng(v.lng);
-              }}
-            />
-          </Field>
-          <p className="text-[11px] leading-relaxed text-ink-faint">
-            需要本人的出生信息（在「我的」页维护）；对方信息仅用于本次测评。
-          </p>
+          <p className="mt-4 text-sm font-semibold">对方</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="称呼（选填）">
+              <input className={inputCls} maxLength={12} placeholder="如：林之遥" value={nameB} onChange={(e) => setNameB(e.target.value)} />
+            </Field>
+            <Field label="出生日期" required>
+              <input className={inputCls} type="date" value={dateB} onChange={(e) => setDateB(e.target.value)} />
+            </Field>
+            <Field label="出生时间">
+              <input className={inputCls} type="time" value={timeB} onChange={(e) => setTimeB(e.target.value)} />
+            </Field>
+            <Field label="出生地（真太阳时校正）">
+              <BirthplaceInput lat={latB} lng={lngB} onPick={(v) => { setLatB(v.lat); setLngB(v.lng); }} />
+            </Field>
+          </div>
           {err ? <p className="text-xs text-vermilion-deep">{err}</p> : null}
           <button
             onClick={submit}
             className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]"
           >
             开始测评
+
           </button>
         </ReportForm>
       ) : flow.phase === "running" ? (
@@ -139,12 +157,12 @@ function Personality() {
           ) : null}
           <CompatibilitySummaryCard detail={detail} />
           <ReportPosterButtons
-            fileName={`缘分伴侣匹配_${name || "TA"}`}
+            fileName={`缘分伴侣匹配_${nameA || "我方"}×${nameB || "对方"}`}
             trackKey="compat_poster"
             build={async () => {
               const meta = detail?.reportMetadataJson ? JSON.parse(detail.reportMetadataJson) : {};
               return buildCompatibilityPoster(
-                [name || "TA"],
+                [`${nameA || "我方"} × ${nameB || "对方"}`],
                 Number(meta.overall_harmony_rate ?? detail?.riskLevel ?? 75),
                 String(meta.attraction_index ?? "MEDIUM"),
                 String(meta.friction_index ?? "MEDIUM"),

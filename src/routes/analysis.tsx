@@ -3,7 +3,8 @@ import { useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { getAuthUser } from "@/lib/auth";
-import { useFeaturePrice } from "@/lib/use-feature-price";
+import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
+import { FeatureClosed } from "@/components/feature-closed";
 
 export const Route = createFileRoute("/analysis")({
   component: Analysis,
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/analysis")({
 
 function Analysis() {
   const price = useFeaturePrice("INSIGHT_NAME", 9);
+  const featureEnabled = useFeatureEnabled("INSIGHT_NAME");
   const flow = useReportFlow();
   const [nameA, setNameA] = useState("");
   const [nameB, setNameB] = useState("");
@@ -45,6 +47,10 @@ function Analysis() {
   return (
     <AppShell>
       <BreadcrumbJsonLd name="姓名解析" path="/analysis" />
+      {featureEnabled === false ? (
+        <FeatureClosed title="姓名解析" />
+      ) : (
+        <>
       <PageHeader
         eyebrow={`功能二 · 消耗 ${price} 点`}
         title="姓名解析"
@@ -92,6 +98,8 @@ function Analysis() {
           <button onClick={flow.reset} className="mt-5 w-full rounded-xl bg-ink py-3 text-sm font-semibold text-paper">
             再解析一个
           </button>
+        </>
+      )}
         </>
       )}
     </AppShell>

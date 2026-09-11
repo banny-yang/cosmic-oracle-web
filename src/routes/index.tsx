@@ -4,6 +4,7 @@ import { AppShell, PageHeader, BrandMark } from "@/components/app-shell";
 import { HeroBanner } from "@/components/hero-banner";
 import { NamingDemo } from "@/components/naming-demo";
 import { useAuth } from "@/lib/auth";
+import { useFeatureEnabled } from "@/lib/use-feature-price";
 import { get } from "@/lib/api";
 import { track } from "@/lib/track";
 
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "宝宝起名、姓名解析、性格契合测评与婚姻契合分析。按生辰喜用与五格数理，从典籍中为宝宝取一个有出处、有数理、有温度的名字。",
+          "宝宝起名、姓名解析、性格契合测评与八字合婚。按生辰喜用与五格数理，从典籍中为宝宝取一个有出处、有数理、有温度的名字。",
       },
       { property: "og:title", content: "对脉名鉴 · 好名字,有出处、有数理、有温度" },
       {
@@ -72,8 +73,8 @@ const features = [
     to: "/marriage",
     code: "MARRIAGE_FIT",
     seal: "缘",
-    title: "婚姻契合分析",
-    desc: "七维评分与相处建议，把两个人的契合讲清楚、说明白。",
+    title: "八字合婚",
+    desc: "十项传统合婚维度，把两个人的契合讲清楚、说明白。",
     cost: "消耗 19 点",
     delay: "d2",
   },
@@ -116,7 +117,7 @@ const pointCosts = [
   { title: "宝宝起名", code: "BABY_NAMING", cost: "10 点 / 次", note: "一次出 10 个名字，附出处与评分" },
   { title: "姓名解析", code: "INSIGHT_NAME", cost: "9 点 / 次", note: "逐字拆解字义、音韵与诗句" },
   { title: "性格契合测评", code: "INSIGHT_PAIR", cost: "9 点 / 次", note: "看两个人相处的分寸与建议" },
-  { title: "婚姻契合分析", code: "MARRIAGE_FIT", cost: "19 点 / 次", note: "七维契合评分与相处指南" },
+  { title: "八字合婚", code: "MARRIAGE_FIT", cost: "19 点 / 次", note: "七维契合评分与相处指南" },
 ];
 
 /* 用户反馈位：当前为占位示例，正式反馈收集后替换（勿虚构真实署名） */
@@ -166,6 +167,13 @@ const sampleDimensions = [
 
 function Index() {
   const { loggedIn } = useAuth();
+  // 管理端功能开关：关闭的功能卡片置灰不可点
+  const featureEnabled = {
+    BABY_NAMING: useFeatureEnabled("BABY_NAMING"),
+    INSIGHT_NAME: useFeatureEnabled("INSIGHT_NAME"),
+    INSIGHT_PAIR: useFeatureEnabled("INSIGHT_PAIR"),
+    MARRIAGE_FIT: useFeatureEnabled("MARRIAGE_FIT"),
+  };
   const [social, setSocial] = useState<SocialProof | null>(null);
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
   // 充值档位与畅享卡：公开只读接口动态渲染（1 点 = ¥1；接口失败回落静态兜底）
@@ -314,20 +322,36 @@ function Index() {
       <section className="mt-10">
         <h2 className="text-lg font-semibold">四个工具，把「名」的事讲清楚</h2>
         <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {features.map((f) => (
-            <Link
-              key={f.to}
-              to={f.to}
-              className={`ink-in ${f.delay} flex flex-col rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5 transition-transform duration-300 hover:-translate-y-1`}
-            >
-              <div className="grid size-9 place-items-center rounded-lg bg-ink/90 text-paper">
-                <span className="font-seal text-base leading-none">{f.seal}</span>
+          {features.map((f) => {
+            const closed = featureEnabled[f.code] === false;
+            const card = (
+              <>
+                <div className={`grid size-9 place-items-center rounded-lg text-paper ${closed ? "bg-ink/40" : "bg-ink/90"}`}>
+                  <span className="font-seal text-base leading-none">{f.seal}</span>
+                </div>
+                <p className={`mt-3 text-base font-semibold text-balance ${closed ? "text-ink-faint" : ""}`}>{f.title}</p>
+                <p className="mt-1.5 flex-1 text-xs leading-relaxed text-ink-soft">{f.desc}</p>
+                {closed ? (
+                  <p className="mt-3 text-[11px] font-medium text-ink-faint">暂未开放</p>
+                ) : (
+                  <p className="mt-3 text-[11px] font-medium text-vermilion-deep">{costLabel(f.code, f.cost)}</p>
+                )}
+              </>
+            );
+            return closed ? (
+              <div key={f.to} className="flex cursor-not-allowed flex-col rounded-2xl bg-paper-2/60 p-4 ring-1 ring-ink/5 opacity-70">
+                {card}
               </div>
-              <p className="mt-3 text-base font-semibold text-balance">{f.title}</p>
-              <p className="mt-1.5 flex-1 text-xs leading-relaxed text-ink-soft">{f.desc}</p>
-              <p className="mt-3 text-[11px] font-medium text-vermilion-deep">{costLabel(f.code, f.cost)}</p>
-            </Link>
-          ))}
+            ) : (
+              <Link
+                key={f.to}
+                to={f.to}
+                className={`ink-in ${f.delay} flex flex-col rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5 transition-transform duration-300 hover:-translate-y-1`}
+              >
+                {card}
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -479,7 +503,7 @@ function Index() {
           <div className="rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-xs text-ink-soft">婚姻契合示例</p>
+                <p className="text-xs text-ink-soft">八字合婚示例</p>
                 <p className="mt-1 text-4xl leading-none font-semibold tabular-nums text-ink">
                   82<span className="ml-1 text-base text-ink-faint">/ 100</span>
                 </p>

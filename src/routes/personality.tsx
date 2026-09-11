@@ -4,7 +4,8 @@ import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/compo
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { getAuthUser } from "@/lib/auth";
-import { useFeaturePrice } from "@/lib/use-feature-price";
+import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
+import { FeatureClosed } from "@/components/feature-closed";
 
 export const Route = createFileRoute("/personality")({
   component: Personality,
@@ -33,6 +34,7 @@ const relations = [
 
 function Personality() {
   const price = useFeaturePrice("INSIGHT_PAIR", 9);
+  const featureEnabled = useFeatureEnabled("INSIGHT_PAIR");
   const flow = useReportFlow();
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
@@ -64,6 +66,10 @@ function Personality() {
   return (
     <AppShell>
       <BreadcrumbJsonLd name="性格契合测评" path="/personality" />
+      {featureEnabled === false ? (
+        <FeatureClosed title="性格契合测评" />
+      ) : (
+        <>
       <PageHeader
         eyebrow={`功能三 · 消耗 ${price} 点`}
         title="性格契合测评"
@@ -136,6 +142,8 @@ function Personality() {
           <button onClick={flow.reset} className="mt-5 w-full rounded-xl bg-ink py-3 text-sm font-semibold text-paper">
             再测一次
           </button>
+        </>
+      )}
         </>
       )}
     </AppShell>

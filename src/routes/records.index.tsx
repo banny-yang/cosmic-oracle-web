@@ -39,7 +39,7 @@ interface ReportItem {
 const TYPE_TITLES: Record<string, string> = {
   COMPATIBILITY: "性格契合测评",
   NAME: "姓名解析",
-  MARRIAGE_FIT: "婚姻契合分析",
+  MARRIAGE_FIT: "八字合婚",
 };
 const SEALS: Record<string, string> = { COMPATIBILITY: "性", NAME: "析", MARRIAGE_FIT: "缘" };
 

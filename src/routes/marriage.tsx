@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
+import { useFeatureEnabled } from "@/lib/use-feature-price";
+import { FeatureClosed } from "@/components/feature-closed";
 import { BirthplaceInput } from "@/components/birthplace-input";
+import { BaziPreviewPanel } from "@/components/bazi-preview-panel";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { getAuthUser } from "@/lib/auth";
 import { useFeaturePrice } from "@/lib/use-feature-price";
@@ -13,18 +16,19 @@ export const Route = createFileRoute("/marriage")({
       { rel: "canonical", href: "https://www.oracle.duimai.net/marriage" },
     ],
     meta: [
-      { title: "婚姻契合分析 · 对脉名鉴" },
-      { name: "keywords", content: "婚姻契合,婚姻匹配,七维契合分析,夫妻相合度" },
+      { title: "八字合婚 · 对脉名鉴" },
+      { name: "keywords", content: "八字合婚,合婚,夫妻合婚,婚姻匹配,八字配对" },
       { property: "og:url", content: "https://www.oracle.duimai.net/marriage" },
       {
         name: "description",
-        content: "七维视角看两个人的相处契合，仅供文化参考与娱乐。",
+        content: "十项传统合婚视角看两个人的契合，仅供文化参考与娱乐。",
       },
     ],
   }),
 });
 
 function Marriage() {
+  const featureEnabled = useFeatureEnabled("MARRIAGE_FIT");
   const price = useFeaturePrice("MARRIAGE_FIT", 19);
   const flow = useReportFlow();
   const [name, setName] = useState("");
@@ -53,11 +57,15 @@ function Marriage() {
 
   return (
     <AppShell>
-      <BreadcrumbJsonLd name="婚姻契合分析" path="/marriage" />
+      <BreadcrumbJsonLd name="八字合婚" path="/marriage" />
+      {featureEnabled === false ? (
+        <FeatureClosed title="八字合婚" />
+      ) : (
+        <>
       <PageHeader
         eyebrow={`功能四 · 消耗 ${price} 点`}
-        title="婚姻契合分析"
-        desc="七维视角看两个人的相处契合，仅供文化参考与娱乐。"
+        title="八字合婚"
+        desc="十项传统合婚视角看两个人的契合，仅供文化参考与娱乐。"
       />
 
       {flow.phase === "form" ? (
@@ -94,7 +102,11 @@ function Marriage() {
             开始分析
           </button>
         </ReportForm>
-      ) : flow.phase === "running" ? (
+      ) : null}
+      {flow.phase === "form" ? (
+        <BaziPreviewPanel partnerBirth={{ date, time, lat, lng }} />
+      ) : null}
+      {flow.phase === "running" ? (
         <>
           <ReportRunning error={flow.error} />
           {flow.markdown ? (
@@ -119,6 +131,8 @@ function Marriage() {
           <button onClick={flow.reset} className="mt-5 w-full rounded-xl bg-ink py-3 text-sm font-semibold text-paper">
             再分析一次
           </button>
+        </>
+      )}
         </>
       )}
     </AppShell>

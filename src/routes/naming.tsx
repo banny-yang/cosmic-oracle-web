@@ -5,7 +5,8 @@ import { BirthplaceInput } from "@/components/birthplace-input";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { track } from "@/lib/track";
 import { post, get } from "@/lib/api";
-import { useFeaturePrice } from "@/lib/use-feature-price";
+import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
+import { FeatureClosed } from "@/components/feature-closed";
 import { getToken } from "@/lib/auth";
 import { setupWxShare } from "@/lib/wx-share";
 import QRCode from "qrcode";
@@ -444,6 +445,7 @@ function Naming() {
 
   // 畅享权益：挂载/结果返回时刷新（徽标与升级弹层价格）
   const namingPrice = useFeaturePrice("BABY_NAMING", 10);
+  const featureEnabled = useFeatureEnabled("BABY_NAMING");
   const [passInfo, setPassInfo] = useState<PassStatus | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   // insufficient=余额不足引导充值/畅享；locked=换批锁定（兼容旧后端码）
@@ -672,6 +674,10 @@ function Naming() {
   return (
     <AppShell>
       <BreadcrumbJsonLd name="宝宝起名" path="/naming" />
+      {featureEnabled === false ? (
+        <FeatureClosed title="宝宝起名" />
+      ) : (
+        <>
       <PageHeader eyebrow={`功能一 · 消耗 ${namingPrice} 点`} title="宝宝起名" desc="填写姓氏与生辰偏好，为孩子拟一组有来历、有数理的名字。" />
 
       {/* 表单 */}
@@ -1480,6 +1486,8 @@ function Naming() {
           <p className="rounded-xl bg-paper px-5 py-3 text-sm text-ink shadow-lg">海报生成中…</p>
         </div>
       ) : null}
+        </>
+      )}
     </AppShell>
   );
 }

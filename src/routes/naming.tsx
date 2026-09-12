@@ -371,6 +371,7 @@ const ELEMENT_SOFT: Record<string, string> = {
 /* ───────── 页面 ───────── */
 
 const styleTags = ["典雅古风", "清新自然", "大气开阔", "温润书卷", "坚毅果敢", "诗意悠远"];
+const parentExpectTags = ["大有可为", "健康平安", "聪慧睿智", "善良仁爱", "坚毅勇敢", "温文尔雅", "乐观开朗", "才艺出众"];
 const classicGroups = [
   { name: "诗词歌赋", items: [["shijing", "诗经"], ["chuci", "楚辞"], ["tangshi", "唐诗"], ["songci", "宋词"], ["weijin", "世说文心"]] },
   { name: "思想哲学", items: [["zhouyi", "周易"], ["lunyu", "论语"], ["rujia", "尚书礼记"], ["daojia", "道德庄子"]] },
@@ -402,6 +403,7 @@ function Naming() {
   const [classicGroup, setClassicGroup] = useState(0);
   const [classicStyle, setClassicStyle] = useState<"大众" | "小众">("大众");
   const [avoidText, setAvoidText] = useState("");
+  const [expectSel, setExpectSel] = useState<string[]>([]);
   const [formErr, setFormErr] = useState("");
 
   // P1：高级选项折叠（起名偏好 + 家族避讳），标题徽标显示已选数量
@@ -509,6 +511,7 @@ function Naming() {
       ? { tabooChars: tabooText.split(/[,，、\s]+/).map((s) => s.trim()).filter(Boolean) }
       : {}),
     ...(stylesSel.length ? { styleTags: stylesSel } : {}),
+    ...(expectSel.length ? { parentExpectations: expectSel } : {}),
     ...(sourcesSel.length ? { classicSources: sourcesSel } : {}),
     classicStyle,
     ...(avoidText.trim()
@@ -798,6 +801,24 @@ function Naming() {
               </button>
             </div>
           </Field>
+          <Field label="家长期望（最多 3 个，选填）">
+            <div className="flex flex-wrap gap-2">
+              {parentExpectTags.map((s) => (
+                <button
+                  key={s}
+                  disabled={!expectSel.includes(s) && expectSel.length >= 3}
+                  title={!expectSel.includes(s) && expectSel.length >= 3 ? "最多选择 3 个期望" : undefined}
+                  onClick={() => setExpectSel((p) => (p.includes(s) ? p.filter((x) => x !== s) : p.length < 3 ? [...p, s] : p))}
+                  className={`${chips} ${expectSel.includes(s) ? "bg-vermilion/15 text-vermilion-deep ring-vermilion/30" : "bg-paper-3 text-ink-soft ring-ink/10"} disabled:opacity-40`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[11px] text-ink/45">
+              选中的期望将用于选字与寓意判词，名字尽量呼应
+            </p>
+          </Field>
           {/* P0 高级选项折叠：起名偏好 + 家族避讳（选填，默认收起） */}
           <button
             type="button"
@@ -852,7 +873,7 @@ function Naming() {
                 <p className="mt-1.5 text-[11px] text-ink/45">
                   {wuxingMatch
                     ? "用字优先补益宝宝八字喜用五行，五行维度得分更高"
-                    : "不限五行取全量字库，有典籍出处的名字更多、更雅"}
+                    : "不限五行取全量字库，双字名优先取典故原文中的词（如 望舒），有典籍出处的名字更多、更雅"}
                 </p>
               </Field>
               <div className="grid grid-cols-2 gap-3">

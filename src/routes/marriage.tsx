@@ -7,11 +7,12 @@ import { BirthplaceInput } from "@/components/birthplace-input";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
 import { BaziPreviewPanel, type BaziPreviewData } from "@/components/bazi-preview-panel";
 import { BaziResultHero } from "@/components/bazi-result-hero";
-import { PenLine, X, ImageDown, Share2, Loader2 } from "lucide-react";
+import { PenLine, X, ImageDown, Share2, Loader2, Lock } from "lucide-react";
 import QRCode from "qrcode";
 import { track } from "@/lib/track";
-import { getAuthUser } from "@/lib/auth";
+import { getAuthUser, useAuth } from "@/lib/auth";
 import { post } from "@/lib/api";
+import { refreshBalance } from "@/lib/balance";
 
 export const Route = createFileRoute("/marriage")({
   component: Marriage,
@@ -42,10 +43,51 @@ interface Party {
 const MALE: Party = { name: "", date: "", time: "12:00", lat: 39.9, lng: 116.4 };
 const FEMALE: Party = { name: "", date: "", time: "12:00", lat: 31.2, lng: 121.5 };
 
+/** 点数不足毛玻璃锁定层：结果已在后台算好，充值到账后回到本页自动清晰展示。 */
+function LockedOverlay({ price, balance, loggedIn }: { price: number; balance: number; loggedIn: boolean }) {
+  return (
+    <div className="absolute inset-0 z-10 grid place-items-center bg-paper/45 p-4">
+      <div className="w-full max-w-xs rounded-2xl bg-paper-2/95 p-5 text-center shadow-xl ring-1 ring-ink/10">
+        <span className="mx-auto grid size-10 place-items-center rounded-full bg-vermilion/12 text-vermilion-deep">
+          <Lock className="size-5" />
+        </span>
+        {loggedIn ? (
+          <>
+            <p className="mt-3 text-sm font-semibold text-ink">点数不足，结果已暂存</p>
+            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+              解锁完整结果与 AI 解读需 {price} 点，当前余额 {balance} 点
+            </p>
+            <div className="mt-3 flex flex-col items-center gap-1.5">
+              <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-20 rounded object-contain ring-1 ring-ink/10" />
+              <p className="text-[11px] text-ink-faint">微信扫码充值，到账后回到本页解锁</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-3 text-sm font-semibold text-ink">登录后查看完整结果</p>
+            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+              登录并解锁后可查看完整结果，并使用 AI 对结果进行深度解读
+            </p>
+            <a
+              href="/login?redirect=%2Fmarriage"
+              className="mt-4 inline-block w-full rounded-xl bg-ink py-2.5 text-sm font-semibold text-paper"
+            >
+              去登录
+            </a>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Marriage() {
   const featureEnabled = useFeatureEnabled("MARRIAGE_FIT");
   const price = useFeaturePrice("MARRIAGE_FIT", 19);
   const flow = useReportFlow();
+  const { user } = useAuth();
+  const balance = user?.tokenBalance ?? 0;
+  const insufficient = balance < price;
   const [male, setMale] = useState<Party>(MALE);
   const [female, setFemale] = useState<Party>(FEMALE);
   const [preview, setPreview] = useState<BaziPreviewData | null>(null);
@@ -73,7 +115,11 @@ function Marriage() {
       { personA: partyPayload(male, "男方"), personB: partyPayload(female, "女方") },
       { auth: false, timeoutMs: 15000 },
     )
-      .then(setPreview)
+      .then((d) => {
+        setPreview(d);
+        // 充值后回到本页即可解锁：预览就绪时同步一次最新余额
+        refreshBalance();
+      })
       .catch((e: Error) => setErr(e.message || "合婚失败，请稍后再试"))
       .finally(() => setLoading(false));
   };
@@ -144,7 +190,12 @@ function Marriage() {
             </button>
           </ReportForm>
           {preview ? (
-            <BaziPreviewPanel data={preview} price={price} onBuy={buyReport} buying={loading} />
+            <div className="relative">
+              <div className={insufficient ? "pointer-events-none select-none blur-[7px]" : ""}>
+                <BaziPreviewPanel data={preview} price={price} onBuy={buyReport} buying={loading} />
+              </div>
+              {insufficient ? <LockedOverlay price={price} balance={balance} loggedIn={!!user} /> : null}
+            </div>
           ) : null}
         </>
       ) : flow.phase === "running" ? (
@@ -159,9 +210,15 @@ function Marriage() {
         </>
       ) : (
         <>
-          {preview ? <BaziResultHero data={preview} persons={preview.persons} /> : null}
           {preview ? (
-            <BaziPreviewPanel data={preview} embedded />
+            <div className="relative">
+              {/* 购买失败（点数不足等）时毛玻璃遮住结果，扣费完成后自动清晰展示 */}
+              <div className={flow.needPay ? "pointer-events-none select-none blur-[7px]" : ""}>
+                <BaziResultHero data={preview} persons={preview.persons} />
+                <BaziPreviewPanel data={preview} embedded />
+              </div>
+              {flow.needPay ? <LockedOverlay price={price} balance={balance} loggedIn={!!user} /> : null}
+            </div>
           ) : null}
           {flow.needPay ? <PaywallCard message={flow.error} /> : null}
           {!flow.needPay && flow.error ? (

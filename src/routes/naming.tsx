@@ -8,6 +8,7 @@ import { post, get } from "@/lib/api";
 import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
 import { getToken } from "@/lib/auth";
+import { refreshBalance } from "@/lib/balance";
 import { setupWxShare } from "@/lib/wx-share";
 import QRCode from "qrcode";
 import {
@@ -165,6 +166,7 @@ interface Diagnosis {
   unlockTip?: string;
   pillars?: string[];
   poolSize?: number;
+  wuxingMatch?: boolean;
 }
 
 /** 维度白话解释（hover title）。 */
@@ -391,6 +393,8 @@ function Naming() {
   const [lat, setLat] = useState(39.9);
   const [lng, setLng] = useState(116.4);
   const [nameLength, setNameLength] = useState<"DOUBLE" | "SINGLE">("DOUBLE");
+  // 五行匹配开关：关闭后不按喜用五行筛字库，典籍出处名供给更多
+  const [wuxingMatch, setWuxingMatch] = useState(true);
   const [generationChar, setGenerationChar] = useState("");
   const [tabooText, setTabooText] = useState("");
   const [stylesSel, setStylesSel] = useState<string[]>([]);
@@ -499,6 +503,7 @@ function Naming() {
     latitude: lat,
     longitude: lng,
     nameLength,
+    wuxingMatch,
     ...(generationChar.trim() ? { generationChar: generationChar.trim() } : {}),
     ...(tabooText.trim()
       ? { tabooChars: tabooText.split(/[,，、\s]+/).map((s) => s.trim()).filter(Boolean) }
@@ -557,10 +562,14 @@ function Naming() {
           setDiagnosis((prev) => ({ ...(prev || {}), ...d, aiGenerated: d.aiGenerated !== false }));
           setLoading(false);
           refreshPass();
+          // 本次生成已扣点：立即刷新登录态余额，页头实时变化
+          refreshBalance();
         } else if (ev.stage === "error") {
           setError(String(ev.message || ev.error || "生成失败，请重试"));
           setLoading(false);
           track("naming_generate_error");
+          // 失败可能伴随点数退还（refundedCoins）：刷新余额兜底
+          refreshBalance();
         } else if ((ev.stage === "ai" || ev.stage === "ai_think") && ev.delta) {
           setAiDelta(String(ev.delta).slice(0, 60));
         }
@@ -828,6 +837,24 @@ function Naming() {
                   {nameLength === "DOUBLE" ? "双字名重名率更低、更显雅致" : "单字名更响亮利落"}
                 </p>
               </Field>
+              <Field label="五行匹配">
+                <div className="flex gap-2">
+                  {([[true, "匹配喜用五行"], [false, "不匹配（典故优先）"]] as const).map(([v, l]) => (
+                    <button
+                      key={String(v)}
+                      onClick={() => setWuxingMatch(v)}
+                      className={`${chips} ${wuxingMatch === v ? "bg-ink text-paper ring-ink" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] text-ink/45">
+                  {wuxingMatch
+                    ? "用字优先补益宝宝八字喜用五行，五行维度得分更高"
+                    : "不限五行取全量字库，有典籍出处的名字更多、更雅"}
+                </p>
+              </Field>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Field label="指定用字（字辈）">
@@ -1072,6 +1099,11 @@ function Naming() {
               <span className={`size-2 rounded-full ${ELEMENT_DOT[diagnosis.dayMasterElement || ""] || "bg-ink/25"}`} />
               日主 {ELEMENT_ZH[diagnosis.dayMasterElement || ""] || "-"}
             </span>
+            {diagnosis.wuxingMatch === false ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-vermilion/10 px-3 py-1.5 font-medium text-vermilion-deep">
+                典故优先 · 未做五行匹配
+              </span>
+            ) : null}
             <span className="inline-flex items-center gap-2 rounded-full bg-paper-3 px-3 py-1.5">
               {STRENGTH_ZH[diagnosis.strength || ""] || "-"}
               {(() => {

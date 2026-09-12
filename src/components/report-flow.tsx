@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { post, get } from "@/lib/api";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { getToken } from "@/lib/auth";
+import { refreshBalance } from "@/lib/balance";
 import { track } from "@/lib/track";
 
 export type ReportPhase = "form" | "running" | "done";
@@ -33,6 +34,8 @@ export function useReportFlow() {
       const res = await post<{ reportId?: string }>("/api/v1/reports/purchase", body);
       if (!res?.reportId) throw new Error("报告创建失败");
       setReportId(res.reportId);
+      // 点数已在购买时扣除：立即刷新登录态余额，页头实时变化
+      refreshBalance();
       let acc = "";
       streamRef.current = streamPost({
         path: `/api/v1/reports/${res.reportId}/stream?lang=zh`,
@@ -46,10 +49,15 @@ export function useReportFlow() {
             setPhase("done");
           }
         },
-        onDone: () => setPhase("done"),
+        onDone: () => {
+          setPhase("done");
+          // 生成中断退款等余额变动兜底刷新
+          refreshBalance();
+        },
         onError: (e) => {
           setError(e.message || "网络连接失败");
           setPhase("done");
+          refreshBalance();
         },
       });
     } catch (e) {

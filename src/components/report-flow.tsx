@@ -121,7 +121,7 @@ export function ReportRunning({ error }: { error?: string }) {
 }
 
 /** 点数不足 / 支付引导卡：动态生成直达小程序充值页的小程序码（失败回落静态码）；充值档位动态读取 */
-export function PaywallCard({ message }: { message: string }) {
+export function PaywallCard({ message, inModal }: { message: string; inModal?: boolean }) {
   const [qr, setQr] = useState<string | null>(null);
   const [link, setLink] = useState("");
   // 充值档位与畅享卡价格公开只读接口（管理端/配置调价后这里同步生效）
@@ -151,7 +151,7 @@ export function PaywallCard({ message }: { message: string }) {
   }, []);
 
   return (
-    <section className="mt-7 rounded-2xl bg-vermilion/10 p-5 ring-1 ring-vermilion/20">
+    <section className={(inModal ? "" : "mt-7 ") + "rounded-2xl bg-vermilion/10 p-5 ring-1 ring-vermilion/20"}>
       <div className="flex flex-col gap-4 md:flex-row md:items-center">
         <div className="flex-1">
           <p className="text-sm font-semibold text-vermilion-deep">{message}</p>
@@ -174,6 +174,26 @@ export function PaywallCard({ message }: { message: string }) {
         </div>
       </div>
     </section>
+  );
+}
+
+/** 点数不足弹窗：中文提示 + 小程序充值引导（复用 PaywallCard 的动态码与档位）。 */
+export function RechargeModal({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/45 p-4 backdrop-blur-[2px]"
+      onClick={onClose}
+    >
+      <div className="ink-in w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <PaywallCard message={message} inModal />
+        <button
+          onClick={onClose}
+          className="mx-auto mt-3 block rounded-xl bg-paper-2 px-6 py-2 text-xs font-semibold text-ink ring-1 ring-ink/10"
+        >
+          我知道了
+        </button>
+      </div>
+    </div>
   );
 }
 

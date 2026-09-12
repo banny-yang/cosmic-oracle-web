@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { BirthplaceInput } from "@/components/birthplace-input";
-import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
+import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, RechargeModal } from "@/components/report-flow";
 import { CompatibilitySummaryCard, useReportDetail } from "@/components/report-summary-cards";
 import { ReportPosterButtons, buildCompatibilityPoster } from "@/components/report-poster";
 import { getAuthUser } from "@/lib/auth";
@@ -38,6 +38,10 @@ function Personality() {
   const price = useFeaturePrice("INSIGHT_PAIR", 9);
   const featureEnabled = useFeatureEnabled("INSIGHT_PAIR");
   const flow = useReportFlow();
+  const [showPaywall, setShowPaywall] = useState(false);
+  useEffect(() => {
+    if (flow.needPay) setShowPaywall(true);
+  }, [flow.needPay]);
   const detail = useReportDetail(flow.reportId, flow.phase === "done" && !flow.error);
   const [nameA, setNameA] = useState("");
   const [dateA, setDateA] = useState("");
@@ -149,7 +153,7 @@ function Personality() {
         </>
       ) : (
         <>
-          {flow.needPay ? <PaywallCard message={flow.error} /> : null}
+          {showPaywall ? <RechargeModal message={flow.error} onClose={() => setShowPaywall(false)} /> : null}
           {!flow.needPay && flow.error ? (
             <section className="mt-7 rounded-2xl bg-paper-2 p-5 text-center ring-1 ring-ink/5">
               <p className="text-sm text-vermilion-deep">{flow.error}</p>

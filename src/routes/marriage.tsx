@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { useFeatureEnabled, useFeaturePrice } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
 import { BirthplaceInput } from "@/components/birthplace-input";
-import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, PaywallCard } from "@/components/report-flow";
+import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, RechargeModal } from "@/components/report-flow";
 import { BaziPreviewPanel, type BaziPreviewData } from "@/components/bazi-preview-panel";
 import { BaziResultHero } from "@/components/bazi-result-hero";
 import { PenLine, X, ImageDown, Share2, Loader2, Lock } from "lucide-react";
@@ -139,6 +139,10 @@ function Marriage() {
   const [poster, setPoster] = useState<string | null>(null);
   const [posterBusy, setPosterBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [showPaywall, setShowPaywall] = useState(false);
+  useEffect(() => {
+    if (flow.needPay) setShowPaywall(true);
+  }, [flow.needPay]);
 
   const partyPayload = (p: Party, fallbackName: string) => ({
     name: p.name.trim() || fallbackName,
@@ -264,7 +268,7 @@ function Marriage() {
               {flow.needPay ? <LockedOverlay price={price} balance={balance} loggedIn={!!user} /> : null}
             </div>
           ) : null}
-          {flow.needPay ? <PaywallCard message={flow.error} /> : null}
+          {showPaywall ? <RechargeModal message={flow.error} onClose={() => setShowPaywall(false)} /> : null}
           {!flow.needPay && flow.error ? (
             <section className="mt-7 rounded-2xl bg-paper-2 p-5 text-center ring-1 ring-ink/5">
               <p className="text-sm text-vermilion-deep">{flow.error}</p>

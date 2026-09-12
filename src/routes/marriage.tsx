@@ -22,11 +22,55 @@ export const Route = createFileRoute("/marriage")({
     ],
     meta: [
       { title: "八字合婚 · 对脉名鉴" },
-      { name: "keywords", content: "八字合婚,合婚,夫妻合婚,婚姻匹配,八字配对" },
+      { name: "keywords", content: "八字合婚,合婚,夫妻合婚,婚姻匹配,八字配对,合婚十项,日主契合,五行互补" },
       { property: "og:url", content: "https://www.oracle.duimai.net/marriage" },
       {
         name: "description",
-        content: "输入男方女方八字与出生地，十项传统合婚维度即时速览，AI 深度解读，仅供文化参考与娱乐。",
+        content:
+          "输入男方女方八字与出生地，免费排盘生成十项传统合婚维度：缘分、五行互补、天干地支、夫妻宫、配偶星等，AI 深度解读契合度与相处建议，仅供文化参考与娱乐。",
+      },
+      { property: "og:title", content: "八字合婚 · 十项合婚维度免费速览 | 对脉名鉴" },
+      {
+        property: "og:description",
+        content:
+          "双方出生信息一键排盘，十项传统合婚维度即时评分，AI 逐项解读契合度与相处之道，支持生成合婚海报分享。",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://www.oracle.duimai.net/og-card.jpg" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: [
+            {
+              "@type": "Question",
+              name: "八字合婚是什么？",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "八字合婚是中国传统婚配习俗：将男女双方的出生时间排成八字（四柱），从五行互补、日主关系、夫妻宫、配偶星等维度看两人的契合程度。对脉名鉴按传统十项合婚规则做量化评分，结果仅供文化参考与娱乐，不构成任何决策依据。",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "如何使用对脉名鉴的八字合婚？",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "输入男方与女方的出生日期、出生时间与出生地，系统自动完成真太阳时校正与排盘，免费生成缘分、五行、天干、地支、夫妻宫、配偶星、性格、稳定、财运、子女十项合婚维度评分，并可解锁 AI 深度解读与合婚海报分享。",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "八字合婚十项包含哪些内容？",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "十项维度为：缘分深浅、五行互补、天干五合、地支关系、夫妻宫宜忌、配偶星显现、性格契合、婚姻稳定、财运互补与子女缘分。每项按权重计入综合契合度，评分体系仅作趣味量化。",
+              },
+            },
+          ],
+        }),
       },
     ],
   }),

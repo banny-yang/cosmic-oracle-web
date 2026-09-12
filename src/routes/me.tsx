@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
 import { BirthplaceInput } from "@/components/birthplace-input";
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/me")({
 
 interface Profile {
   displayName?: string | null;
+  shortId?: number;
   avatarUrl?: string | null;
   phone?: string | null;
   tokenBalance?: number;
@@ -86,6 +88,7 @@ function MePage() {
   // 联系客服
   const [showService, setShowService] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
 
   useEffect(() => {
     if (!loggedIn) {
@@ -204,6 +207,17 @@ function MePage() {
     }
   };
 
+  const copyShortId = async () => {
+    if (!profile?.shortId) return;
+    try {
+      await navigator.clipboard.writeText(String(profile.shortId));
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 1500);
+    } catch {
+      // 剪贴板不可用时忽略（短号仍可见，可手动记下）
+    }
+  };
+
   const birthText = profile?.localBirthTime
     ? profile.localBirthTime.replace("T", " ").slice(0, 16) + (profile.birthPlace ? " · " + profile.birthPlace : "")
     : "";
@@ -213,7 +227,8 @@ function MePage() {
       <PageHeader eyebrow="账号" title="我的" desc="昵称、出生信息与登录状态管理。" />
 
       {/* 资料卡 */}
-      <section className="ink-in d1 mt-7 flex items-center gap-4 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+      <section className="ink-in d1 mt-7 overflow-hidden rounded-2xl bg-paper-2 ring-1 ring-ink/5">
+        <div className="flex items-center gap-4 p-5">
         {user?.avatarUrl ? (
           <img src={user.avatarUrl} alt="头像" className="size-14 rounded-full object-cover ring-2 ring-ink/10" />
         ) : (
@@ -236,6 +251,20 @@ function MePage() {
         >
           编辑
         </button>
+        </div>
+        {profile?.shortId != null ? (
+          <div className="flex items-center justify-between border-t border-ink/5 px-5 py-2.5">
+            <p className="text-xs text-ink-faint">用户 ID（客服报号用）</p>
+            <button
+              onClick={copyShortId}
+              className="flex items-center gap-1.5 rounded-full bg-paper-3 px-2.5 py-1 font-mono text-xs font-medium text-ink ring-1 ring-ink/10"
+              title="点击复制"
+            >
+              {profile.shortId}
+              {copiedId ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3 text-ink-faint" />}
+            </button>
+          </div>
+        ) : null}
       </section>
 
       {editingName ? (

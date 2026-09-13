@@ -1411,7 +1411,7 @@ function Naming() {
               <p className="text-xs text-ink-soft">
                 「换一批」自动排除已看过的名字{passInfo?.active ? " · 畅享期内不限次" : ` · 每次再付 ${namingPrice} 点`} · 勾选 3~5 个还可发起亲友投票
               </p>
-              <div className="mt-1 flex items-center gap-4">
+              <div className="mt-1 flex flex-wrap items-center justify-center gap-4">
                 <button
                   onClick={() => {
                     document.getElementById("naming-form")?.scrollIntoView({ behavior: "smooth" });
@@ -1420,6 +1420,17 @@ function Naming() {
                 >
                   调整偏好再来一轮 →
                 </button>
+                {!passInfo?.active ? (
+                  <button
+                    onClick={() => {
+                      setUpgradeMode("locked");
+                      setUpgradeOpen(true);
+                    }}
+                    className="text-xs font-medium text-vermilion-deep underline underline-offset-2"
+                  >
+                    开通畅享不限次（点数 / ¥ 均可） →
+                  </button>
+                ) : null}
                 <button
                   onClick={() => {
                     navigator.clipboard?.writeText(`https://www.oracle.duimai.net/naming`);

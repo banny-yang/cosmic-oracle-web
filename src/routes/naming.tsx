@@ -7,7 +7,7 @@ import { track } from "@/lib/track";
 import { post, get } from "@/lib/api";
 import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
-import { getToken } from "@/lib/auth";
+import { getToken, getAuthUser } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
 import { setupWxShare } from "@/lib/wx-share";
 import QRCode from "qrcode";
@@ -463,12 +463,16 @@ function Naming() {
       .then((r) => setPassInfo(r || null))
       .catch(() => {});
   };
-  useEffect(refreshPass, []);
+  useEffect(() => {
+    refreshPass();
+    refreshBalance();
+  }, []);
 
   // 点数购买畅享：余额足直接扣点开通；不足（402）留在弹层提示充值
   const [purchasingPass, setPurchasingPass] = useState<"" | "DAY" | "MONTH">("");
   const [passErr, setPassErr] = useState("");
-  const purchasePass = async (passType: "DAY" | "MONTH") => {
+  const [precheckOpen, setPrecheckOpen] = useState(false);
+  const purchasePass = async (passType: "DAY" | "MONTH", autoStart = false) => {
     setPurchasingPass(passType);
     setPassErr("");
     try {
@@ -477,6 +481,8 @@ function Naming() {
       refreshPass();
       refreshBalance();
       setUpgradeOpen(false);
+      setPrecheckOpen(false);
+      if (autoStart) start(false); // 从"开始推演"前检进入：开通成功自动开始生成
     } catch (e) {
       const code = (e as Error & { code?: string }).code;
       setPassErr(
@@ -487,6 +493,21 @@ function Naming() {
     } finally {
       setPurchasingPass("");
     }
+  };
+
+  // 开始推演前检：未开通畅享且余额足以扣本次点数 → 先弹"开通畅享"建议（点数/¥ 均可），
+  // 用户可选直接生成或先开畅享；余额不足走原流程（服务端 402 弹充值引导）
+  const handleStartClick = () => {
+    if (passInfo?.active || trial) {
+      start(false);
+      return;
+    }
+    const balance = getAuthUser()?.tokenBalance ?? 0;
+    if (balance >= namingPrice) {
+      setPrecheckOpen(true);
+      return;
+    }
+    start(false);
   };
 
   // 生成状态
@@ -1004,7 +1025,7 @@ function Naming() {
 
           {formErr ? <p className="text-xs text-vermilion-deep">{formErr}</p> : null}
           <button
-            onClick={() => start(false)}
+            onClick={handleStartClick}
             className="hidden w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] md:block"
           >
             开始推演 · 消耗 {namingPrice} 点 · 单次 10 个名字
@@ -1014,7 +1035,7 @@ function Naming() {
 
         {/* P1 移动端吸底提交（含安全区适配） */}
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-paper-2/95 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden">
-          <button onClick={() => start(false)} className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]">
+          <button onClick={handleStartClick} className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]">
             开始推演 · 消耗 {namingPrice} 点 · 单次 10 个名字
           </button>
           <p className="mt-1 text-center text-[10px] text-ink/50">未充值新用户首次免费（展示 3 个精选名字）</p>
@@ -1094,7 +1115,7 @@ function Naming() {
       {error && !loading ? (
         <section className="ink-in mt-7 rounded-2xl bg-paper-2 p-5 text-center ring-1 ring-ink/5">
           <p className="text-sm text-vermilion-deep">{error}</p>
-          <button onClick={() => start(false)} className="mt-4 rounded-xl bg-ink px-6 py-2.5 text-sm font-semibold text-paper">
+          <button onClick={handleStartClick} className="mt-4 rounded-xl bg-ink px-6 py-2.5 text-sm font-semibold text-paper">
             重试
           </button>
         </section>
@@ -1535,6 +1556,64 @@ function Naming() {
               >
                 或再付 {namingPrice} 点生成新一批（不排除已看过）
               </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {/* 开始推演前检：余额足够时先建议开通畅享（点数/¥ 均可），可直接生成 */}
+      {precheckOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
+          onClick={() => setPrecheckOpen(false)}
+        >
+          <div
+            className="ink-in w-full max-w-md rounded-2xl bg-paper p-5 ring-1 ring-ink/10 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold">开始推演 · 余额足够</h3>
+                <p className="mt-1 text-xs text-ink-soft">
+                  当前余额 {getAuthUser()?.tokenBalance ?? 0} 点，本次生成将消耗 {namingPrice} 点。
+                  开通畅享不限次更划算（生成与换一批都不再扣点）。
+                </p>
+              </div>
+              <button onClick={() => setPrecheckOpen(false)} className="text-ink/50 hover:text-ink" title="关闭">
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="mt-4 space-y-2">
+              <button
+                onClick={() => purchasePass("DAY", true)}
+                disabled={purchasingPass !== ""}
+                className="w-full rounded-xl bg-amber-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+              >
+                {purchasingPass === "DAY"
+                  ? "开通中..."
+                  : `开通 24 小时畅享（${passInfo?.dayPricePoints ?? 40} 点）并开始推演`}
+              </button>
+              <button
+                onClick={() => purchasePass("MONTH", true)}
+                disabled={purchasingPass !== ""}
+                className="w-full rounded-xl bg-ink py-2.5 text-sm font-semibold text-paper transition-colors hover:bg-ink/85 disabled:opacity-50"
+              >
+                {purchasingPass === "MONTH"
+                  ? "开通中..."
+                  : `开通包月畅享（${passInfo?.monthPricePoints ?? 100} 点）并开始推演`}
+              </button>
+              <button
+                onClick={() => {
+                  setPrecheckOpen(false);
+                  start(false);
+                }}
+                className="w-full rounded-xl border border-ink/15 bg-paper-3 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-paper-3/70"
+              >
+                暂不开通，直接生成（扣 {namingPrice} 点）
+              </button>
+            </div>
+            {passErr ? (
+              <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[11px] text-red-700 ring-1 ring-red-200">{passErr}</p>
             ) : null}
           </div>
         </div>

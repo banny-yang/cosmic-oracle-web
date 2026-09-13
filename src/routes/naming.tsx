@@ -1041,7 +1041,12 @@ function Naming() {
               已按喜用五行与避讳筛出 <b className="text-vermilion-deep">{diagnosis.poolSize}</b> 个优选字，进入典籍推演…
             </div>
           ) : null}
-          {aiDelta ? <p className="mt-4 truncate text-xs text-ink-faint">AI {aiDelta}</p> : null}
+          {aiDelta ? (
+            <div className="mt-4 rounded-xl bg-paper-3/60 p-3">
+              <p className="text-[11px] text-ink/50">AI 典籍推演</p>
+              <p className="mt-1 truncate text-xs text-ink-faint">{aiDelta}</p>
+            </div>
+          ) : null}
           {slowHint ? (
             <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800 ring-1 ring-amber-200">
               推演仍在进行（典籍配对较耗时，通常 1~3 分钟）——可以先喝口水，结果出来会自动展示

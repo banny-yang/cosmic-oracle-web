@@ -41,6 +41,24 @@ interface RechargeOrder {
   paidAt?: string | null;
 }
 
+/** 时间套餐（GET /api/v1/plans/mine）。 */
+interface MyPlan {
+  planId: number;
+  planCode: string;
+  planNameZh: string;
+  startsAt?: string | null;
+  expiresAt?: string | null;
+  status: string;
+  active: boolean;
+}
+
+/** 起名畅享权益（GET /api/v1/naming/pass/status）。 */
+interface PassStatusLite {
+  active?: boolean;
+  passType?: string;
+  expiresAtEpochMs?: number;
+}
+
 const ORDER_STATUS: Record<string, { label: string; cls: string }> = {
   PENDING: { label: "处理中", cls: "bg-amber-100 text-amber-800" },
   PAID: { label: "已到账", cls: "bg-emerald-100 text-emerald-800" },
@@ -76,6 +94,12 @@ function MePage() {
   const [showOrders, setShowOrders] = useState(false);
   const [orders, setOrders] = useState<RechargeOrder[] | null>(null);
   const [ordersErr, setOrdersErr] = useState("");
+
+  // 我的套餐（时间套餐 + 起名畅享，含到期情况）
+  const [showPlans, setShowPlans] = useState(false);
+  const [plans, setPlans] = useState<MyPlan[] | null>(null);
+  const [passLine, setPassLine] = useState<{ active: boolean; text: string } | null>(null);
+  const [plansErr, setPlansErr] = useState("");
 
   // 意见反馈
   const [showFeedback, setShowFeedback] = useState(false);
@@ -174,6 +198,32 @@ function MePage() {
     get<RechargeOrder[]>("/api/v1/payments/client/wechat/my-orders")
       .then((list) => setOrders(list || []))
       .catch((e) => setOrdersErr(e instanceof Error ? e.message : "加载失败"));
+  };
+
+  const fmtDate = (iso?: string | number | null) => {
+    if (iso == null) return "-";
+    const d = typeof iso === "number" ? new Date(iso) : new Date(String(iso).replace(" ", "T"));
+    return isNaN(d.getTime()) ? "-" : d.toLocaleDateString("zh-CN", { year: "numeric", month: "numeric", day: "numeric" });
+  };
+
+  const loadPlans = () => {
+    setPlansErr("");
+    if (plans && passLine) return;
+    const userId = getAuthUser()?.userId;
+    Promise.all([
+      apiGet<{ plans: MyPlan[]; activeCount: number }>("/api/v1/plans/mine"),
+      apiGet<PassStatusLite>("/api/v1/naming/pass/status"),
+    ])
+      .then(([mine, pass]) => {
+        setPlans(mine?.plans || []);
+        if (pass?.active) {
+          const label = pass.passType === "MONTH" ? "包月畅享" : "24 小时畅享";
+          setPassLine({ active: true, text: `${label} · 至 ${fmtDate(pass.expiresAtEpochMs)}` });
+        } else {
+          setPassLine({ active: false, text: "未开通（取名页升级弹窗可用点数开通）" });
+        }
+      })
+      .catch((e) => setPlansErr(e instanceof Error ? e.message : "加载失败"));
   };
 
   const submitFeedback = async () => {
@@ -351,6 +401,81 @@ function MePage() {
             <p className="text-[10px] font-medium text-ink">扫码充值</p>
           </div>
         </div>
+        <button
+          onClick={() => {
+            const next = !showPlans;
+            setShowPlans(next);
+            if (next) loadPlans();
+          }}
+          className="flex w-full items-center justify-between border-t border-ink/5 px-5 py-4 text-left"
+        >
+          <span className="text-sm font-medium">我的套餐与畅享</span>
+          <span className="text-xs text-ink-faint">{showPlans ? "收起" : "查看"}</span>
+        </button>
+        {showPlans ? (
+          <div className="border-t border-ink/5 px-5 py-4">
+            {plansErr ? <p className="text-xs text-vermilion-deep">{plansErr}</p> : null}
+            {!plans && !plansErr ? <p className="text-xs text-ink-faint">加载中…</p> : null}
+            {plans ? (
+              <>
+                {(() => {
+                  const active = plans.filter((p) => p.active);
+                  const history = plans.filter((p) => !p.active);
+                  return (
+                    <>
+                      <p className="text-[11px] font-medium text-ink">有效套餐</p>
+                      {active.length === 0 ? (
+                        <p className="mt-1 text-xs text-ink-faint">暂无有效套餐</p>
+                      ) : (
+                        <ul className="mt-1 divide-y divide-ink/5">
+                          {active.map((p) => {
+                            const days = p.expiresAt
+                              ? Math.max(0, Math.ceil((new Date(p.expiresAt.replace(" ", "T")).getTime() - Date.now()) / 86400000))
+                              : null;
+                            return (
+                              <li key={p.planId} className="flex items-center gap-3 py-2 first:pt-0">
+                                <p className="min-w-0 flex-1 text-xs font-medium text-ink">
+                                  {p.planNameZh}
+                                  <span className="ml-2 font-normal text-ink-faint">
+                                    至 {fmtDate(p.expiresAt)}
+                                    {days != null ? ` · 剩余 ${days} 天` : ""}
+                                  </span>
+                                </p>
+                                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
+                                  生效中
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                      <p className="mt-3 text-[11px] font-medium text-ink">起名畅享</p>
+                      <p className="mt-1 text-xs text-ink-faint">{passLine?.text ?? "未开通"}</p>
+                      {history.length ? (
+                        <>
+                          <p className="mt-3 text-[11px] font-medium text-ink">历史</p>
+                          <ul className="mt-1 divide-y divide-ink/5">
+                            {history.map((p) => (
+                              <li key={p.planId} className="flex items-center gap-3 py-1.5 first:pt-0">
+                                <p className="min-w-0 flex-1 text-xs text-ink-faint">
+                                  {p.planNameZh}
+                                  <span className="ml-2">至 {fmtDate(p.expiresAt)}</span>
+                                </p>
+                                <span className="shrink-0 text-[10px] text-ink-faint">
+                                  {p.status === "CANCELLED" ? "已取消" : "已到期"}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : null}
+                    </>
+                  );
+                })()}
+              </>
+            ) : null}
+          </div>
+        ) : null}
         <button
           onClick={() => {
             const next = !showOrders;

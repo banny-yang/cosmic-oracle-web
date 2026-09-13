@@ -88,6 +88,8 @@ type PassStatus = {
   expiresAtEpochMs?: number;
   dayPriceFen?: number;
   monthPriceFen?: number;
+  dayPricePoints?: number;
+  monthPricePoints?: number;
   batchLockEnabled?: boolean;
 };
 
@@ -462,6 +464,30 @@ function Naming() {
       .catch(() => {});
   };
   useEffect(refreshPass, []);
+
+  // 点数购买畅享：余额足直接扣点开通；不足（402）留在弹层提示充值
+  const [purchasingPass, setPurchasingPass] = useState<"" | "DAY" | "MONTH">("");
+  const [passErr, setPassErr] = useState("");
+  const purchasePass = async (passType: "DAY" | "MONTH") => {
+    setPurchasingPass(passType);
+    setPassErr("");
+    try {
+      await post("/api/v1/naming/pass/purchase-points", { passType });
+      track("naming_pass_purchased", { passType });
+      refreshPass();
+      refreshBalance();
+      setUpgradeOpen(false);
+    } catch (e) {
+      const code = (e as Error & { code?: string }).code;
+      setPassErr(
+        code === "ERR_INSUFFICIENT_BALANCE"
+          ? "点数余额不足，请先充值点数"
+          : (e as Error).message || "开通失败，请重试",
+      );
+    } finally {
+      setPurchasingPass("");
+    }
+  };
 
   // 生成状态
   const [loading, setLoading] = useState(false);
@@ -1461,13 +1487,30 @@ function Naming() {
                 <p className="text-[11px] font-medium text-amber-800">24 小时畅享</p>
                 <p className="mt-0.5 text-xl font-bold text-amber-900">¥{((passInfo?.dayPriceFen ?? 3990) / 100).toFixed(1)}</p>
                 <p className="mt-1 text-[11px] leading-snug text-ink-soft">当日不限次生成与换批</p>
+                <button
+                  onClick={() => purchasePass("DAY")}
+                  disabled={purchasingPass !== ""}
+                  className="mt-2 w-full rounded-lg bg-amber-600 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+                >
+                  {purchasingPass === "DAY" ? "开通中..." : `点数开通（${passInfo?.dayPricePoints ?? 40} 点）`}
+                </button>
               </div>
               <div className="rounded-xl bg-paper-3 p-3 ring-1 ring-ink/10">
                 <p className="text-[11px] font-medium text-ink-soft">包月畅享</p>
                 <p className="mt-0.5 text-xl font-bold text-ink">¥{((passInfo?.monthPriceFen ?? 9900) / 100).toFixed(0)}</p>
                 <p className="mt-1 text-[11px] leading-snug text-ink-soft">30 天不限次，适合慢慢挑</p>
+                <button
+                  onClick={() => purchasePass("MONTH")}
+                  disabled={purchasingPass !== ""}
+                  className="mt-2 w-full rounded-lg bg-ink py-1.5 text-xs font-semibold text-paper transition-colors hover:bg-ink/85 disabled:opacity-50"
+                >
+                  {purchasingPass === "MONTH" ? "开通中..." : `点数开通（${passInfo?.monthPricePoints ?? 100} 点）`}
+                </button>
               </div>
             </div>
+            {passErr ? (
+              <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[11px] text-red-700 ring-1 ring-red-200">{passErr}</p>
+            ) : null}
             <div className="mt-4 flex items-center gap-3 rounded-xl bg-paper-3/60 p-3">
               <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-20 shrink-0 rounded-lg bg-paper ring-1 ring-ink/10" />
               <p className="text-[11px] leading-relaxed text-ink-soft">

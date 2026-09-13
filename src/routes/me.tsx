@@ -211,8 +211,8 @@ function MePage() {
     if (plans && passLine) return;
     const userId = getAuthUser()?.userId;
     Promise.all([
-      apiGet<{ plans: MyPlan[]; activeCount: number }>("/api/v1/plans/mine"),
-      apiGet<PassStatusLite>("/api/v1/naming/pass/status"),
+      get<{ plans: MyPlan[]; activeCount: number }>("/api/v1/plans/mine"),
+      get<PassStatusLite>("/api/v1/naming/pass/status"),
     ])
       .then(([mine, pass]) => {
         setPlans(mine?.plans || []);

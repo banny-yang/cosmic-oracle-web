@@ -75,6 +75,8 @@ interface NameCardData {
   dialectCheckPassed?: boolean;
   phoneticNotes?: string[];
   classicVerified?: boolean;
+  /** 姓名语法连读（自然具象姓+动宾名，如 叶知秋）——后端 V155 下发。 */
+  syntaxReading?: boolean;
   classicMeaning?: string;
   charCitations?: { char: string; citation: string; source: string }[];
   sameClassicSource?: boolean;
@@ -100,6 +102,38 @@ const DIM_LABELS: [string, string][] = [
   ["culture", "文化底蕴"],
   ["zodiac", "生肖契合"],
 ];
+
+/** 声调→平仄（1/2 阴平阳平为平，3/4 上声去声为仄）。 */
+function pingzeOf(tones?: number[]): string {
+  return (tones || []).map((t) => (t === 1 || t === 2 ? "平" : "仄")).join("");
+}
+
+/** 三型典源启发式：名字两字在引文中相邻=典故原词 / 同句=同句取字 / 分居句读两侧=上下句取字；无法判定返回 null。 */
+function citationFormOf(citation: string, chars: string[]): "word" | "line" | "couplet" | null {
+  const [c1, c2] = chars;
+  if (!citation || !c1 || !c2) return null;
+  const i1 = citation.indexOf(c1);
+  const i2 = citation.indexOf(c2);
+  if (i1 < 0 || i2 < 0 || i1 === i2) return null;
+  if (Math.abs(i1 - i2) === 1) return "word";
+  const samePart = citation
+    .split(/[，。！？；、]/)
+    .some((seg) => seg.includes(c1) && seg.includes(c2));
+  return samePart ? "line" : "couplet";
+}
+
+const FORM_BADGE: Record<"word" | "line" | "couplet", { text: string; hint: string }> = {
+  word: { text: "典故原词 · 连续成词", hint: "名字两字为典籍原文中的连续词（如 望舒）" },
+  line: { text: "同句取字 · 一句成典", hint: "一字上半句、一字下半句，同出一句原文" },
+  couplet: { text: "上下句取字 · 集联成典", hint: "一字取上句、一字取下句，同出一联" },
+};
+
+/** 出处上下文（GET /api/v1/naming/citation-context）：同书同篇 seq±2 原句窗口。 */
+type CitationContext = {
+  book?: string;
+  chapter?: string;
+  sentences?: { seq: number; text: string; hit?: boolean }[];
+};
 
 /** 典故引文中高亮名字用字（PRD 出处展示规范：整联一次展示 + 选中字高亮）。 */
 function highlightNameChars(text: string, chars: string[]) {
@@ -243,13 +277,44 @@ async function buildPoster(c: NameCardData, infoLine: string, diagLine: string):
     : c.classicCitation
       ? [{ tag: "", text: c.classicCitation, src: [c.classicSource, c.classicMeaning ? `「${c.classicMeaning}」` : ""].filter(Boolean).join("  ") }]
       : []) as { tag: string; text: string; src: string }[];
-  if (cites.length === 1) {
+  // 整联引文（含逗号）双句分行渲染：抽出的诗句绘制器对两条路径共用
+  const drawVerseShared = (text: string, y: number, hiChars: Set<string>) => {
+    let size = 30;
+    g.font = `bold ${size}px serif`;
+    while (size > 18 && g.measureText(text).width > W - 160) {
+      size -= 1;
+      g.font = `bold ${size}px serif`;
+    }
+    let x = (W - g.measureText(text).width) / 2;
+    g.textAlign = "left";
+    for (const ch of text) {
+      const w = g.measureText(ch).width;
+      g.fillStyle = hiChars.has(ch) ? accent : ink;
+      g.fillText(ch, x, y);
+      x += w;
+    }
+    g.textAlign = "center";
+  };
+  const [c0] = cites;
+  const singleCouplet = c0 ? c0.text.split("，") : [];
+  if (c0 && cites.length === 1 && singleCouplet.length === 2 && singleCouplet[0] && singleCouplet[1]) {
+    // 整联（V155 couplet/line 整联引文）：徽标 + 上下句两行 + 出处，避免 26 字截断
+    g.strokeStyle = "rgba(158,43,37,.3)"; g.strokeRect(60, 360, W - 120, 148);
+    g.fillStyle = accent; g.font = "18px sans-serif";
+    g.fillText("✦ 典籍原文 · 一联成典", W / 2, 392);
+    const hi = new Set(c.name.slice(1).split(""));
+    drawVerseShared(singleCouplet[0], 436, hi);
+    drawVerseShared(singleCouplet[1], 480, hi);
+    g.fillStyle = accent; g.font = "19px sans-serif";
+    const s0 = c0.src.length > 30 ? c0.src.slice(0, 30) + "…" : c0.src;
+    g.fillText(s0, W / 2, 508);
+  } else if (c0 && cites.length === 1) {
     g.strokeStyle = "rgba(158,43,37,.3)"; g.strokeRect(60, 360, W - 120, 128);
     g.fillStyle = ink; g.font = "26px serif";
-    const cite = cites[0].text.length > 26 ? cites[0].text.slice(0, 26) + "…" : cites[0].text;
+    const cite = c0.text.length > 26 ? c0.text.slice(0, 26) + "…" : c0.text;
     g.fillText(cite, W / 2, 412);
     g.fillStyle = accent; g.font = "20px sans-serif";
-    g.fillText(cites[0].src, W / 2, 456);
+    g.fillText(c0.src, W / 2, 456);
   } else if (cites.length >= 2) {
     // 藏名联/同出联：徽标 + 放大居中两行诗句（名字用字朱红高亮，超宽自适应缩字号）+ 出处
     g.strokeStyle = "rgba(158,43,37,.3)"; g.strokeRect(60, 340, W - 120, 176);
@@ -1713,6 +1778,8 @@ function NameCardView({
   xiPrimary?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [ctxData, setCtxData] = useState<CitationContext | null>(null);
+  const [ctxLoading, setCtxLoading] = useState(false);
   // 名字 = 姓(1~2字) + 名;charElements 对应名字部分
   const givenStart = Math.max(1, c.name.length - (c.charElements?.length || 2));
   const chars = useMemo(
@@ -1776,6 +1843,24 @@ function NameCardView({
     setOpen(!open);
   };
 
+  // 出处上下文（V155）：引文可点 → 展开同书同篇 seq±2 原句窗口
+  const openContext = async (citation: string) => {
+    if (!citation) return;
+    setCtxLoading(true);
+    setCtxData(null);
+    track("citation_context", { name: c.name });
+    try {
+      const res = await get<CitationContext>(
+        `/api/v1/naming/citation-context?text=${encodeURIComponent(citation)}`,
+      );
+      setCtxData(res);
+    } catch {
+      setCtxData({ sentences: [], book: "", chapter: "未收录上下文（原创联或条目库外引文）" });
+    } finally {
+      setCtxLoading(false);
+    }
+  };
+
   return (
     <section
       className={`group relative rounded-2xl p-5 ring-1 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(158,43,37,0.12)] ${c.recommended ? "bg-gradient-to-b from-amber-50/80 to-paper-2 ring-2 ring-amber-600/45 hover:ring-amber-600/70" : "bg-paper-2 ring-ink/5 hover:ring-vermilion/30"}`}
@@ -1825,7 +1910,20 @@ function NameCardView({
         </div>
       </div>
 
-      <p className="mt-2 text-xs tracking-wide text-ink-soft">{c.pinyin}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <p className="text-xs tracking-wide text-ink-soft">
+          {c.pinyin}
+          {pingzeOf(c.tones) ? <span className="ml-1.5 rounded bg-ink/6 px-1.5 py-0.5 text-[10px] text-ink-faint">{pingzeOf(c.tones)}</span> : null}
+        </p>
+        {c.syntaxReading ? (
+          <span
+            title="姓氏与名连读构成主谓/动宾诗意句式（如 叶知秋 · 一叶知秋）"
+            className="inline-flex items-center gap-1 rounded-full bg-vermilion/10 px-2 py-0.5 text-[10px] font-medium text-vermilion-deep ring-1 ring-vermilion/25"
+          >
+            ✧ 诗联成句
+          </span>
+        ) : null}
+      </div>
 
       {c.recommended ? (
         <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
@@ -1863,12 +1961,26 @@ function NameCardView({
               <PenLine aria-hidden className="size-3" />
               藏名一联 · 原创嵌名
             </span>
+          ) : c.sameClassicSource ? (
+            (() => {
+              const citeText = Array.from(new Set(c.charCitations!.map((cc) => cc.citation))).join("");
+              const form = citationFormOf(citeText, c.charCitations!.map((cc) => cc.char));
+              const badge = form ? FORM_BADGE[form] : null;
+              return (
+                <span
+                  title={badge ? badge.hint : "两字同出一典（同句或同联上下句），逐字校验通过"}
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-700/12 px-2 py-0.5 text-[10px] font-medium text-amber-800 ring-1 ring-amber-600/30"
+                >
+                  {badge ? `✦ ${badge.text}` : "✦ 同出一联 · 字字有典"}
+                </span>
+              );
+            })()
           ) : (
             <span
-              title={c.sameClassicSource ? "两字同出一典（同句或同联上下句），逐字校验通过" : "校验规则：每字引文正文均包含该字，出处核验通过"}
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${c.sameClassicSource ? "bg-amber-700/12 text-amber-800 ring-1 ring-amber-600/30" : "bg-emerald-800/10 text-emerald-800"}`}
+              title="校验规则：每字引文正文均包含该字，出处核验通过"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium bg-emerald-800/10 text-emerald-800"
             >
-              {c.sameClassicSource ? "✦ 同出一联 · 字字有典" : "✓ 字字有典 · 已校验"}
+              ✓ 字字有典 · 已校验
             </span>
           )}
           {(c.sameClassicSource || c.originalCouplet) && c.charCitations.length >= 2 ? (
@@ -1885,9 +1997,15 @@ function NameCardView({
                 ) : null}
               </div>
               {Array.from(new Set(c.charCitations.map((cc) => cc.citation))).map((t) => (
-                <p key={t} className="mt-1.5 text-sm leading-loose text-ink">
+                <button
+                  key={t}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); openContext(t); }}
+                  title="查看出处上下文（同篇原句）"
+                  className="mt-1.5 block w-full text-left text-sm leading-loose text-ink hover:text-vermilion-deep"
+                >
                   {highlightNameChars(t, c.charCitations!.map((cc) => cc.char))}
-                </p>
+                </button>
               ))}
               {c.charCitations[0].source ? (
                 <p className="mt-1 text-xs font-medium text-vermilion-deep">「{c.charCitations[0].source}」</p>
@@ -1920,7 +2038,14 @@ function NameCardView({
             </span>
           ) : null}
           {c.classicSource ? <p className="text-xs font-medium text-vermilion-deep">「{c.classicSource}」</p> : null}
-          <p className="mt-1 text-xs leading-relaxed text-ink-soft">{c.classicCitation}</p>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); openContext(c.classicCitation!); }}
+            title="查看出处上下文（同篇原句）"
+            className="mt-1 block w-full text-left text-xs leading-relaxed text-ink-soft hover:text-vermilion-deep"
+          >
+            {c.classicCitation}
+          </button>
           {c.classicMeaning ? <p className="mt-1 text-[11px] text-ink-faint">「{c.classicMeaning}」</p> : null}
         </div>
       ) : null}
@@ -2057,6 +2182,48 @@ function NameCardView({
           </button>
         </div>
       </div>
+
+      {/* 出处上下文弹层（V155）：同书同篇原句窗口，命中行朱红高亮 */}
+      {(ctxLoading || ctxData) ? (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4"
+          onClick={() => { setCtxData(null); setCtxLoading(false); }}
+        >
+          <div
+            className="max-h-[70vh] w-full max-w-md overflow-y-auto rounded-2xl bg-paper p-5 ring-1 ring-ink/15"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-seal text-lg text-ink">
+                {ctxData?.book ? `${ctxData.book}${ctxData.chapter ? ` · ${ctxData.chapter}` : ""}` : "出处上下文"}
+              </p>
+              <button
+                onClick={() => { setCtxData(null); setCtxLoading(false); }}
+                className="grid size-7 place-items-center rounded-full bg-paper-3 text-ink-soft ring-1 ring-ink/10"
+              >
+                <X aria-hidden className="size-4" />
+              </button>
+            </div>
+            {ctxLoading ? (
+              <p className="mt-6 text-center text-sm text-ink-faint">正在回查典籍原文…</p>
+            ) : (ctxData?.sentences?.length ?? 0) > 0 ? (
+              <div className="mt-3 space-y-2">
+                {ctxData!.sentences!.map((s) => (
+                  <p
+                    key={s.seq}
+                    className={`rounded-lg px-3 py-2 text-sm leading-loose ${s.hit ? "bg-vermilion/8 font-medium text-vermilion-deep ring-1 ring-vermilion/20" : "text-ink-soft"}`}
+                  >
+                    {s.text}
+                  </p>
+                ))}
+                <p className="pt-1 text-center text-[10px] text-ink-faint">同书同篇 · 句序前后各二句</p>
+              </div>
+            ) : (
+              <p className="mt-6 text-center text-sm text-ink-faint">{ctxData?.chapter || "未收录上下文"}</p>
+            )}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

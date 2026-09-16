@@ -12,12 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalysisRouteImport } from './routes/analysis'
 import { Route as HelpRouteImport } from './routes/help'
+import { Route as LiuyaoRouteImport } from './routes/liuyao'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MarriageRouteImport } from './routes/marriage'
 import { Route as MeRouteImport } from './routes/me'
+import { Route as NamesRouteImport } from './routes/names'
 import { Route as NamingRouteImport } from './routes/naming'
 import { Route as PersonalityRouteImport } from './routes/personality'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as QimenRouteImport } from './routes/qimen'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as RecordsIndexRouteImport } from './routes/records.index'
 import { Route as RecordsIdRouteImport } from './routes/records.$id'
@@ -38,6 +41,11 @@ const HelpRoute = HelpRouteImport.update({
   path: '/help',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LiuyaoRoute = LiuyaoRouteImport.update({
+  id: '/liuyao',
+  path: '/liuyao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -53,6 +61,11 @@ const MeRoute = MeRouteImport.update({
   path: '/me',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NamesRoute = NamesRouteImport.update({
+  id: '/names',
+  path: '/names',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NamingRoute = NamingRouteImport.update({
   id: '/naming',
   path: '/naming',
@@ -66,6 +79,11 @@ const PersonalityRoute = PersonalityRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QimenRoute = QimenRouteImport.update({
+  id: '/qimen',
+  path: '/qimen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -93,12 +111,15 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
   '/help': typeof HelpRoute
+  '/liuyao': typeof LiuyaoRoute
   '/login': typeof LoginRoute
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
+  '/names': typeof NamesRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
   '/privacy': typeof PrivacyRoute
+  '/qimen': typeof QimenRoute
   '/terms': typeof TermsRoute
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
@@ -108,12 +129,15 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
   '/help': typeof HelpRoute
+  '/liuyao': typeof LiuyaoRoute
   '/login': typeof LoginRoute
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
+  '/names': typeof NamesRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
   '/privacy': typeof PrivacyRoute
+  '/qimen': typeof QimenRoute
   '/terms': typeof TermsRoute
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
@@ -124,12 +148,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
   '/help': typeof HelpRoute
+  '/liuyao': typeof LiuyaoRoute
   '/login': typeof LoginRoute
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
+  '/names': typeof NamesRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
   '/privacy': typeof PrivacyRoute
+  '/qimen': typeof QimenRoute
   '/terms': typeof TermsRoute
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
@@ -141,12 +168,15 @@ export interface FileRouteTypes {
     | '/'
     | '/analysis'
     | '/help'
+    | '/liuyao'
     | '/login'
     | '/marriage'
     | '/me'
+    | '/names'
     | '/naming'
     | '/personality'
     | '/privacy'
+    | '/qimen'
     | '/terms'
     | '/records/$id'
     | '/vote/$token'
@@ -156,12 +186,15 @@ export interface FileRouteTypes {
     | '/'
     | '/analysis'
     | '/help'
+    | '/liuyao'
     | '/login'
     | '/marriage'
     | '/me'
+    | '/names'
     | '/naming'
     | '/personality'
     | '/privacy'
+    | '/qimen'
     | '/terms'
     | '/records/$id'
     | '/vote/$token'
@@ -171,12 +204,15 @@ export interface FileRouteTypes {
     | '/'
     | '/analysis'
     | '/help'
+    | '/liuyao'
     | '/login'
     | '/marriage'
     | '/me'
+    | '/names'
     | '/naming'
     | '/personality'
     | '/privacy'
+    | '/qimen'
     | '/terms'
     | '/records/$id'
     | '/vote/$token'
@@ -187,12 +223,15 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalysisRoute: typeof AnalysisRoute
   HelpRoute: typeof HelpRoute
+  LiuyaoRoute: typeof LiuyaoRoute
   LoginRoute: typeof LoginRoute
   MarriageRoute: typeof MarriageRoute
   MeRoute: typeof MeRoute
+  NamesRoute: typeof NamesRoute
   NamingRoute: typeof NamingRoute
   PersonalityRoute: typeof PersonalityRoute
   PrivacyRoute: typeof PrivacyRoute
+  QimenRoute: typeof QimenRoute
   TermsRoute: typeof TermsRoute
   RecordsIdRoute: typeof RecordsIdRoute
   VoteTokenRoute: typeof VoteTokenRoute
@@ -222,6 +261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HelpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/liuyao': {
+      id: '/liuyao'
+      path: '/liuyao'
+      fullPath: '/liuyao'
+      preLoaderRoute: typeof LiuyaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -243,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/names': {
+      id: '/names'
+      path: '/names'
+      fullPath: '/names'
+      preLoaderRoute: typeof NamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/naming': {
       id: '/naming'
       path: '/naming'
@@ -262,6 +315,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qimen': {
+      id: '/qimen'
+      path: '/qimen'
+      fullPath: '/qimen'
+      preLoaderRoute: typeof QimenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -299,12 +359,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysisRoute: AnalysisRoute,
   HelpRoute: HelpRoute,
+  LiuyaoRoute: LiuyaoRoute,
   LoginRoute: LoginRoute,
   MarriageRoute: MarriageRoute,
   MeRoute: MeRoute,
+  NamesRoute: NamesRoute,
   NamingRoute: NamingRoute,
   PersonalityRoute: PersonalityRoute,
   PrivacyRoute: PrivacyRoute,
+  QimenRoute: QimenRoute,
   TermsRoute: TermsRoute,
   RecordsIdRoute: RecordsIdRoute,
   VoteTokenRoute: VoteTokenRoute,

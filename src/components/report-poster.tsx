@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, ImageDown, Share2, Loader2 } from "lucide-react";
 import QRCode from "qrcode";
 import { track } from "@/lib/track";
+import { posterQrTarget } from "@/lib/promo-config";
 
 /** 报告海报（canvas → PNG）：通用头部/底部 + 中部由调用方绘制 */
 async function drawPosterBase(opts: {
@@ -26,7 +27,7 @@ async function drawPosterBase(opts: {
   opts.draw(g, W);
   let qrOk = false;
   try {
-    const qrUrl = await QRCode.toDataURL(`https://www.oracle.duimai.net${opts.qrPath}`, { margin: 1, width: 320, color: { dark: "#2B2417", light: "#F6EFE3" } });
+    const qrUrl = await QRCode.toDataURL(await posterQrTarget(opts.qrPath ?? "/"), { margin: 1, width: 320, color: { dark: "#2B2417", light: "#F6EFE3" } });
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const im = new Image();
       im.onload = () => resolve(im);

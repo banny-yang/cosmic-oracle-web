@@ -50,7 +50,9 @@
 
 @theme {
   --font-song: "Songti SC", "STSong", "SimSun", "Noto Serif SC", serif;
-  --font-seal: "Ma Shan Zheng", "Songti SC", "SimSun", serif;
+  /* 回退先楷体再宋体：Ma Shan Zheng 全字库也缺的少数字（玥/芃/燊等 20 字）落到楷体，
+     比直接落宋体更接近毛笔风格，避免一个名字里字体突兀混排 */
+  --font-seal: "Ma Shan Zheng", "KaiTi", "STKaiti", "Songti SC", "SimSun", serif;
 }
 
 :root {
@@ -187,4 +189,125 @@
 
 @utility banner-zoom {
   animation: banner-zoom 7s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* ── 六爻掷币（对齐 App 端 CoinTossArena）：涟漪竞技场 + 三枚铜钱抛掷弧线/自旋/回弹/地面阴影 ── */
+
+/* 竞技场涟漪：静环 + 2s 循环扩散 */
+@keyframes arena-ripple {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.arena-ripple {
+  animation: arena-ripple 2s linear infinite;
+}
+
+/* 抛掷飞行（1.3s）：抛起→自旋→落地→回弹。--sx = 三枚币的水平散开量；
+   阳面终点 1440°（≡0°）、阴面 1620°（≡180°），落定即正确币面 */
+@keyframes coin-toss-yang {
+  0% {
+    transform: translateX(0) translateY(0) scale(1) rotateY(0deg);
+  }
+  12% {
+    transform: translateX(calc(var(--sx) * 0.5)) translateY(-90px) scale(0.86) rotateY(260deg);
+  }
+  40% {
+    transform: translateX(var(--sx)) translateY(-140px) scale(0.78) rotateY(640deg);
+  }
+  76% {
+    transform: translateX(calc(var(--sx) * 0.8)) translateY(0) scale(1) rotateY(1380deg);
+  }
+  88% {
+    transform: translateX(calc(var(--sx) * 0.7)) translateY(-12px) scale(0.97) rotateY(1420deg);
+  }
+  100% {
+    transform: translateX(calc(var(--sx) * 0.7)) translateY(0) scale(1) rotateY(1440deg);
+  }
+}
+
+@keyframes coin-toss-yin {
+  0% {
+    transform: translateX(0) translateY(0) scale(1) rotateY(0deg);
+  }
+  12% {
+    transform: translateX(calc(var(--sx) * 0.5)) translateY(-90px) scale(0.86) rotateY(260deg);
+  }
+  40% {
+    transform: translateX(var(--sx)) translateY(-140px) scale(0.78) rotateY(660deg);
+  }
+  76% {
+    transform: translateX(calc(var(--sx) * 0.8)) translateY(0) scale(1) rotateY(1410deg);
+  }
+  88% {
+    transform: translateX(calc(var(--sx) * 0.7)) translateY(-12px) scale(0.97) rotateY(1450deg);
+  }
+  100% {
+    transform: translateX(calc(var(--sx) * 0.7)) translateY(0) scale(1) rotateY(1620deg);
+  }
+}
+
+.coin-fly {
+  transform-style: preserve-3d;
+  animation-duration: 1.3s;
+  animation-timing-function: cubic-bezier(0.3, 0.6, 0.4, 1);
+  animation-fill-mode: both;
+}
+
+.coin-fly-yang {
+  animation-name: coin-toss-yang;
+}
+
+.coin-fly-yin {
+  animation-name: coin-toss-yin;
+}
+
+.coin-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.coin-shadow {
+  animation: coin-shadow 1.3s cubic-bezier(0.3, 0.6, 0.4, 1) both;
+}
+
+/* 地面阴影：币升空时缩小淡出，落地复原（金色微光，同 App 端） */
+@keyframes coin-shadow {
+  0% {
+    transform: scaleX(1);
+    opacity: 0.45;
+  }
+  40% {
+    transform: scaleX(0.55);
+    opacity: 0.12;
+  }
+  76% {
+    transform: scaleX(1);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0.45;
+  }
+}
+
+/* 卦象爻线：从左向右生长（同 App 端 TweenAnimationBuilder） */
+@keyframes line-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.line-grow {
+  transform-origin: left;
+  animation: line-grow 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }

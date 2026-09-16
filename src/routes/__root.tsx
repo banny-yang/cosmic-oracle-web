@@ -98,7 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       ...SITE_VERIFICATIONS.map(([name, content]) => ({ name, content })),
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: SITE_TITLE },
       { name: "description", content: SITE_DESC },
       { property: "og:site_name", content: "对脉名鉴" },

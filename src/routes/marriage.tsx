@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
+import { posterQrTarget } from "@/lib/promo-config";
 import { useFeatureEnabled, useFeaturePrice } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
 import { BirthplaceInput } from "@/components/birthplace-input";
@@ -489,7 +490,7 @@ async function buildMarriagePoster(data: BaziPreviewData): Promise<string> {
   // footer 二维码 + 引导
   let qrOk = false;
   try {
-    const qrUrl = await QRCode.toDataURL("https://www.oracle.duimai.net/marriage", { margin: 1, width: 320, color: { dark: "#2B2417", light: "#F6EFE3" } });
+    const qrUrl = await QRCode.toDataURL(await posterQrTarget("/marriage"), { margin: 1, width: 320, color: { dark: "#2B2417", light: "#F6EFE3" } });
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const im = new Image();
       im.onload = () => resolve(im);

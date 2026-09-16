@@ -340,8 +340,10 @@ async function buildPoster(c: NameCardData, infoLine: string, diagLine: string):
       }
       g.textAlign = "center";
     };
-    drawVerse(cites[0].text, 428);
-    drawVerse(cites[1].text, 482);
+    // 两字同出一句（引文与出处均相同）只画该句一次并垂直居中；同联上下句文本不同，照旧两行
+    const sameSentence = cites[0].text === cites[1].text && cites[0].src === cites[1].src;
+    drawVerse(cites[0].text, sameSentence ? 455 : 428);
+    if (!sameSentence) drawVerse(cites[1].text, 482);
     g.fillStyle = "rgba(158,43,37,.9)"; g.font = "19px sans-serif";
     const srcText = cites[0].src === cites[1].src
       ? cites[0].src
@@ -1325,7 +1327,7 @@ function Naming() {
               <select
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
-                className="rounded-lg bg-paper-3 px-2 py-1 text-xs ring-1 ring-ink/10"
+                className="rounded-lg bg-paper-3 px-2 py-1 text-base ring-1 ring-ink/10 md:text-xs"
               >
                 <option value="recommend">按推荐指数</option>
                 <option value="phonetics">按音律韵味</option>

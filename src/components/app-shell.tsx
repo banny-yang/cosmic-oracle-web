@@ -1,6 +1,7 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { track } from "@/lib/track";
+import { pageView } from "@/lib/analytics";
 import type { ReactNode } from "react";
 import { useAuth, getToken, updateToken } from "@/lib/auth";
 import { post } from "@/lib/api";
@@ -103,6 +104,12 @@ export function BrandMark({ className = "size-11 shrink-0 rounded-xl" }: { class
 }
 
 export function AppShell({ banner, children }: { banner?: ReactNode; children: ReactNode }) {
+  // 自建统计（V162）：路由变化上报 PV（仅生产 + VITE_TRACKING=1，失败静默）
+  const location = useLocation();
+  useEffect(() => {
+    pageView(location.pathname);
+  }, [location.pathname]);
+
   // 轻量前端错误监控：未捕获异常/未处理 Promise 拒绝 → 埋点
   useEffect(() => {
     const onErr = (e: ErrorEvent) =>

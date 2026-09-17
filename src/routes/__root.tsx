@@ -18,9 +18,6 @@ const SITE_TITLE = "对脉名鉴 · 起名与姓名文化参考";
 const SITE_DESC =
   "对脉名鉴：宝宝起名、姓名共振、缘分伴侣匹配与八字合婚。从字义、音韵与诗句出处出发，为重要的人取一个经得起时间的名字。";
 
-/** 部署时经 VITE_TRACKING=1 启用统计（GoatCounter 同域脚本），本地 dev 不加载 */
-const TRACKING_ENABLED = import.meta.env.VITE_TRACKING === "1";
-
 /** 容器环境变量注入的后端地址（docker -e API_BASE_URL=...），仅 SSR 进程能读到 */
 const RUNTIME_API_BASE_URL = runtimeApiBaseUrl();
 
@@ -135,15 +132,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               children: `window.__RUNTIME_CONFIG__=Object.assign(window.__RUNTIME_CONFIG__||{},${JSON.stringify(
                 { API_BASE_URL: RUNTIME_API_BASE_URL },
               )});`,
-            },
-          ]
-        : []),
-      ...(TRACKING_ENABLED
-        ? [
-            {
-              src: "/count.js",
-              async: true,
-              "data-goatcounter": `${SITE_URL}/count`,
             },
           ]
         : []),

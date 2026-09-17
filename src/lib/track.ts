@@ -1,26 +1,12 @@
 /**
- * 轻量埋点封装：对接自托管 GoatCounter（同域 /count.js，见 __root 注入）。
- * 未加载（本地 dev / 脚本被拦截）时静默丢弃，绝不影响业务。
+ * 轻量埋点封装：上报自建统计（/api/v1/analytics/collect，明细落 t_web_visit）。
+ * 函数签名与事件名保持不变，调用方零改动；失败静默，绝不影响业务。
  */
+
+import { beacon } from "@/lib/analytics";
 
 type TrackProps = Record<string, string | number | boolean | undefined | null>;
 
-declare global {
-  interface Window {
-    goatcounter?: {
-      count: (params: { path: string; title?: string; event?: boolean }) => void;
-    };
-  }
-}
-
 export function track(event: string, props?: TrackProps) {
-  try {
-    window.goatcounter?.count({
-      path: `/event/${event}`,
-      title: props ? JSON.stringify(props) : undefined,
-      event: true,
-    });
-  } catch {
-    /* 统计失败不影响业务 */
-  }
+  beacon({ event, props: props ? JSON.stringify(props) : undefined });
 }

@@ -4,6 +4,7 @@ import { track } from "@/lib/track";
 import { pageView } from "@/lib/analytics";
 import type { ReactNode } from "react";
 import { useAuth, getToken, updateToken } from "@/lib/auth";
+import { refreshBalance } from "@/lib/balance";
 import { post } from "@/lib/api";
 import { useFeatureEnabled } from "@/lib/use-feature-price";
 import {
@@ -127,9 +128,10 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
     };
   }, []);
 
-  // 登录态持久化：打开页面即静默滑动续期（fire-and-forget，失败不打扰）
+  // 登录态持久化：打开页面即静默滑动续期 + 拉一次最新余额（fire-and-forget，失败不打扰）
   useEffect(() => {
     if (!getToken()) return;
+    refreshBalance();
     post<{ token?: string }>("/api/v1/users/refresh-token", undefined, { timeoutMs: 8000 })
       .then((r) => {
         if (r?.token) updateToken(r.token);

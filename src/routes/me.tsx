@@ -3,6 +3,7 @@ import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
 import { BirthplaceInput } from "@/components/birthplace-input";
+import { ScanBuyPanel } from "@/components/scan-buy";
 import { get, patch, post, api } from "@/lib/api";
 import { getToken, getAuthUser, useAuth, updateUser, clearAuth } from "@/lib/auth";
 
@@ -389,16 +390,13 @@ function MePage() {
           <p className="text-sm font-medium">点数余额</p>
           <p className="text-sm font-semibold tabular-nums text-vermilion-deep">{user?.tokenBalance ?? 0} 点</p>
         </div>
-        <div className="flex items-start gap-4 border-t border-ink/5 px-5 py-4">
-          <div className="flex-1">
-            <p className="text-sm font-medium">充值与解锁</p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-              网页端暂不支持支付。微信扫右侧小程序码（或在微信里搜索「对脉名鉴」），登录同一账号（手机号或微信）即可购买使用。
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-col items-center gap-1.5 rounded-xl bg-paper p-2.5 ring-1 ring-ink/10">
-            <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-20 rounded object-contain" />
-            <p className="text-[10px] font-medium text-ink">扫码充值</p>
+        <div className="border-t border-ink/5 px-5 py-4">
+          <p className="text-sm font-medium">充值与解锁</p>
+          <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+            选择套餐后微信扫码支付，点数/畅享直接充入当前账号，到账后自动提示。
+          </p>
+          <div className="mt-3">
+            <ScanBuyPanel trackWhere="me" />
           </div>
         </div>
         <button

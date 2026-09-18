@@ -9,6 +9,7 @@ import { track } from "@/lib/track";
 import { post, get } from "@/lib/api";
 import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
+import { ScanBuyPanel } from "@/components/scan-buy";
 import { getToken, getAuthUser } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
 import { setupWxShare } from "@/lib/wx-share";
@@ -2217,15 +2218,11 @@ function Naming() {
                     {passErr}
                   </p>
                 ) : null}
-                <div className="mt-4 flex items-center gap-3 rounded-xl bg-paper-3/60 p-3">
-                  <img
-                    src="/mp-qrcode.jpg"
-                    alt="对脉名鉴小程序码"
-                    className="size-20 shrink-0 rounded-lg bg-paper ring-1 ring-ink/10"
-                  />
-                  <p className="text-[11px] leading-relaxed text-ink-soft">
-                    微信扫码进入「对脉名鉴」小程序，在「我的-充值」页选择畅享卡/包月支付；权益与点数登录同一账号通用。
+                <div className="mt-4">
+                  <p className="mb-1.5 text-[11px] font-medium text-ink-faint">
+                    或微信扫码直购（点数/畅享充入当前账号，到账自动提示）
                   </p>
+                  <ScanBuyPanel trackWhere="naming_paywall" />
                 </div>
                 {upgradeMode === "locked" ? (
                   <button

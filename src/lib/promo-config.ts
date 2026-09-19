@@ -5,7 +5,7 @@
  */
 import { get } from "./api";
 
-const FALLBACK_BASE = "https://www.oracle.duimai.net";
+const FALLBACK_BASE = "http://name.duimai.net";
 
 let cache: Promise<string> | null = null;
 

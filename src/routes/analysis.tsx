@@ -12,12 +12,12 @@ export const Route = createFileRoute("/analysis")({
   component: Analysis,
   head: () => ({
     links: [
-      { rel: "canonical", href: "https://www.oracle.duimai.net/analysis" },
+      { rel: "canonical", href: "http://name.duimai.net/analysis" },
     ],
     meta: [
       { title: "姓名共振 · 对脉名鉴" },
       { name: "keywords", content: "姓名共振,名字含义,字义出处,名字音律,姓名文化" },
-      { property: "og:url", content: "https://www.oracle.duimai.net/analysis" },
+      { property: "og:url", content: "http://name.duimai.net/analysis" },
       {
         name: "description",
         content: "逐字拆解字义、音韵与诗句出处，看看一个名字的来路与气质。",

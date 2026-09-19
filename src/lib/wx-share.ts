@@ -1,6 +1,6 @@
 /**
  * 微信内置浏览器分享卡片配置（需后端已配置服务号 WECHAT_OFFICIAL_APP_ID/SECRET，
- * 且公众号 JS 安全域名包含 www.oracle.duimai.net）。非微信环境静默跳过。
+ * 且公众号 JS 安全域名包含 name.duimai.net）。非微信环境静默跳过。
  */
 import { get } from "./api";
 
@@ -41,7 +41,7 @@ export async function setupWxShare(opts: { title: string; desc: string; link?: s
       title: opts.title,
       desc: opts.desc,
       link: opts.link || location.href,
-      imgUrl: opts.imgUrl || "https://www.oracle.duimai.net/og-card.jpg",
+      imgUrl: opts.imgUrl || "http://name.duimai.net/og-card.jpg",
     };
     w.updateAppMessageShareData && w.updateAppMessageShareData(share);
     w.updateTimelineShareData && w.updateTimelineShareData({ ...share, title: share.title + " · " + share.desc });

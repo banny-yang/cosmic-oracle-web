@@ -9,11 +9,11 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
   head: () => ({
     links: [
-      { rel: "canonical", href: "https://www.oracle.duimai.net/login" },
+      { rel: "canonical", href: "http://name.duimai.net/login" },
     ],
     meta: [
       { title: "登录 · 对脉名鉴" },
-      { property: "og:url", content: "https://www.oracle.duimai.net/login" },
+      { property: "og:url", content: "http://name.duimai.net/login" },
       { name: "description", content: "手机验证码或微信扫码登录对脉名鉴，同步解析记录与购买内容。" },
     ],
   }),

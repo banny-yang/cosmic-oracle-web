@@ -41,7 +41,7 @@ async function drawPosterBase(opts: {
   g.fillStyle = "rgba(43,36,23,.8)"; g.font = "bold 22px sans-serif";
   g.fillText(opts.footerLine, 48, H - 132);
   g.fillStyle = "rgba(43,36,23,.55)"; g.font = "17px sans-serif";
-  g.fillText(qrOk ? opts.qrHint : `www.oracle.duimai.net${opts.qrPath}`, 48, H - 102);
+  g.fillText(qrOk ? opts.qrHint : `name.duimai.net${opts.qrPath}`, 48, H - 102);
   g.fillStyle = "rgba(43,36,23,.4)"; g.font = "15px sans-serif";
   g.fillText("内容由算法基于传统文化与统计模型生成 · 仅供文化参考与娱乐", 48, H - 72);
   return cv.toDataURL("image/png");

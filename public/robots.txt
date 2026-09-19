@@ -1,16 +1,52 @@
+# 欢迎搜索引擎与 AI 爬虫（GEO 策略：允许被 AI 答案引擎引用）
+User-agent: *
+Allow: /
+Disallow: /me
+Disallow: /records
+Disallow: /vote/
+Disallow: /login
+
+# 通用搜索
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
+# 国内搜索与 AI（豆包/文心/夸克/搜狗）
+User-agent: Bytespider
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YisouSpider
+Allow: /
+
+User-agent: Sogou spider
+Allow: /
+
+# 国际 AI 答案引擎
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+# 社交预览
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
-Allow: /
-
-Sitemap: https://www.oracle.duimai.net/sitemap.xml
+Sitemap: http://name.duimai.net/sitemap.xml

@@ -8,9 +8,9 @@ import { setupWxShare } from "@/lib/wx-share";
 export const Route = createFileRoute("/vote/$token")({
   component: VotePage,
   head: () => ({
-    links: [{ rel: "canonical", href: "https://www.oracle.duimai.net/vote" }],
+    links: [{ rel: "canonical", href: "http://name.duimai.net/vote" }],
     meta: [
-      { property: "og:image", content: "https://www.oracle.duimai.net/og-card.jpg" },
+      { property: "og:image", content: "http://name.duimai.net/og-card.jpg" },
       { title: "名字投票 · 对脉名鉴" },
       {
         name: "description",

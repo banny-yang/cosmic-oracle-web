@@ -19,12 +19,12 @@ export const Route = createFileRoute("/marriage")({
   component: Marriage,
   head: () => ({
     links: [
-      { rel: "canonical", href: "https://www.oracle.duimai.net/marriage" },
+      { rel: "canonical", href: "http://name.duimai.net/marriage" },
     ],
     meta: [
       { title: "八字合婚 · 对脉名鉴" },
       { name: "keywords", content: "八字合婚,合婚,夫妻合婚,婚姻匹配,八字配对,合婚十项,日主契合,五行互补" },
-      { property: "og:url", content: "https://www.oracle.duimai.net/marriage" },
+      { property: "og:url", content: "http://name.duimai.net/marriage" },
       {
         name: "description",
         content:
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/marriage")({
           "双方出生信息一键排盘，十项传统合婚维度即时评分，AI 逐项解读契合度与相处之道，支持生成合婚海报分享。",
       },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "https://www.oracle.duimai.net/og-card.jpg" },
+      { property: "og:image", content: "http://name.duimai.net/og-card.jpg" },
     ],
     scripts: [
       {
@@ -380,7 +380,7 @@ function Marriage() {
                           if (navigator.canShare?.({ files: [file] })) {
                             await navigator.share({ files: [file], title: "八字合婚" });
                           } else {
-                            await navigator.share({ title: "八字合婚", text: "我们的八字合婚结果", url: "https://www.oracle.duimai.net/marriage" });
+                            await navigator.share({ title: "八字合婚", text: "我们的八字合婚结果", url: "http://name.duimai.net/marriage" });
                           }
                         } catch { /* 用户取消 */ }
                       }}
@@ -505,7 +505,7 @@ async function buildMarriagePoster(data: BaziPreviewData): Promise<string> {
   g.fillStyle = "rgba(43,36,23,.8)"; g.font = "bold 22px sans-serif";
   g.fillText("对脉名鉴 · 八字合婚", 48, H - 132);
   g.fillStyle = "rgba(43,36,23,.55)"; g.font = "17px sans-serif";
-  g.fillText(qrOk ? "扫码打开网页版，为两个人合一次婚" : "www.oracle.duimai.net/marriage", 48, H - 102);
+  g.fillText(qrOk ? "扫码打开网页版，为两个人合一次婚" : "name.duimai.net/marriage", 48, H - 102);
   g.fillStyle = "rgba(43,36,23,.4)"; g.font = "15px sans-serif";
   g.fillText("十项传统合婚维度 · 评分仅供文化参考与娱乐", 48, H - 72);
   return cv.toDataURL("image/png");

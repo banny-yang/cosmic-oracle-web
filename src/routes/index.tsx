@@ -11,14 +11,14 @@ import { track } from "@/lib/track";
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
-    links: [{ rel: "canonical", href: "https://www.oracle.duimai.net/" }],
+    links: [{ rel: "canonical", href: "http://name.duimai.net/" }],
     meta: [
       { title: "对脉名鉴 · 起名与姓名文化参考" },
       {
         name: "keywords",
         content: "宝宝起名,在线起名,诗经楚辞起名,生辰五行起名,姓名共振,名字测分,五格数理,起名工具",
       },
-      { property: "og:url", content: "https://www.oracle.duimai.net/" },
+      { property: "og:url", content: "http://name.duimai.net/" },
       {
         name: "description",
         content:
@@ -223,6 +223,80 @@ function Index() {
     prices && prices[code] != null ? `${prices[code]} 点 / 次` : fallback;
 
   return (
+    <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "对脉名鉴",
+              url: "http://name.duimai.net",
+              logo: "http://name.duimai.net/brand-logo.png",
+            },
+            {
+              "@type": "WebSite",
+              name: "对脉名鉴",
+              url: "http://name.duimai.net",
+              inLanguage: "zh-CN",
+            },
+            {
+              "@type": "WebApplication",
+              name: "对脉名鉴",
+              url: "http://name.duimai.net",
+              applicationCategory: "LifestyleApplication",
+              operatingSystem: "Web",
+              description:
+                "中文起名与姓名文化 Web 应用：宝宝起名（典籍语料 + 真太阳时 + 喜用神 + 五格数理）、姓名解析、八字合婚、六爻与奇门，网页直接使用。",
+              inLanguage: "zh-CN",
+              featureList: [
+                "宝宝起名：69 万句典籍语料，引文回查原文",
+                "真太阳时校正排盘",
+                "姓名数理与五行分析",
+                "八字合婚与缘分匹配",
+                "六爻在线占卜与 AI 解读",
+              ],
+            },
+            {
+              "@type": "DefinedTerm",
+              name: "真太阳时",
+              description:
+                "真太阳时是按出生地经度修正钟表时间得到的当地真实太阳时刻；八字排盘以其定时柱，比行政区划时区时间更准确。",
+              inDefinedTermSet: { "@type": "DefinedTermSet", name: "起名与命理术语", url: "http://name.duimai.net/" },
+            },
+            {
+              "@type": "DefinedTerm",
+              name: "喜用神",
+              description:
+                "喜用神指八字中对日主最有补益作用的五行，由日主旺衰与调候需求判定，是传统起名选字的五行依据。",
+              inDefinedTermSet: { "@type": "DefinedTermSet", name: "起名与命理术语", url: "http://name.duimai.net/" },
+            },
+            {
+              "@type": "FAQPage",
+              mainEntity: [
+                {
+                  "@type": "Question",
+                  name: "对脉名鉴是什么？",
+                  acceptedAnswer: { "@type": "Answer", text: "中文起名与姓名文化 Web 应用，主打有出处、有数理、有温度的宝宝起名：基于 69 万句典籍语料，引文可回查古籍原文，浏览器直接使用无需下载。" },
+                },
+                {
+                  "@type": "Question",
+                  name: "起名为什么要做真太阳时校正？",
+                  acceptedAnswer: { "@type": "Answer", text: "钟表时间是行政区划时区时间，真太阳时按出生地经度修正，八字排盘的时柱才准确，喜用神判定才可靠。" },
+                },
+                {
+                  "@type": "Question",
+                  name: "名字的出处可信吗？",
+                  acceptedAnswer: { "@type": "Answer", text: "每个荐名标注典籍原文与出处（诗经、楚辞、唐诗、宋词等），后端对引文做原文回查校验，拼接式引用会被判废。" },
+                },
+              ],
+            },
+          ],
+        }),
+      }}
+    />
     <AppShell
       banner={
         <HeroBanner>
@@ -622,19 +696,20 @@ function Index() {
                 "@type": "WebSite",
                 name: "对脉名鉴",
                 alternateName: "对脉名鉴 · 起名与姓名文化参考",
-                url: "https://www.oracle.duimai.net",
+                url: "http://name.duimai.net",
                 inLanguage: "zh-CN",
               },
               {
                 "@type": "Organization",
                 name: "成都米哈哈科技",
                 url: "https://www.mihaha.com",
-                logo: "https://www.oracle.duimai.net/brand-logo.png",
+                logo: "http://name.duimai.net/brand-logo.png",
               },
             ],
           }),
         }}
       />
     </AppShell>
+    </>
   );
 }

@@ -27,12 +27,12 @@ API 地址解析优先级：`window.__RUNTIME_CONFIG__.API_BASE_URL`（运行时
 给 Java 后端的环境变量加上 Web 域名（现有 CorsConfig 已覆盖 `/api/**` 含 SSE）：
 
 ```
-CORS_ALLOWED_ORIGIN_PATTERNS=https://www.oracle.duimai.net,http://localhost:*
+CORS_ALLOWED_ORIGIN_PATTERNS=http://name.duimai.net,http://localhost:*
 ```
 
 ## nginx 反代建议
 
-- `www.oracle.duimai.net` → `127.0.0.1:3001`（本应用）
+- `name.duimai.net` → `127.0.0.1:3001`（本应用）
 - `oracle.duimai.net` 维持指向 Java 后端（8080）
 - SSE（起名/报告流式）经本应用域名直连后端，无需代理 websocket 配置
 
@@ -50,10 +50,10 @@ CORS_ALLOWED_ORIGIN_PATTERNS=https://www.oracle.duimai.net,http://localhost:*
   监听 `127.0.0.1:3003 → 容器 3001`；compose 定义在 Cosmic-Oracle-Java `deploy/docker-compose.server.yml` 的 `web` 服务。
 - **统计**：GoatCounter 以 systemd 二进制运行（`/opt/goatcounter`，service `goatcounter`），
   监听 `127.0.0.1:3002`，sqlite 数据在 `/data/goatcounter/`。
-- **nginx**：宝塔 vhost `/www/server/panel/vhost/nginx/www.oracle.duimai.net.conf`
+- **nginx**：宝塔 vhost `/www/server/panel/vhost/nginx/name.duimai.net.conf`
   —— `/count.js`、`/count` → 3002（同域埋点），其余 → 3003。当前仅 80；
   **DNS 解析生效后在宝塔为该站点申请 SSL 并强制 https**。
-- **后端 CORS**：服务器 `.env` 的 `CORS_ALLOWED_ORIGIN_PATTERNS` 已追加 `http(s)://www.oracle.duimai.net`。
+- **后端 CORS**：服务器 `.env` 的 `CORS_ALLOWED_ORIGIN_PATTERNS` 已追加 `http(s)://name.duimai.net`。
 - **构建命令**：`VITE_API_BASE_URL=https://server.oracle.duimai.net VITE_TRACKING=1 npm run build`
   （漏掉 env 会回落 127.0.0.1；`VITE_TRACKING=1` 启用统计脚本注入）。
 - **发布流程**：`docker build -t cosmic-oracle/web:1.0.0 . && docker save | gzip` → scp → 服务器 `docker load`

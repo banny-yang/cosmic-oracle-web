@@ -13,12 +13,12 @@ export const Route = createFileRoute("/personality")({
   component: Personality,
   head: () => ({
     links: [
-      { rel: "canonical", href: "http://name.duimai.net/personality" },
+      { rel: "canonical", href: "https://name.duimai.net/personality" },
     ],
     meta: [
       { title: "缘分伴侣匹配 · 对脉名鉴" },
       { name: "keywords", content: "缘分伴侣匹配,恋爱伴侣,创业合伙,亲子教育,职场助力,契合度测评" },
-      { property: "og:url", content: "http://name.duimai.net/personality" },
+      { property: "og:url", content: "https://name.duimai.net/personality" },
       {
         name: "description",
         content: "以传统性格倾向视角看两个人相处的分寸，仅供文化参考。",

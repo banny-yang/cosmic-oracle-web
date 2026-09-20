@@ -11,14 +11,14 @@ export const Route = createFileRoute("/names")({
     keyword: typeof search["keyword"] === "string" ? search["keyword"].slice(0, 20) : undefined,
   }),
   head: () => ({
-    links: [{ rel: "canonical", href: "http://name.duimai.net/names" }],
+    links: [{ rel: "canonical", href: "https://name.duimai.net/names" }],
     meta: [
       { title: "名字灵感库 · 对脉名鉴" },
       {
         name: "keywords",
         content: "好名字,名字大全,诗经取名,楚辞取名,唐诗宋词取名,男孩名,女孩名",
       },
-      { property: "og:url", content: "http://name.duimai.net/names" },
+      { property: "og:url", content: "https://name.duimai.net/names" },
       {
         name: "description",
         content:

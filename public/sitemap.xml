@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>http://name.duimai.net/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>http://name.duimai.net/naming</loc><changefreq>weekly</changefreq></url>
-  <url><loc>http://name.duimai.net/analysis</loc><changefreq>weekly</changefreq></url>
-  <url><loc>http://name.duimai.net/personality</loc><changefreq>weekly</changefreq></url>
-  <url><loc>http://name.duimai.net/marriage</loc><changefreq>weekly</changefreq></url>
-  <url><loc>http://name.duimai.net/liuyao</loc><changefreq>weekly</changefreq></url>
-  <url><loc>http://name.duimai.net/qimen</loc><changefreq>weekly</changefreq></url>
-  <url><loc>http://name.duimai.net/names</loc><changefreq>daily</changefreq></url>
-  <url><loc>http://name.duimai.net/login</loc><changefreq>weekly</changefreq></url>
-  <url><loc>http://name.duimai.net/privacy</loc><changefreq>weekly</changefreq></url>
-  <url><loc>http://name.duimai.net/terms</loc><changefreq>weekly</changefreq></url>
-  <url><loc>http://name.duimai.net/help</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/naming</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/analysis</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/personality</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/marriage</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/liuyao</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/qimen</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/names</loc><changefreq>daily</changefreq></url>
+  <url><loc>https://name.duimai.net/privacy</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/terms</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/help</loc><changefreq>weekly</changefreq></url>
 </urlset>

@@ -11,14 +11,14 @@ import { track } from "@/lib/track";
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
-    links: [{ rel: "canonical", href: "http://name.duimai.net/" }],
+    links: [{ rel: "canonical", href: "https://name.duimai.net/" }],
     meta: [
       { title: "对脉名鉴 · 起名与姓名文化参考" },
       {
         name: "keywords",
         content: "宝宝起名,在线起名,诗经楚辞起名,生辰五行起名,姓名共振,名字测分,五格数理,起名工具",
       },
-      { property: "og:url", content: "http://name.duimai.net/" },
+      { property: "og:url", content: "https://name.duimai.net/" },
       {
         name: "description",
         content:
@@ -233,19 +233,19 @@ function Index() {
             {
               "@type": "Organization",
               name: "对脉名鉴",
-              url: "http://name.duimai.net",
-              logo: "http://name.duimai.net/brand-logo.png",
+              url: "https://name.duimai.net",
+              logo: "https://name.duimai.net/brand-logo.png",
             },
             {
               "@type": "WebSite",
               name: "对脉名鉴",
-              url: "http://name.duimai.net",
+              url: "https://name.duimai.net",
               inLanguage: "zh-CN",
             },
             {
               "@type": "WebApplication",
               name: "对脉名鉴",
-              url: "http://name.duimai.net",
+              url: "https://name.duimai.net",
               applicationCategory: "LifestyleApplication",
               operatingSystem: "Web",
               description:
@@ -264,14 +264,14 @@ function Index() {
               name: "真太阳时",
               description:
                 "真太阳时是按出生地经度修正钟表时间得到的当地真实太阳时刻；八字排盘以其定时柱，比行政区划时区时间更准确。",
-              inDefinedTermSet: { "@type": "DefinedTermSet", name: "起名与命理术语", url: "http://name.duimai.net/" },
+              inDefinedTermSet: { "@type": "DefinedTermSet", name: "起名与命理术语", url: "https://name.duimai.net/" },
             },
             {
               "@type": "DefinedTerm",
               name: "喜用神",
               description:
                 "喜用神指八字中对日主最有补益作用的五行，由日主旺衰与调候需求判定，是传统起名选字的五行依据。",
-              inDefinedTermSet: { "@type": "DefinedTermSet", name: "起名与命理术语", url: "http://name.duimai.net/" },
+              inDefinedTermSet: { "@type": "DefinedTermSet", name: "起名与命理术语", url: "https://name.duimai.net/" },
             },
             {
               "@type": "FAQPage",
@@ -696,14 +696,14 @@ function Index() {
                 "@type": "WebSite",
                 name: "对脉名鉴",
                 alternateName: "对脉名鉴 · 起名与姓名文化参考",
-                url: "http://name.duimai.net",
+                url: "https://name.duimai.net",
                 inLanguage: "zh-CN",
               },
               {
                 "@type": "Organization",
                 name: "成都米哈哈科技",
                 url: "https://www.mihaha.com",
-                logo: "http://name.duimai.net/brand-logo.png",
+                logo: "https://name.duimai.net/brand-logo.png",
               },
             ],
           }),

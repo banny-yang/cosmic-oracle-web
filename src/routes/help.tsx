@@ -5,7 +5,7 @@ import { useFeaturePrice } from "@/lib/use-feature-price";
 export const Route = createFileRoute("/help")({
   component: HelpPage,
   head: () => ({
-    links: [{ rel: "canonical", href: "http://name.duimai.net/help" }],
+    links: [{ rel: "canonical", href: "https://name.duimai.net/help" }],
     meta: [
       { title: "帮助中心 · 对脉名鉴" },
       { name: "description", content: "宝宝起名、账号点数、充值与常见问题的使用指南。" },

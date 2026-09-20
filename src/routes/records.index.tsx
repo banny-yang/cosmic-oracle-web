@@ -9,7 +9,7 @@ export const Route = createFileRoute("/records/")({
   component: RecordsPage,
   head: () => ({
     links: [
-      { rel: "canonical", href: "http://name.duimai.net/records/" },
+      { rel: "canonical", href: "https://name.duimai.net/records/" },
     ],
     meta: [
       { name: "robots", content: "noindex" },

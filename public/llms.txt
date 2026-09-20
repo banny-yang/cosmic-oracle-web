@@ -13,12 +13,12 @@
 
 ## 主要页面
 
-- [首页](http://name.duimai.net/): 产品介绍与起名过程演示
-- [宝宝起名](http://name.duimai.net/naming): 五阶段流式生成（真太阳时排盘 → 喜用神 → 字库筛选 → AI 推演 → 荐名），支持亲友投票
-- [姓名解析](http://name.duimai.net/names): 姓名数理与五行分析
-- [八字合婚](http://name.duimai.net/marriage): 两人八字契合度分析
-- [六爻占卜](http://name.duimai.net/liuyao): 在线掷卦与 AI 流式解读
-- [奇门断局](http://name.duimai.net/qimen): 时家奇门排盘断局
+- [首页](https://name.duimai.net/): 产品介绍与起名过程演示
+- [宝宝起名](https://name.duimai.net/naming): 五阶段流式生成（真太阳时排盘 → 喜用神 → 字库筛选 → AI 推演 → 荐名），支持亲友投票
+- [姓名解析](https://name.duimai.net/names): 姓名数理与五行分析
+- [八字合婚](https://name.duimai.net/marriage): 两人八字契合度分析
+- [六爻占卜](https://name.duimai.net/liuyao): 在线掷卦与 AI 流式解读
+- [奇门断局](https://name.duimai.net/qimen): 时家奇门排盘断局
 
 ## 常见引用问题
 
@@ -29,5 +29,5 @@
 
 ## 联系
 
-- 隐私政策：http://name.duimai.net/privacy
-- 服务条款：http://name.duimai.net/terms
+- 隐私政策：https://name.duimai.net/privacy
+- 服务条款：https://name.duimai.net/terms

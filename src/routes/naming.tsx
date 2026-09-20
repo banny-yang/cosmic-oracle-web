@@ -51,7 +51,7 @@ export const Route = createFileRoute("/naming")({
         : undefined,
   }),
   head: () => ({
-    links: [{ rel: "canonical", href: "http://name.duimai.net/naming" }],
+    links: [{ rel: "canonical", href: "https://name.duimai.net/naming" }],
     meta: [
       { title: "宝宝起名 · 对脉名鉴" },
       {
@@ -63,13 +63,13 @@ export const Route = createFileRoute("/naming")({
         content:
           "按生辰喜用与五格数理，从典籍中为宝宝取一个有出处、有数理、有温度的名字；支持五维雷达、方言谐音检测与亲友投票。",
       },
-      { property: "og:url", content: "http://name.duimai.net/naming" },
+      { property: "og:url", content: "https://name.duimai.net/naming" },
       { property: "og:title", content: "宝宝起名 · 对脉名鉴" },
       {
         property: "og:description",
         content: "一次生成 10 个有推荐指数与典籍出处的名字方案，支持亲友投票一起定。",
       },
-      { property: "og:image", content: "http://name.duimai.net/og-card.jpg" },
+      { property: "og:image", content: "https://name.duimai.net/og-card.jpg" },
     ],
   }),
 });
@@ -2108,7 +2108,7 @@ function Naming() {
                     ) : null}
                     <button
                       onClick={() => {
-                        navigator.clipboard?.writeText(`http://name.duimai.net/naming`);
+                        navigator.clipboard?.writeText(`https://name.duimai.net/naming`);
                         track("invite_copy", {});
                       }}
                       className="text-xs font-medium text-ink-soft underline underline-offset-2"
@@ -2358,7 +2358,7 @@ function Naming() {
                             await navigator.share({
                               title: `起名海报 ${poster.name}`,
                               text: `为「${poster.name}」生成的起名海报`,
-                              url: "http://name.duimai.net/naming",
+                              url: "https://name.duimai.net/naming",
                             });
                           }
                         } catch {

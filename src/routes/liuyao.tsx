@@ -16,11 +16,11 @@ import { track } from "@/lib/track";
 export const Route = createFileRoute("/liuyao")({
   component: Liuyao,
   head: () => ({
-    links: [{ rel: "canonical", href: "http://name.duimai.net/liuyao" }],
+    links: [{ rel: "canonical", href: "https://name.duimai.net/liuyao" }],
     meta: [
       { title: "六爻占卜 · 对脉名鉴" },
       { name: "keywords", content: "六爻,六爻占卜,起卦,卦象解读,摇卦" },
-      { property: "og:url", content: "http://name.duimai.net/liuyao" },
+      { property: "og:url", content: "https://name.duimai.net/liuyao" },
       {
         name: "description",
         content: "心中默念所问之事，三枚铜钱六次成卦——本卦变卦、AI 流式解读，一问一卦。",

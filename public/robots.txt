@@ -49,4 +49,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: http://name.duimai.net/sitemap.xml
+Sitemap: https://name.duimai.net/sitemap.xml

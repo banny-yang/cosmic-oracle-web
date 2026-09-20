@@ -5,11 +5,11 @@ export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
   head: () => ({
     links: [
-      { rel: "canonical", href: "http://name.duimai.net/privacy" },
+      { rel: "canonical", href: "https://name.duimai.net/privacy" },
     ],
     meta: [
       { title: "隐私政策 · 对脉名鉴" },
-      { property: "og:url", content: "http://name.duimai.net/privacy" },
+      { property: "og:url", content: "https://name.duimai.net/privacy" },
       {
         name: "description",
         content: "对脉名鉴隐私政策：我们收集哪些信息、如何使用与保护、如何删除你的数据。",

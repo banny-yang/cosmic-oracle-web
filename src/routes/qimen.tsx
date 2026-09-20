@@ -27,11 +27,11 @@ import { track } from "@/lib/track";
 export const Route = createFileRoute("/qimen")({
   component: Qimen,
   head: () => ({
-    links: [{ rel: "canonical", href: "http://name.duimai.net/qimen" }],
+    links: [{ rel: "canonical", href: "https://name.duimai.net/qimen" }],
     meta: [
       { title: "奇门遁甲断局 · 对脉名鉴" },
       { name: "keywords", content: "奇门遁甲,奇门断局,排盘,九宫格,代占,应期" },
-      { property: "og:url", content: "http://name.duimai.net/qimen" },
+      { property: "og:url", content: "https://name.duimai.net/qimen" },
       {
         name: "description",
         content:

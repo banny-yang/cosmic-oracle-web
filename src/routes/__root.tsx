@@ -13,7 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { runtimeApiBaseUrl } from "../lib/runtime-env";
 
-const SITE_URL = "http://name.duimai.net";
+const SITE_URL = "https://name.duimai.net";
 const SITE_TITLE = "对脉名鉴 · 起名与姓名文化参考";
 const SITE_DESC =
   "对脉名鉴：宝宝起名、姓名共振、缘分伴侣匹配与八字合婚。从字义、音韵与诗句出处出发，为重要的人取一个经得起时间的名字。";

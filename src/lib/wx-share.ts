@@ -41,7 +41,7 @@ export async function setupWxShare(opts: { title: string; desc: string; link?: s
       title: opts.title,
       desc: opts.desc,
       link: opts.link || location.href,
-      imgUrl: opts.imgUrl || "http://name.duimai.net/og-card.jpg",
+      imgUrl: opts.imgUrl || "https://name.duimai.net/og-card.jpg",
     };
     w.updateAppMessageShareData && w.updateAppMessageShareData(share);
     w.updateTimelineShareData && w.updateTimelineShareData({ ...share, title: share.title + " · " + share.desc });

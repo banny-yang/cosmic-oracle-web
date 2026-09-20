@@ -19,12 +19,12 @@ export const Route = createFileRoute("/marriage")({
   component: Marriage,
   head: () => ({
     links: [
-      { rel: "canonical", href: "http://name.duimai.net/marriage" },
+      { rel: "canonical", href: "https://name.duimai.net/marriage" },
     ],
     meta: [
       { title: "八字合婚 · 对脉名鉴" },
       { name: "keywords", content: "八字合婚,合婚,夫妻合婚,婚姻匹配,八字配对,合婚十项,日主契合,五行互补" },
-      { property: "og:url", content: "http://name.duimai.net/marriage" },
+      { property: "og:url", content: "https://name.duimai.net/marriage" },
       {
         name: "description",
         content:
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/marriage")({
           "双方出生信息一键排盘，十项传统合婚维度即时评分，AI 逐项解读契合度与相处之道，支持生成合婚海报分享。",
       },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "http://name.duimai.net/og-card.jpg" },
+      { property: "og:image", content: "https://name.duimai.net/og-card.jpg" },
     ],
     scripts: [
       {
@@ -380,7 +380,7 @@ function Marriage() {
                           if (navigator.canShare?.({ files: [file] })) {
                             await navigator.share({ files: [file], title: "八字合婚" });
                           } else {
-                            await navigator.share({ title: "八字合婚", text: "我们的八字合婚结果", url: "http://name.duimai.net/marriage" });
+                            await navigator.share({ title: "八字合婚", text: "我们的八字合婚结果", url: "https://name.duimai.net/marriage" });
                           }
                         } catch { /* 用户取消 */ }
                       }}

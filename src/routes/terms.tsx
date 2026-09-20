@@ -5,11 +5,11 @@ export const Route = createFileRoute("/terms")({
   component: TermsPage,
   head: () => ({
     links: [
-      { rel: "canonical", href: "http://name.duimai.net/terms" },
+      { rel: "canonical", href: "https://name.duimai.net/terms" },
     ],
     meta: [
       { title: "用户协议 · 对脉名鉴" },
-      { property: "og:url", content: "http://name.duimai.net/terms" },
+      { property: "og:url", content: "https://name.duimai.net/terms" },
       {
         name: "description",
         content: "对脉名鉴用户协议：服务性质、点数与付费规则、使用规范与免责声明。",

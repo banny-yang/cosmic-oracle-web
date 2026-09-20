@@ -306,7 +306,7 @@ export function BreadcrumbJsonLd({ name, path }: { name: string; path: string })
             "@type": "ListItem",
             position: i + 1,
             name: it.name,
-            item: "http://name.duimai.net" + it.path,
+            item: "https://name.duimai.net" + it.path,
           })),
         }),
       }}

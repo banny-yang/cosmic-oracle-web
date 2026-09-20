@@ -12,7 +12,13 @@ import {
 import { shellCls } from "@/components/app-shell";
 import { cn } from "@/lib/utils";
 
-/* ───────── 水墨幅面（内联 SVG，色值与 styles.css 主题 token 一致） ───────── */
+/* ───────── 水墨幅面（内联 SVG，色值为 styles.css 主题 token 的 sRGB 实色） ───────── */
+
+/*
+ * 这里必须写 #hex 而不是 oklch()：SVG 表现属性（fill/stroke/stop-color）不经过 CSS 构建
+ * 管线，小程序 web-view 的老内核（安卓 X5 Chrome 97 / iOS 15）解析不了 oklch()——fill 会回落
+ * 到初始值黑色、渐变 stop-color 同样变黑，整幅水墨图就成黑块。
+ */
 
 function SlideArt({ children }: { children: ReactNode }) {
   return (
@@ -35,33 +41,33 @@ function ArtClassic() {
     <SlideArt>
       <defs>
         <linearGradient id="hb-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="oklch(0.965 0.018 92)" />
-          <stop offset="1" stopColor="oklch(0.93 0.028 90)" />
+          <stop offset="0" stopColor="#f8f3e6" />
+          <stop offset="1" stopColor="#efe8d3" />
         </linearGradient>
       </defs>
       <rect width="1600" height="560" fill="url(#hb-sky)" />
       {/* 朱日（居安全区内，超宽屏上下裁切不丢） */}
-      <circle cx="1230" cy="215" r="46" fill="oklch(0.54 0.155 38)" opacity="0.9" />
-      <circle cx="1230" cy="215" r="62" fill="oklch(0.54 0.155 38)" opacity="0.12" />
+      <circle cx="1230" cy="215" r="46" fill="#b6451f" opacity="0.9" />
+      <circle cx="1230" cy="215" r="62" fill="#b6451f" opacity="0.12" />
       {/* 远山三层，自左向右渐重 */}
       <path
         d="M 600 560 L 760 300 L 830 380 L 900 250 L 1010 420 L 1080 340 L 1200 560 Z"
-        fill="oklch(0.28 0.02 70)"
+        fill="#2f271e"
         opacity="0.08"
       />
       <path
         d="M 860 560 L 990 240 L 1060 330 L 1150 190 L 1270 400 L 1330 320 L 1460 560 Z"
-        fill="oklch(0.28 0.02 70)"
+        fill="#2f271e"
         opacity="0.14"
       />
       <path
         d="M 1100 560 L 1220 210 L 1290 300 L 1390 150 L 1520 380 L 1600 300 L 1600 560 Z"
-        fill="oklch(0.28 0.02 70)"
+        fill="#2f271e"
         opacity="0.22"
       />
       {/* 雾带 */}
-      <rect x="560" y="362" width="1040" height="44" fill="oklch(0.955 0.021 92)" opacity="0.55" />
-      <rect x="720" y="430" width="880" height="28" fill="oklch(0.955 0.021 92)" opacity="0.4" />
+      <rect x="560" y="362" width="1040" height="44" fill="#f5f0e1" opacity="0.55" />
+      <rect x="720" y="430" width="880" height="28" fill="#f5f0e1" opacity="0.4" />
       {/* 竖排诗句 */}
       {poem.map((ch, i) => (
         <text
@@ -70,7 +76,7 @@ function ArtClassic() {
           y={150 + i * 46}
           textAnchor="middle"
           fontSize="34"
-          fill="oklch(0.47 0.022 75)"
+          fill="#62594d"
           className="font-seal"
         >
           {ch}
@@ -97,20 +103,20 @@ function ArtGrid() {
     <SlideArt>
       <defs>
         <linearGradient id="hb-grid" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="oklch(0.955 0.021 92)" />
-          <stop offset="1" stopColor="oklch(0.928 0.03 90)" />
+          <stop offset="0" stopColor="#f5f0e1" />
+          <stop offset="1" stopColor="#efe7d1" />
         </linearGradient>
       </defs>
       <rect width="1600" height="560" fill="url(#hb-grid)" />
       {/* 底纹大字（左侧，宽屏被遮罩覆盖、移动端补白） */}
-      <text x="420" y="380" textAnchor="middle" fontSize="220" fill="oklch(0.28 0.02 70)" opacity="0.06" className="font-seal">
+      <text x="420" y="380" textAnchor="middle" fontSize="220" fill="#2f271e" opacity="0.06" className="font-seal">
         数
       </text>
       {/* 相生链：虚线穿行五格之间 */}
       <path
         d="M 640 268 C 850 222, 1000 316, 1290 264"
         fill="none"
-        stroke="oklch(0.54 0.155 38 / 0.5)"
+        stroke="#b6451f" strokeOpacity="0.5"
         strokeWidth="3"
         strokeDasharray="2 10"
         strokeLinecap="round"
@@ -123,8 +129,10 @@ function ArtGrid() {
             width={SIZE}
             height={SIZE}
             rx="14"
-            fill={e.favor ? "oklch(0.54 0.155 38)" : "oklch(0.955 0.021 92 / 0.78)"}
-            stroke={e.favor ? "oklch(0.45 0.13 35 / 0.4)" : "oklch(0.28 0.02 70 / 0.16)"}
+            fill={e.favor ? "#b6451f" : "#f5f0e1"}
+            fillOpacity={e.favor ? 1 : 0.78}
+            stroke={e.favor ? "#8f331c" : "#2f271e"}
+            strokeOpacity={e.favor ? 0.4 : 0.16}
             strokeWidth="2"
           />
           <text
@@ -133,16 +141,16 @@ function ArtGrid() {
             textAnchor="middle"
             fontSize="54"
             className="font-seal"
-            fill={e.favor ? "oklch(0.955 0.021 92)" : "oklch(0.28 0.02 70)"}
+            fill={e.favor ? "#f5f0e1" : "#2f271e"}
           >
             {e.ch}
           </text>
         </g>
       ))}
       {/* 数理点缀 */}
-      <circle cx="1315" cy="170" r="5" fill="oklch(0.28 0.02 70 / 0.18)" />
-      <circle cx="1390" cy="248" r="3.5" fill="oklch(0.28 0.02 70 / 0.14)" />
-      <circle cx="1360" cy="120" r="3" fill="oklch(0.54 0.155 38 / 0.35)" />
+      <circle cx="1315" cy="170" r="5" fill="#2f271e" fillOpacity="0.18" />
+      <circle cx="1390" cy="248" r="3.5" fill="#2f271e" fillOpacity="0.14" />
+      <circle cx="1360" cy="120" r="3" fill="#b6451f" fillOpacity="0.35" />
     </SlideArt>
   );
 }
@@ -150,7 +158,7 @@ function ArtGrid() {
 /** 亲友共决：云纹回环 · 三点归心 */
 function ArtCloud() {
   const cloud = (cx: number, cy: number, scale: number) => (
-    <g transform={`translate(${cx} ${cy}) scale(${scale})`} fill="none" stroke="oklch(0.28 0.02 70 / 0.16)" strokeWidth="3" strokeLinecap="round">
+    <g transform={`translate(${cx} ${cy}) scale(${scale})`} fill="none" stroke="#2f271e" strokeOpacity="0.16" strokeWidth="3" strokeLinecap="round">
       <path d="M -80 0 q 20 -36 56 -22 q 14 -34 52 -20 q 34 10 28 42" />
       <path d="M -80 14 q 40 26 92 8 q 40 -14 66 6" />
     </g>
@@ -159,8 +167,8 @@ function ArtCloud() {
     <SlideArt>
       <defs>
         <linearGradient id="hb-cloud" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="oklch(0.96 0.02 91)" />
-          <stop offset="1" stopColor="oklch(0.9 0.034 89)" />
+          <stop offset="0" stopColor="#f7f2e3" />
+          <stop offset="1" stopColor="#e7ddc5" />
         </linearGradient>
       </defs>
       <rect width="1600" height="560" fill="url(#hb-cloud)" />
@@ -174,12 +182,12 @@ function ArtCloud() {
         { x: 1090, y: 410 },
       ].map((p, i) => (
         <g key={i}>
-          <line x1={p.x} y1={p.y} x2="1090" y2="300" stroke="oklch(0.28 0.02 70 / 0.25)" strokeWidth="2" />
-          <circle cx={p.x} cy={p.y} r="9" fill="oklch(0.54 0.155 38)" opacity={0.55 + i * 0.15} />
+          <line x1={p.x} y1={p.y} x2="1090" y2="300" stroke="#2f271e" strokeOpacity="0.25" strokeWidth="2" />
+          <circle cx={p.x} cy={p.y} r="9" fill="#b6451f" opacity={0.55 + i * 0.15} />
         </g>
       ))}
-      <circle cx="1090" cy="300" r="34" fill="none" stroke="oklch(0.54 0.155 38 / 0.5)" strokeWidth="3" />
-      <circle cx="1090" cy="300" r="14" fill="oklch(0.54 0.155 38)" />
+      <circle cx="1090" cy="300" r="34" fill="none" stroke="#b6451f" strokeOpacity="0.5" strokeWidth="3" />
+      <circle cx="1090" cy="300" r="14" fill="#b6451f" />
     </SlideArt>
   );
 }

@@ -118,7 +118,7 @@ export function BaziResultHero({
       <div className="relative mt-7 flex items-center justify-center gap-6">
         <div className="relative shrink-0">
           <svg width="148" height="148" viewBox="0 0 148 148" aria-hidden>
-            <circle cx="74" cy="74" r={R} fill="none" stroke="oklch(0.28 0.02 70 / 0.08)" strokeWidth="8" />
+            <circle cx="74" cy="74" r={R} fill="none" stroke="#2f271e" strokeOpacity="0.08" strokeWidth="8" />
             <circle
               cx="74" cy="74" r={R} fill="none"
               stroke={style.ring} strokeWidth="8" strokeLinecap="round"

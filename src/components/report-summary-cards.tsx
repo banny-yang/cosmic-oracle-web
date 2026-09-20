@@ -56,7 +56,7 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
   return (
     <div className="relative shrink-0">
       <svg width="124" height="124" viewBox="0 0 124 124" aria-hidden>
-        <circle cx="62" cy="62" r={R} fill="none" stroke="oklch(0.28 0.02 70 / 0.08)" strokeWidth="7" />
+        <circle cx="62" cy="62" r={R} fill="none" stroke="#2f271e" strokeOpacity="0.08" strokeWidth="7" />
         <circle cx="62" cy="62" r={R} fill="none" stroke={ringColor(score)} strokeWidth="7" strokeLinecap="round"
           strokeDasharray={`${(C * score) / 100} ${C}`} transform="rotate(-90 62 62)" />
       </svg>

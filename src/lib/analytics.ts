@@ -34,8 +34,14 @@ export function beacon(payload: Payload) {
   }
 }
 
-/** 页面浏览（PV）：AppShell 路由变化时调用。 */
+/** 页面浏览（PV）：AppShell 路由变化时调用。
+ *  同一文档内按路径去重——路由过渡会让新旧两棵树都跑一次 effect，
+ *  不去重时每次站内跳转都会记 2 条 PV；刷新页面模块状态重置，照常计数。 */
+let lastReportedPath: string | null = null;
+
 export function pageView(path: string) {
+  if (path === lastReportedPath) return;
+  lastReportedPath = path;
   beacon({ path });
 }
 

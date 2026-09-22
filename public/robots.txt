@@ -13,7 +13,7 @@ Allow: /
 User-agent: Bingbot
 Allow: /
 
-# 国内搜索与 AI（豆包/文心/夸克/搜狗）
+# 国内搜索与 AI（豆包/文心/夸克/搜狗/360/华为花瓣）
 User-agent: Bytespider
 Allow: /
 
@@ -24,6 +24,12 @@ User-agent: YisouSpider
 Allow: /
 
 User-agent: Sogou spider
+Allow: /
+
+User-agent: 360Spider
+Allow: /
+
+User-agent: PetalBot
 Allow: /
 
 # 国际 AI 答案引擎

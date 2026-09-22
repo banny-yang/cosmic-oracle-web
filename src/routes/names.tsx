@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppShell, PageHeader, BreadcrumbJsonLd, inputCls } from "@/components/app-shell";
 import { get } from "@/lib/api";
 import { sourceToCategory, categoryToExpectation } from "@/lib/gallery-signals";
@@ -10,6 +10,15 @@ export const Route = createFileRoute("/names")({
   validateSearch: (search: Record<string, unknown>) => ({
     keyword: typeof search["keyword"] === "string" ? search["keyword"].slice(0, 20) : undefined,
   }),
+  // 首屏数据在服务端取好，名字内容随 SSR HTML 直出（AI/搜索引擎不执行 JS 也能读到）
+  loaderDeps: ({ search }) => ({ keyword: search["keyword"] ?? "" }),
+  loader: async ({ deps }) => {
+    const [initial, meta] = await Promise.all([
+      fetchGallery({ page: 0, keyword: deps.keyword }).catch(() => null),
+      fetchCategories().catch(() => null),
+    ]);
+    return { initial, meta, keyword: deps.keyword };
+  },
   head: () => ({
     links: [{ rel: "canonical", href: "https://name.duimai.net/names" }],
     meta: [
@@ -53,6 +62,37 @@ interface CategoryInfo {
   elements: string[];
 }
 
+const GALLERY_PAGE_SIZE = 20;
+
+function fetchGallery(opts: {
+  page: number;
+  category?: string;
+  gender?: string;
+  element?: string;
+  keyword?: string;
+}) {
+  return get<GalleryPage>(
+    "/api/v1/naming/name-gallery",
+    {
+      page: opts.page,
+      size: GALLERY_PAGE_SIZE,
+      ...(opts.category ? { category: opts.category } : {}),
+      ...(opts.gender ? { gender: opts.gender } : {}),
+      ...(opts.element ? { element: opts.element } : {}),
+      ...(opts.keyword ? { keyword: opts.keyword } : {}),
+    },
+    { auth: false, timeoutMs: 10000 },
+  );
+}
+
+function fetchCategories() {
+  return get<CategoryInfo>(
+    "/api/v1/naming/name-gallery/categories",
+    {},
+    { auth: false, timeoutMs: 8000 },
+  );
+}
+
 const ELEMENT_ZH: Record<string, string> = {
   WOOD: "木",
   FIRE: "火",
@@ -67,9 +107,11 @@ const chipOff = "bg-paper-3 text-ink-soft ring-ink/10";
 
 function NameGallery() {
   const keywordSearch = Route.useSearch();
-  const [meta, setMeta] = useState<CategoryInfo | null>(null);
-  const [data, setData] = useState<GalleryPage | null>(null);
-  const [loading, setLoading] = useState(true);
+  const loaderKeyword = keywordSearch["keyword"] ?? "";
+  const { initial, meta: initialMeta } = Route.useLoaderData();
+  const [meta, setMeta] = useState<CategoryInfo | null>(initialMeta);
+  const [data, setData] = useState<GalleryPage | null>(initial);
+  const [loading, setLoading] = useState(!initial);
   const [page, setPage] = useState(0);
 
   const [category, setCategory] = useState("");
@@ -77,32 +119,33 @@ function NameGallery() {
   const [element, setElement] = useState("");
   const [keywordInput, setKeywordInput] = useState(() => keywordSearch["keyword"] ?? "");
   const [keyword, setKeyword] = useState(() => keywordSearch["keyword"] ?? "");
+  const hydrated = useRef(false);
 
   useEffect(() => {
-    get<CategoryInfo>(
-      "/api/v1/naming/name-gallery/categories",
-      {},
-      { auth: false, timeoutMs: 8000 },
-    )
+    if (initialMeta) return;
+    fetchCategories()
       .then(setMeta)
       .catch(() => setMeta(null));
-  }, []);
+  }, [initialMeta]);
 
   useEffect(() => {
+    // 首屏状态与 loader 一致时直接用 SSR 数据，不再重复请求；筛选/翻页仍走客户端
+    if (!hydrated.current) {
+      hydrated.current = true;
+      if (
+        initial &&
+        page === 0 &&
+        !category &&
+        !gender &&
+        !element &&
+        keyword === loaderKeyword
+      ) {
+        return;
+      }
+    }
     let cancelled = false;
     setLoading(true);
-    get<GalleryPage>(
-      "/api/v1/naming/name-gallery",
-      {
-        page,
-        size: 20,
-        ...(category ? { category } : {}),
-        ...(gender ? { gender } : {}),
-        ...(element ? { element } : {}),
-        ...(keyword ? { keyword } : {}),
-      },
-      { auth: false, timeoutMs: 10000 },
-    )
+    fetchGallery({ page, category, gender, element, keyword })
       .then((r) => {
         if (!cancelled) setData(r);
       })
@@ -115,7 +158,7 @@ function NameGallery() {
     return () => {
       cancelled = true;
     };
-  }, [page, category, gender, element, keyword]);
+  }, [page, category, gender, element, keyword, initial, loaderKeyword]);
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.size)) : 1;
   const pick = (fn: () => void) => {
@@ -126,6 +169,25 @@ function NameGallery() {
   return (
     <AppShell>
       <BreadcrumbJsonLd name="名字灵感库" path="/names" />
+      {data && data.items.length > 0 ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              name: "名字灵感库 · 好名字列表",
+              numberOfItems: data.total,
+              itemListElement: data.items.slice(0, GALLERY_PAGE_SIZE).map((n, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                name: n.word,
+                description: [n.pinyin, n.source, n.meaning].filter(Boolean).join(" · "),
+              })),
+            }).replace(/</g, "\\u003c"),
+          }}
+        />
+      ) : null}
       <PageHeader
         eyebrow="免费浏览 · 典籍甄选"
         title="名字灵感库"

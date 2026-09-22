@@ -16,6 +16,7 @@ import { Route as LiuyaoRouteImport } from './routes/liuyao'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MarriageRouteImport } from './routes/marriage'
 import { Route as MeRouteImport } from './routes/me'
+import { Route as NameRouteImport } from './routes/name'
 import { Route as NamesRouteImport } from './routes/names'
 import { Route as NamingRouteImport } from './routes/naming'
 import { Route as PersonalityRouteImport } from './routes/personality'
@@ -59,6 +60,11 @@ const MarriageRoute = MarriageRouteImport.update({
 const MeRoute = MeRouteImport.update({
   id: '/me',
   path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NameRoute = NameRouteImport.update({
+  id: '/name',
+  path: '/name',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NamesRoute = NamesRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
+  '/name': typeof NameRoute
   '/names': typeof NamesRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
+  '/name': typeof NameRoute
   '/names': typeof NamesRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
+  '/name': typeof NameRoute
   '/names': typeof NamesRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/marriage'
     | '/me'
+    | '/name'
     | '/names'
     | '/naming'
     | '/personality'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/marriage'
     | '/me'
+    | '/name'
     | '/names'
     | '/naming'
     | '/personality'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/marriage'
     | '/me'
+    | '/name'
     | '/names'
     | '/naming'
     | '/personality'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MarriageRoute: typeof MarriageRoute
   MeRoute: typeof MeRoute
+  NameRoute: typeof NameRoute
   NamesRoute: typeof NamesRoute
   NamingRoute: typeof NamingRoute
   PersonalityRoute: typeof PersonalityRoute
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/name': {
+      id: '/name'
+      path: '/name'
+      fullPath: '/name'
+      preLoaderRoute: typeof NameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/names': {
@@ -363,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MarriageRoute: MarriageRoute,
   MeRoute: MeRoute,
+  NameRoute: NameRoute,
   NamesRoute: NamesRoute,
   NamingRoute: NamingRoute,
   PersonalityRoute: PersonalityRoute,

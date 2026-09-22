@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { runtimeApiBaseUrl } from "../lib/runtime-env";
+import { syncToutiaoPush } from "../lib/toutiao-push";
 
 const SITE_URL = "https://name.duimai.net";
 const SITE_TITLE = "对脉名鉴 · 起名与姓名文化参考";
@@ -173,6 +174,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  /* 头条收录 token 以后台配置为准：库里有值时替换构建时注入的标签，为空则原样保留（见 lib/toutiao-push） */
+  useEffect(() => {
+    void syncToutiaoPush();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

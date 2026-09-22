@@ -28,6 +28,9 @@ const SITE_VERIFICATIONS = [
   ["msvalidate.01", import.meta.env.VITE_BING_SITE_VERIFICATION as string | undefined],
 ].filter(([, v]) => !!v) as [string, string][];
 
+/** 头条搜索自动收录 token（后台「自动收录」给出），构建时经 VITE_TOUTIAO_AUTO_PUSH 注入 */
+const TOUTIAO_AUTO_PUSH = import.meta.env.VITE_TOUTIAO_AUTO_PUSH as string | undefined;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -124,6 +127,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
     ],
     scripts: [
+      /* 头条搜索自动收录：等价于后台给的插入式片段（同一 script src + id="ttzz"），
+         改用 async 标签避免第三方 CDN 阻塞首屏渲染 */
+      ...(TOUTIAO_AUTO_PUSH
+        ? [
+            {
+              id: "ttzz",
+              src: `https://lf1-cdn-tos.bytegoofy.com/goofy/ttzz/push.js?${TOUTIAO_AUTO_PUSH}`,
+              async: true,
+            },
+          ]
+        : []),
       /* 运行时 API 地址：SSR 侧读容器环境变量写入 head，客户端业务代码经
          window.__RUNTIME_CONFIG__ 读取（脚本在 body bundle 前同步执行，变量先于一切请求生效） */
       ...(RUNTIME_API_BASE_URL

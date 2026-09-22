@@ -22,11 +22,12 @@ const SITE_DESC =
 /** 容器环境变量注入的后端地址（docker -e API_BASE_URL=...），仅 SSR 进程能读到 */
 const RUNTIME_API_BASE_URL = runtimeApiBaseUrl();
 
-/** 站长平台验证码（百度/Google/Bing），构建时经 VITE_*_SITE_VERIFICATION 注入 */
+/** 站长平台验证码（百度/Google/Bing/360），构建时经 VITE_*_SITE_VERIFICATION 注入 */
 const SITE_VERIFICATIONS = [
   ["baidu-site-verification", import.meta.env.VITE_BAIDU_SITE_VERIFICATION as string | undefined],
   ["google-site-verification", import.meta.env.VITE_GOOGLE_SITE_VERIFICATION as string | undefined],
   ["msvalidate.01", import.meta.env.VITE_BING_SITE_VERIFICATION as string | undefined],
+  ["360-site-verification", import.meta.env.VITE_360_SITE_VERIFICATION as string | undefined],
 ].filter(([, v]) => !!v) as [string, string][];
 
 /** 头条搜索自动收录 token（后台「自动收录」给出），构建时经 VITE_TOUTIAO_AUTO_PUSH 注入 */

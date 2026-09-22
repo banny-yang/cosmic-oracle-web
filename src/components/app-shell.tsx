@@ -255,7 +255,7 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
               rel="noreferrer"
               className="ml-1 hover:text-ink-soft"
             >
-              蜀ICP备16031368号-7
+              蜀ICP备16031368号-2
             </a>
           </p>
         </footer>

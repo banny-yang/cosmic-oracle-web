@@ -59,4 +59,4 @@ CORS_ALLOWED_ORIGIN_PATTERNS=http://name.duimai.net,http://localhost:*
 - **发布流程**：`docker build -t cosmic-oracle/web:1.0.0 . && docker save | gzip` → scp → 服务器 `docker load`
   → `docker compose up -d web`。
 - **待办**：`www` 子域名 A 记录 → 8.140.52.138（域名商）；宝塔签 SSL；
-  ~~页脚备案号占位~~（已改为 蜀ICP备16031368号-7 / 成都米哈哈科技·www.mihaha.com）。
+  ~~页脚备案号占位~~（现为 蜀ICP备16031368号-2 / 成都米哈哈科技·www.mihaha.com）。

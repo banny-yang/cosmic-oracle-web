@@ -6,11 +6,19 @@ import { NameGalleryCarousel } from "@/components/name-gallery-carousel";
 import { NamingDemo } from "@/components/naming-demo";
 import { useAuth } from "@/lib/auth";
 import { get } from "@/lib/api";
-import { fetchClassicBookTree, promotedCategories } from "@/lib/classic-books";
+import { fetchClassicBookTree, promotedCategories, type ClassicBookTree } from "@/lib/classic-books";
 import { track } from "@/lib/track";
 
 export const Route = createFileRoute("/")({
   component: Index,
+  // 「典藏典籍」随 SSR HTML 直出（AI/搜索引擎不执行 JS 也能读到书目与名句）；
+  // 接口慢/不可用时 4 秒兜底返回 null，板块静默隐藏，不拖累首页首字节
+  loader: async () => ({
+    classic: await Promise.race([
+      fetchClassicBookTree(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+    ]),
+  }),
   head: () => ({
     links: [{ rel: "canonical", href: "https://name.duimai.net/" }],
     meta: [
@@ -160,8 +168,26 @@ const sampleDimensions = [
 
 /* ───────── 页面 ───────── */
 
+/** 「典藏典籍」板块数据：卡片带「用《X》取名」入口，只取已录入原文、可指定取名的书。 */
+function classicSection(tree: ClassicBookTree | null) {
+  if (!tree) return null;
+  const all = promotedCategories(tree).flatMap((c) => c.books);
+  const nameable = all.filter((b) => b.selectable);
+  if (!nameable.length) return null;
+  return {
+    total: all.length,
+    books: nameable.slice(0, 3).map((b) => ({
+      book: b.book,
+      intro: b.intro,
+      highlight: b.highlight,
+      highlightSource: b.highlightSource,
+    })),
+  };
+}
+
 function Index() {
   const { loggedIn } = useAuth();
+  const { classic } = Route.useLoaderData();
   const [social, setSocial] = useState<SocialProof | null>(null);
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
   // 充值档位与畅享卡：公开只读接口动态渲染（1 点 = ¥1；接口失败回落静态兜底）
@@ -189,7 +215,7 @@ function Index() {
       highlight: string | null;
       highlightSource: string | null;
     }[];
-  } | null>(null);
+  } | null>(() => classicSection(classic));
 
   useEffect(() => {
     track("home_view");
@@ -245,19 +271,16 @@ function Index() {
       .catch(() => {});
   }, []);
 
-  // 典藏典籍：书目树取前几部展出（公开接口，失败静默隐藏板块，详见 /dianji）
+  // 典藏典籍：loader 未取到时再客户端补拉（失败静默隐藏板块，详见 /dianji）
   useEffect(() => {
+    if (classic) return;
     fetchClassicBookTree()
       .then((t) => {
-        const all = promotedCategories(t).flatMap((c) => c.books);
-        // 卡片带「用《X》取名」入口，只取已录入原文、可指定取名的书
-        const nameable = all.filter((b) => b.selectable);
-        if (nameable.length) {
-          setClassicBooks({ total: all.length, books: nameable.slice(0, 3) });
-        }
+        const section = classicSection(t);
+        if (section) setClassicBooks(section);
       })
       .catch(() => {});
-  }, []);
+  }, [classic]);
 
   const fmt = (n?: number) =>
     n == null ? "" : n >= 10000 ? (n / 10000).toFixed(1) + " 万" : String(n);

@@ -3,6 +3,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { posterQrTarget } from "@/lib/promo-config";
 import { CATEGORY_LABELS, categoryToExpectation } from "@/lib/gallery-signals";
+import {
+  fetchClassicBookTree,
+  selectableBooksByCategory,
+  type ClassicBookNode,
+  type ClassicBookTree,
+} from "@/lib/classic-books";
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { track } from "@/lib/track";
@@ -34,7 +40,7 @@ import {
 export const Route = createFileRoute("/naming")({
   component: Naming,
   // 环 1：灵感库卡片 CTA 带入风格信号——prefer=偏好字（仅汉字≤4）、src=典籍类目码、
-  // g=性别（M/F）、cat=气质分类（映射家长期望预选）
+  // g=性别（M/F）、cat=气质分类（映射家长期望预选）；book=《典籍馆》指定书目（按书名取典）
   validateSearch: (search: Record<string, unknown>) => ({
     prefer:
       typeof search["prefer"] === "string"
@@ -48,6 +54,10 @@ export const Route = createFileRoute("/naming")({
     cat:
       typeof search["cat"] === "string" && categoryToExpectation(search["cat"])
         ? search["cat"]
+        : undefined,
+    book:
+      typeof search["book"] === "string"
+        ? search["book"].replace(/[《》\s]/g, "").slice(0, 12)
         : undefined,
   }),
   head: () => ({
@@ -673,6 +683,10 @@ const classicGroups = [
       ["bowu", "山海本草"],
     ],
   },
+  {
+    name: "蒙学启蒙",
+    items: [["mengxue", "蒙学"]],
+  },
 ] as const;
 
 function Naming() {
@@ -721,6 +735,11 @@ function Naming() {
   const [sourcesSel, setSourcesSel] = useState<string[]>(() =>
     preferSearch["src"] && CATEGORY_LABELS[preferSearch["src"]] ? [preferSearch["src"]] : [],
   );
+  // 书名轴（V171）：书目树来自管理端维护的 t_classic_book，取不到时整块隐藏、退化为类目轴
+  const [bookTree, setBookTree] = useState<ClassicBookTree | null>(null);
+  const [booksSel, setBooksSel] = useState<string[]>([]);
+  /** 《典籍馆》深链带入的书名（可单独移除，与类目偏好互不影响） */
+  const [preferBook, setPreferBook] = useState<string | null>(() => preferSearch["book"] ?? null);
   const [classicGroup, setClassicGroup] = useState(() => {
     const src = preferSearch["src"];
     if (!src || !CATEGORY_LABELS[src]) return 0;
@@ -745,7 +764,77 @@ function Naming() {
     (tabooText.trim() ? 1 : 0) +
     (avoidText.trim() ? 1 : 0) +
     stylesSel.length +
-    sourcesSel.length;
+    sourcesSel.length +
+    booksSel.length;
+
+  /** 生效的书目信号：《典籍馆》深链带入的书名被用户摘除（切分组/取消勾选）后不再视为信号 */
+  const bookSignal = preferBook && booksSel.includes(preferBook) ? preferBook : null;
+
+  // 书名轴（V171）：挂载时取一次书目树（管理端可维护；取不到则整块隐藏，退化为类目轴）
+  useEffect(() => {
+    let cancelled = false;
+    fetchClassicBookTree().then((t) => {
+      if (!cancelled) setBookTree(t);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** 类目编码 → 用户可选书目。 */
+  const booksByCat = useMemo(() => selectableBooksByCategory(bookTree), [bookTree]);
+  /** 书名 → 类目编码（切换分组/取消类目时清掉不在范围内的选书）。 */
+  const catByBook = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const g of bookTree?.groups ?? []) {
+      for (const c of g.categories) {
+        for (const b of c.books) m.set(b.book, c.code);
+      }
+    }
+    return m;
+  }, [bookTree]);
+
+  /** 类目编码 → 中文名（书目树口径优先，缺时回落前端既有标签）。 */
+  const catNameByCode = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const g of bookTree?.groups ?? []) {
+      for (const c of g.categories) m.set(c.code, c.name);
+    }
+    return m;
+  }, [bookTree]);
+  const catName = (code: string) => catNameByCode.get(code) ?? CATEGORY_LABELS[code] ?? code;
+
+  /**
+   * 书目行（第二级）：类目被勾选、或该类目下已选书目的类目，展开其可选书目。
+   * 行内含「取消类目即收起」的联动——取消类目会同时清掉其下选书（见下方类目 chip）。
+   */
+  const bookRows = useMemo(() => {
+    const rows: { code: string; name: string; books: ClassicBookNode[] }[] = [];
+    for (const [code, books] of booksByCat) {
+      const active =
+        sourcesSel.includes(code) || booksSel.some((b) => catByBook.get(b) === code);
+      if (active) rows.push({ code, name: catName(code), books });
+    }
+    return rows;
+  }, [booksByCat, catByBook, sourcesSel, booksSel, catNameByCode]);
+
+  // 《典籍馆》深链：书目树到位后把 ?book= 落到选书——并把该书类目从类目轴摘掉（选书即按书出典）
+  useEffect(() => {
+    if (!bookTree || !preferBook) return;
+    const cat = catByBook.get(preferBook);
+    const selectable = cat ? (booksByCat.get(cat) ?? []).some((b) => b.book === preferBook) : false;
+    if (!cat || !selectable) {
+      // 该书未开放用户选择（管理端 selectable=0）或已下线：忽略深链，不留死状态
+      setPreferBook(null);
+      return;
+    }
+    setBooksSel((p) => (p.includes(preferBook) ? p : [...p, preferBook]));
+    setSourcesSel((p) => p.filter((c) => c !== cat));
+    setClassicGroup((gi) => {
+      const idx = classicGroups.findIndex((g) => g.items.some(([c2]) => c2 === cat));
+      return idx >= 0 ? idx : gi;
+    });
+  }, [bookTree, preferBook, catByBook, booksByCat]);
 
   /** 浏览器定位 → 直接取经纬度（真太阳时校正只需经度，地名仅为展示）。 */
   const locateMe = () => {
@@ -900,6 +989,7 @@ function Naming() {
     ...(stylesSel.length ? { styleTags: stylesSel } : {}),
     ...(expectSel.length ? { parentExpectations: expectSel } : {}),
     ...(sourcesSel.length ? { classicSources: sourcesSel } : {}),
+    ...(booksSel.length ? { classicBooks: booksSel } : {}),
     classicStyle,
     ...(avoidText.trim()
       ? {
@@ -1273,12 +1363,15 @@ function Naming() {
                     选中的期望将用于选字与寓意判词，名字尽量呼应
                   </p>
                 </Field>
-                {/* 环 1 增强：灵感库带入面板——始终可见（不折叠），四个信号可单独移除 */}
-                {preferChars.length || preferSrc || preferGender || preferExpect ? (
+                {/* 环 1 增强：偏好信号面板——始终可见（不折叠），各信号可单独移除 */}
+                {preferChars.length || preferSrc || bookSignal || preferGender || preferExpect ? (
                   <div className="rounded-xl bg-vermilion/[0.06] px-3 py-2.5 ring-1 ring-vermilion/15">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-[11px] font-medium text-vermilion-deep">
-                        灵感库带入
+                        {/* 从《典籍馆》指定书目进来时没有灵感库名字，标题按实际来源写 */}
+                        {preferChars.length || preferSrc || preferGender || preferExpect
+                          ? "灵感库带入"
+                          : "指定典籍"}
                       </span>
                       {preferChars.length ? (
                         <span className="flex items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-[11px] ring-1 ring-vermilion/20">
@@ -1306,6 +1399,23 @@ function Naming() {
                             onClick={() => {
                               setPreferSrc(null);
                               setSourcesSel([]);
+                            }}
+                            className="text-ink-faint hover:text-ink"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ) : null}
+                      {/* 书目信号以实际勾选为准：切分组/取消类目会摘掉书目，此处同步不再显示 */}
+                      {bookSignal ? (
+                        <span className="flex items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-[11px] text-ink-soft ring-1 ring-ink/10">
+                          书目 · 《{preferBook}》
+                          <button
+                            type="button"
+                            title="移除指定书目"
+                            onClick={() => {
+                              setBooksSel((p) => p.filter((x) => x !== preferBook));
+                              setPreferBook(null);
                             }}
                             className="text-ink-faint hover:text-ink"
                           >
@@ -1344,8 +1454,11 @@ function Naming() {
                       ) : null}
                     </div>
                     <p className="mt-1.5 text-[11px] text-ink-faint">
-                      按选定名字的风格生成：偏好字优先成卡
+                      {preferChars.length || preferSrc || preferGender || preferExpect
+                        ? "按选定名字的风格生成：偏好字优先成卡"
+                        : "本次起名的偏好："}
                       {preferSrc ? "、典籍收敛到该出处" : ""}
+                      {bookSignal ? "、名字出处限定该书" : ""}
                       {preferExpect ? "、期望呼应其气质" : ""}；点 × 可单独移除任一信号
                     </p>
                   </div>
@@ -1489,10 +1602,10 @@ function Naming() {
                               key={g.name}
                               onClick={() => {
                                 setClassicGroup(gi);
-                                // 分段互斥：切换分组清空其他组已选（组间类目不重叠）
-                                setSourcesSel((p) =>
-                                  p.filter((x) => g.items.some(([c2]) => x === c2)),
-                                );
+                                // 分段互斥：切换分组清空其他组已选（组间类目不重叠），组外选书一并清掉
+                                const codes = g.items.map(([c2]) => c2) as readonly string[];
+                                setSourcesSel((p) => p.filter((x) => codes.includes(x)));
+                                setBooksSel((p) => p.filter((bk) => codes.includes(catByBook.get(bk) ?? "")));
                               }}
                               className={`${chips} flex-1 ${classicGroup === gi ? "bg-ink text-paper ring-ink" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
                             >
@@ -1506,11 +1619,15 @@ function Naming() {
                         {classicGroups[classicGroup].items.map(([code, label]) => (
                           <button
                             key={code}
-                            onClick={() =>
-                              setSourcesSel((p) =>
-                                p.includes(code) ? p.filter((x) => x !== code) : [...p, code],
-                              )
-                            }
+                            onClick={() => {
+                              if (sourcesSel.includes(code)) {
+                                // 取消类目时同步清掉其下已选书目（书目行随类目一起收起）
+                                setBooksSel((bk) => bk.filter((x) => catByBook.get(x) !== code));
+                                setSourcesSel((p) => p.filter((x) => x !== code));
+                                return;
+                              }
+                              setSourcesSel((p) => [...p, code]);
+                            }}
                             className={`${chips} ${sourcesSel.includes(code) ? "bg-vermilion/15 text-vermilion-deep ring-vermilion/30" : "bg-paper-3 text-ink-soft ring-ink/10"}`}
                           >
                             {label}
@@ -1520,6 +1637,60 @@ function Naming() {
                       <p className="mt-1.5 text-[11px] text-ink/45">
                         可多选类目；切换分组会更换可选类目并清空已选
                       </p>
+
+                      {/* 第二级：书目轴（V171，管理端维护的书单）——选中类目后展开其下书目 */}
+                      {bookRows.length ? (
+                        <div className="mt-3 space-y-2.5 rounded-xl bg-paper-3/60 p-3 ring-1 ring-ink/5">
+                          {bookRows.map(({ code, name, books }) => (
+                            <div key={code}>
+                              <p className="text-[11px] font-medium text-ink-soft">
+                                {name} · 指定书目
+                                <span className="ml-1 font-normal text-ink-faint">
+                                  （可多选，选定后只从这些典籍出典）
+                                </span>
+                              </p>
+                              <div className="mt-1.5 flex flex-wrap gap-2">
+                                {books.map((b) => (
+                                  <button
+                                    key={b.book}
+                                    title={b.intro ?? undefined}
+                                    onClick={() => {
+                                      if (booksSel.includes(b.book)) {
+                                        setBooksSel((p) => p.filter((x) => x !== b.book));
+                                        return;
+                                      }
+                                      // 选书即按书出典：把该书类目从类目轴摘掉，避免两轴口径打架
+                                      setSourcesSel((sp) => sp.filter((x) => x !== code));
+                                      setBooksSel((p) => [...p, b.book]);
+                                    }}
+                                    className={`${chips} ${booksSel.includes(b.book) ? "bg-vermilion/15 text-vermilion-deep ring-vermilion/30" : "bg-paper-2 text-ink-soft ring-ink/10"}`}
+                                  >
+                                    {b.book}
+                                    {b.sentenceCount > 0 ? (
+                                      <span className="ml-1 opacity-60">
+                                        {b.sentenceCount >= 10000
+                                          ? `${Math.round(b.sentenceCount / 10000)}万`
+                                          : b.sentenceCount}
+                                      </span>
+                                    ) : null}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                          <p className="text-[11px] text-ink-faint">
+                            {booksSel.length
+                              ? `已选 ${booksSel.length} 部：名字出处只来自所选书目，可在《典籍馆》看每部书的名句`
+                              : "不选书目 = 在所选类目（或全部语料）里自由取典"}
+                            <Link
+                              to="/dianji"
+                              className="ml-1 text-vermilion-deep underline underline-offset-2"
+                            >
+                              查看典籍馆 →
+                            </Link>
+                          </p>
+                        </div>
+                      ) : null}
                     </Field>
                     <h4 className="flex items-center gap-2 pt-1 text-xs font-semibold text-ink-soft">
                       <span aria-hidden className="h-3 w-0.5 rounded-full bg-vermilion/60" />

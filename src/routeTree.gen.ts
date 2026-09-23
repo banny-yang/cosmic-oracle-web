@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalysisRouteImport } from './routes/analysis'
+import { Route as DianjiRouteImport } from './routes/dianji'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as LiuyaoRouteImport } from './routes/liuyao'
 import { Route as LoginRouteImport } from './routes/login'
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
 const AnalysisRoute = AnalysisRouteImport.update({
   id: '/analysis',
   path: '/analysis',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DianjiRoute = DianjiRouteImport.update({
+  id: '/dianji',
+  path: '/dianji',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HelpRoute = HelpRouteImport.update({
@@ -116,6 +122,7 @@ const VoteTokenRoute = VoteTokenRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
+  '/dianji': typeof DianjiRoute
   '/help': typeof HelpRoute
   '/liuyao': typeof LiuyaoRoute
   '/login': typeof LoginRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
+  '/dianji': typeof DianjiRoute
   '/help': typeof HelpRoute
   '/liuyao': typeof LiuyaoRoute
   '/login': typeof LoginRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
+  '/dianji': typeof DianjiRoute
   '/help': typeof HelpRoute
   '/liuyao': typeof LiuyaoRoute
   '/login': typeof LoginRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/analysis'
+    | '/dianji'
     | '/help'
     | '/liuyao'
     | '/login'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/analysis'
+    | '/dianji'
     | '/help'
     | '/liuyao'
     | '/login'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/analysis'
+    | '/dianji'
     | '/help'
     | '/liuyao'
     | '/login'
@@ -234,6 +246,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalysisRoute: typeof AnalysisRoute
+  DianjiRoute: typeof DianjiRoute
   HelpRoute: typeof HelpRoute
   LiuyaoRoute: typeof LiuyaoRoute
   LoginRoute: typeof LoginRoute
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       path: '/analysis'
       fullPath: '/analysis'
       preLoaderRoute: typeof AnalysisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dianji': {
+      id: '/dianji'
+      path: '/dianji'
+      fullPath: '/dianji'
+      preLoaderRoute: typeof DianjiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/help': {
@@ -378,6 +398,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysisRoute: AnalysisRoute,
+  DianjiRoute: DianjiRoute,
   HelpRoute: HelpRoute,
   LiuyaoRoute: LiuyaoRoute,
   LoginRoute: LoginRoute,

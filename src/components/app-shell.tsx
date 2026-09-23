@@ -15,6 +15,7 @@ import {
   Heart,
   HeartHandshake,
   History,
+  Library,
   Menu,
   Waves,
   type LucideIcon,
@@ -39,6 +40,14 @@ const FEATURE_MENU = [
   title: string;
 }>;
 
+/** 常显入口（不挂功能开关）：典籍馆是内容/文化页，与业务开关无关。 */
+const STATIC_MENU = [{ to: "/dianji", icon: Library, title: "典籍馆" }] as const satisfies
+  ReadonlyArray<{
+    to: string;
+    icon: LucideIcon;
+    title: string;
+  }>;
+
 /** 顶栏功能菜单（横排桌面 / 纵排汉堡浮层），受管理端功能开关控制 */
 function FeatureNav({ vertical = false }: { vertical?: boolean }) {
   const enabled = {
@@ -50,7 +59,10 @@ function FeatureNav({ vertical = false }: { vertical?: boolean }) {
     QIMEN_JUDGE: useFeatureEnabled("QIMEN_JUDGE"),
     NAME_GALLERY: useFeatureEnabled("NAME_GALLERY"),
   };
-  const items = FEATURE_MENU.filter((f) => enabled[f.code] !== false);
+  const items: ReadonlyArray<{ to: string; icon: LucideIcon; title: string }> = [
+    ...FEATURE_MENU.filter((f) => enabled[f.code] !== false),
+    ...STATIC_MENU,
+  ];
   return (
     <nav
       className={vertical ? "flex flex-col items-stretch gap-1" : "flex items-center gap-1"}

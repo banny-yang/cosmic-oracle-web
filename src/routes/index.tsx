@@ -6,6 +6,7 @@ import { NameGalleryCarousel } from "@/components/name-gallery-carousel";
 import { NamingDemo } from "@/components/naming-demo";
 import { useAuth } from "@/lib/auth";
 import { get } from "@/lib/api";
+import { fetchClassicBookTree, promotedCategories } from "@/lib/classic-books";
 import { track } from "@/lib/track";
 
 export const Route = createFileRoute("/")({
@@ -180,6 +181,15 @@ function Index() {
   const [verse, setVerse] = useState<{ text?: string; source?: string; meaning?: string } | null>(
     null,
   );
+  const [classicBooks, setClassicBooks] = useState<{
+    total: number;
+    books: {
+      book: string;
+      intro: string | null;
+      highlight: string | null;
+      highlightSource: string | null;
+    }[];
+  } | null>(null);
 
   useEffect(() => {
     track("home_view");
@@ -232,6 +242,20 @@ function Index() {
   useEffect(() => {
     get("/api/v1/naming/daily-verse", {}, { auth: false, timeoutMs: 6000 })
       .then((r: any) => r?.text && setVerse(r))
+      .catch(() => {});
+  }, []);
+
+  // 典藏典籍：书目树取前几部展出（公开接口，失败静默隐藏板块，详见 /dianji）
+  useEffect(() => {
+    fetchClassicBookTree()
+      .then((t) => {
+        const all = promotedCategories(t).flatMap((c) => c.books);
+        // 卡片带「用《X》取名」入口，只取已录入原文、可指定取名的书
+        const nameable = all.filter((b) => b.selectable);
+        if (nameable.length) {
+          setClassicBooks({ total: all.length, books: nameable.slice(0, 3) });
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -386,6 +410,56 @@ function Index() {
       {/* 功能矩阵 */}
       {/* 名字灵感库幻灯片（原功能卡网格位置，数据来自公开接口，失败静默隐藏） */}
       <NameGalleryCarousel />
+
+      {/* 典藏典籍（典籍馆入口 + 书目与名句，数据来自公开接口，失败静默隐藏） */}
+      {classicBooks && classicBooks.books.length ? (
+        <section className="mt-12">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold">典藏典籍</h2>
+            <Link
+              to="/dianji"
+              className="text-xs font-medium text-vermilion-deep underline underline-offset-2"
+            >
+              进典籍馆看全部 {classicBooks.total} 部 →
+            </Link>
+          </div>
+          <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+            起名引擎收录的典籍书目（诗经、楚辞、唐诗宋词、蒙学等）。看中哪一部，就指定它为宝宝取名——
+            名字的出处只来自这一部书。
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {classicBooks.books.map((b) => (
+              <div key={b.book} className="rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5">
+                <p className="font-seal text-xl leading-none text-ink">《{b.book}》</p>
+                <p className="mt-2 text-xs leading-relaxed text-ink-soft text-pretty">
+                  {b.intro ?? ""}
+                </p>
+                {b.highlight ? (
+                  <p className="mt-2 text-xs leading-relaxed text-ink">
+                    {b.highlight}
+                    {b.highlightSource ? (
+                      <span className="text-ink-faint"> —— {b.highlightSource}</span>
+                    ) : null}
+                  </p>
+                ) : null}
+                <Link
+                  to="/naming"
+                  search={{
+                    prefer: undefined,
+                    src: undefined,
+                    g: undefined,
+                    cat: undefined,
+                    book: b.book,
+                  }}
+                  className="mt-3 inline-block text-xs font-medium text-vermilion-deep underline underline-offset-2"
+                >
+                  用《{b.book}》取名 →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* 点数与价格 */}
       <section className="mt-12">

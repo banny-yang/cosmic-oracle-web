@@ -72,7 +72,7 @@ function PrivacyPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl bg-paper-2/60 p-6 ring-1 ring-ink/5">
+    <section className="rounded-2xl bg-white p-6 transition-colors hover:bg-vermilion-wash">
       <h2 className="text-base font-semibold text-ink">{title}</h2>
       <div className="mt-3 space-y-3">{children}</div>
     </section>

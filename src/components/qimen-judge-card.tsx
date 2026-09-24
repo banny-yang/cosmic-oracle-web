@@ -55,7 +55,7 @@ function HitChips({ hits, tone }: { hits?: GridHit[] | undefined; tone: "ji" | "
           key={i}
           className={[
             "rounded-full px-2 py-0.5 text-[11px] font-medium",
-            tone === "ji" ? "bg-vermilion/10 text-vermilion-deep" : "bg-ink/8 text-ink-soft",
+            tone === "ji" ? "bg-vermilion-wash text-vermilion-deep" : "bg-paper-3 text-ink-soft",
           ].join(" ")}
         >
           {h.pattern_name ?? "格局"}
@@ -72,10 +72,10 @@ export function QimenJudgeCard({ judge }: { judge: QimenJudgeData }) {
   const score = judge.verdict?.score;
   const pct = typeof score === "number" ? Math.max(0, Math.min(100, score)) : null;
   return (
-    <section className="rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+    <section className="rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
       <div className="flex items-center gap-4">
         {pct != null ? (
-          <div className="grid size-16 shrink-0 place-items-center rounded-full ring-2 ring-vermilion/60">
+          <div className="grid size-16 shrink-0 place-items-center rounded-full">
             <span className="text-lg font-bold tabular-nums text-vermilion-deep">{pct}</span>
           </div>
         ) : null}
@@ -114,7 +114,7 @@ export function QimenYingQiCard({ yingqi }: { yingqi: QimenYingQi }) {
   const list = (yingqi.candidate_times ?? []).slice(0, 4);
   if (list.length === 0) return null;
   return (
-    <section className="rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+    <section className="rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
       <p className="text-xs font-semibold tracking-widest text-vermilion-deep">
         应期推断{yingqi.rule_name ? ` · ${yingqi.rule_name}` : ""}
       </p>
@@ -138,7 +138,7 @@ export function QimenYingQiCard({ yingqi }: { yingqi: QimenYingQi }) {
                 {c.action_type ? ` · ${c.action_type}` : ""}
               </p>
               {prob != null ? (
-                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-ink/10">
+                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-paper-3">
                   <div
                     className="h-full rounded-full bg-vermilion"
                     style={{ width: `${Math.min(100, prob)}%` }}

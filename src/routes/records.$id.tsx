@@ -34,6 +34,8 @@ interface NameCardData {
   recommendScore?: number;
   recommended?: boolean;
   recommendReason?: string;
+  /** 姓+名整体搭配说明（后端姓氏融合）。 */
+  surnameNote?: string;
 }
 
 interface LogDetail {
@@ -87,19 +89,19 @@ function RecordDetail() {
       />
 
       {error ? (
-        <div className="mt-7 rounded-2xl bg-paper-2 p-8 text-center ring-1 ring-ink/5">
+        <div className="mt-7 rounded-2xl bg-white p-8 text-center transition-colors hover:bg-vermilion-wash">
           <p className="text-sm text-vermilion-deep">{error}</p>
         </div>
       ) : !loaded ? (
         <div className="mt-7 space-y-4">
           {[0, 1].map((i) => (
-            <div key={i} className="h-36 animate-pulse rounded-2xl bg-paper-2 ring-1 ring-ink/5" />
+            <div key={i} className="h-36 animate-pulse rounded-2xl bg-paper-3" />
           ))}
         </div>
       ) : (
         <>
           {diag ? (
-            <section className="ink-in d1 mt-7 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="ink-in d1 mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               <h2 className="text-base font-semibold">出生五行分析</h2>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 <span className="rounded-full bg-paper-3 px-3 py-1.5">日主 · {ELEMENT_ZH[diag.dayMasterElement] || "-"}</span>
@@ -119,7 +121,7 @@ function RecordDetail() {
           </div>
           <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
             {cards.map((c) => (
-              <section key={c.name} className="relative rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+              <section key={c.name} className="relative rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
                 {c.recommended ? (
                   <span className="absolute top-0 right-5 flex flex-col items-center rounded-b-lg bg-vermilion px-2 py-1.5 font-seal text-xs leading-tight text-paper">
                     <span>推</span>
@@ -137,8 +139,13 @@ function RecordDetail() {
                     {c.recommendReason ? <span className="text-ink-faint">· {c.recommendReason}</span> : null}
                   </p>
                 ) : null}
+                {c.surnameNote ? (
+                  <p className="mt-3 text-[11px] leading-relaxed text-ink-faint">
+                    <span className="text-ink-soft">姓+名 ·</span> {c.surnameNote}
+                  </p>
+                ) : null}
                 {c.classicCitation ? (
-                  <div className="mt-3 rounded-xl bg-paper-3/60 p-3">
+                  <div className="mt-3 rounded-xl bg-paper-3 p-3">
                     {c.classicSource ? <p className="text-xs font-medium text-vermilion-deep">「{c.classicSource}」</p> : null}
                     <p className="mt-1 text-xs leading-relaxed text-ink-soft">{c.classicCitation}</p>
                   </div>

@@ -36,6 +36,12 @@
   --color-ink-faint: var(--ink-faint);
   --color-vermilion: var(--vermilion);
   --color-vermilion-deep: var(--vermilion-deep);
+  /* 扁平化的两个实色补充。都写成字面值而不是 color-mix/oklch 透明度：
+     --color-scrim 需要真半透明（弹层遮罩只能用遮罩，没法用实色块替代），用 rgba 才不会
+     被 legacy-css-compat 那条旧内核管线降级成不透明色；--color-vermilion-wash 是浅朱砂底
+     （悬停/次级强调），本来就要实色。 */
+  --color-vermilion-wash: #fbf0ed;
+  --color-scrim: rgba(43, 36, 23, 0.55);
 }
 
 /* 自托管毛笔印章体（子集含站点文案+起名字池），替代 Google Fonts CDN，

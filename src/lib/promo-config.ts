@@ -28,14 +28,18 @@ export function promoWebUrl(): Promise<string> {
  * 海报二维码目标：配置为裸域名时 = 域名 + 功能路径（如 /naming，保持深链）；
  * 配置为带路径的落地页（pathname 非根或带查询串）时原样使用——
  * 管理端想统一指向一个活动页时只需填完整地址。
+ * opts.from 追加渠道参数（海报统一 from=poster）用于区分扫码来源；
+ * 管理端手填的完整落地页不改写。
  */
-export async function posterQrTarget(path: string): Promise<string> {
+export async function posterQrTarget(path: string, opts: { from?: string } = {}): Promise<string> {
   const base = await promoWebUrl();
+  const withFrom = (target: string) =>
+    opts.from ? `${target}?from=${encodeURIComponent(opts.from)}` : target;
   try {
     const u = new URL(base);
     if ((u.pathname && u.pathname !== "/") || u.search) return base;
-    return base + (path.startsWith("/") ? path : "/" + path);
+    return withFrom(base + (path.startsWith("/") ? path : "/" + path));
   } catch {
-    return FALLBACK_BASE + (path.startsWith("/") ? path : "/" + path);
+    return withFrom(FALLBACK_BASE + (path.startsWith("/") ? path : "/" + path));
   }
 }

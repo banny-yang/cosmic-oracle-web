@@ -83,7 +83,7 @@ function Analysis() {
         <>
           <ReportRunning error={flow.error} />
           {flow.markdown ? (
-            <section className="mt-4 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               <MiniMarkdown text={flow.markdown} />
             </section>
           ) : null}
@@ -92,7 +92,7 @@ function Analysis() {
         <>
           {showPaywall ? <RechargeModal message={flow.error} onClose={() => setShowPaywall(false)} /> : null}
           {!flow.needPay && flow.error ? (
-            <section className="mt-7 rounded-2xl bg-paper-2 p-5 text-center ring-1 ring-ink/5">
+            <section className="mt-7 rounded-2xl bg-white p-5 text-center transition-colors hover:bg-vermilion-wash">
               <p className="text-sm text-vermilion-deep">{flow.error}</p>
             </section>
           ) : null}
@@ -107,17 +107,24 @@ function Analysis() {
                 ? meta.partner_names.map(String)[0].split(" · ")
                 : [meta.seeker_name ?? nameA, meta.partner_name ?? nameB];
               return buildNamePoster(
-                names[0] || nameA, (names[1] ?? nameB) || nameB,
+                names[0] || nameA,
+                (names[1] ?? nameB) || "对方",
                 score,
                 Array.isArray(meta.partner_names) && meta.partner_names.length > 1 ? "平均姓名契合度" : "双人姓名契合度",
-                typeof meta.three_talents === "string" ? meta.three_talents : null,
                 meta.resonance_type === "harmonic_healing" ? "良性共振" : meta.resonance_type === "neutral_balance" ? "中性平衡" : meta.resonance_type === "malignant_excitation" ? "恶性亢奋" : null,
                 typeof meta.energy_mantra === "string" ? meta.energy_mantra : detail?.annualMantra ?? null,
+                {
+                  dayMaster: typeof meta.bazi_day_master === "string" ? meta.bazi_day_master : null,
+                  favorable: typeof meta.bazi_favorable_element === "string" ? meta.bazi_favorable_element : null,
+                  threeTalents: typeof meta.three_talents === "string" ? meta.three_talents : null,
+                  attribute: meta.name_element_attribute && typeof meta.name_element_attribute === "object" ? meta.name_element_attribute : null,
+                  remedyRate: typeof meta.bazi_deficiency_remedy_rate === "string" ? meta.bazi_deficiency_remedy_rate : null,
+                },
               );
             }}
           />
           {flow.markdown ? (
-            <section className="ink-in mt-5 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="ink-in mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               <MiniMarkdown text={flow.markdown} />
             </section>
           ) : null}

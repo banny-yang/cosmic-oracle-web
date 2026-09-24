@@ -4,7 +4,7 @@ import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/compo
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { useReportFlow, ReportForm, MiniMarkdown, ReportRunning, RechargeModal } from "@/components/report-flow";
 import { CompatibilitySummaryCard, useReportDetail } from "@/components/report-summary-cards";
-import { ReportPosterButtons, buildCompatibilityPoster } from "@/components/report-poster";
+import { ReportPosterButtons, buildCompatibilityPoster, fetchMarriageFitWuxing } from "@/components/report-poster";
 import { getAuthUser } from "@/lib/auth";
 import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
@@ -146,7 +146,7 @@ function Personality() {
         <>
           <ReportRunning error={flow.error} />
           {flow.markdown ? (
-            <section className="mt-4 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               <MiniMarkdown text={flow.markdown} />
             </section>
           ) : null}
@@ -155,7 +155,7 @@ function Personality() {
         <>
           {showPaywall ? <RechargeModal message={flow.error} onClose={() => setShowPaywall(false)} /> : null}
           {!flow.needPay && flow.error ? (
-            <section className="mt-7 rounded-2xl bg-paper-2 p-5 text-center ring-1 ring-ink/5">
+            <section className="mt-7 rounded-2xl bg-white p-5 text-center transition-colors hover:bg-vermilion-wash">
               <p className="text-sm text-vermilion-deep">{flow.error}</p>
             </section>
           ) : null}
@@ -165,18 +165,23 @@ function Personality() {
             trackKey="compat_poster"
             build={async () => {
               const meta = detail?.reportMetadataJson ? JSON.parse(detail.reportMetadataJson) : {};
+              const a = { name: nameA.trim() || "我方", birthTime: `${dateA}T${timeA}:00`, latitude: latA, longitude: lngA };
+              const b = { name: nameB.trim() || "对方", birthTime: `${dateB}T${timeB}:00`, latitude: latB, longitude: lngB };
+              const fit = await fetchMarriageFitWuxing(a, b);
               return buildCompatibilityPoster(
-                [`${nameA || "我方"} × ${nameB || "对方"}`],
+                a.name,
+                b.name,
                 Number(meta.overall_harmony_rate ?? detail?.riskLevel ?? 75),
                 String(meta.attraction_index ?? "MEDIUM"),
                 String(meta.friction_index ?? "MEDIUM"),
                 Array.isArray(meta.relational_tags) ? meta.relational_tags.map(String) : [],
                 typeof meta.communication_key === "string" ? meta.communication_key : detail?.annualMantra ?? null,
+                fit,
               );
             }}
           />
           {flow.markdown ? (
-            <section className="ink-in mt-5 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="ink-in mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               <MiniMarkdown text={flow.markdown} />
             </section>
           ) : null}

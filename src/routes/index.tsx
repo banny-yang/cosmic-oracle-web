@@ -363,13 +363,13 @@ function Index() {
               <Link
                 to="/naming"
                 onClick={() => track("home_cta_click", { where: "hero" })}
-                className="rounded-2xl bg-vermilion px-7 py-3 text-base font-semibold text-paper ring-1 ring-vermilion-deep/40 transition-transform duration-300 hover:-translate-y-0.5"
+                className="rounded-2xl bg-vermilion px-7 py-3 text-base font-semibold text-paper transition-colors hover:bg-vermilion-deep"
               >
                 开始为TA起名
               </Link>
               <a
                 href="#sample"
-                className="rounded-2xl bg-paper-2 px-7 py-3 text-base font-medium text-ink ring-1 ring-ink/10 transition-transform duration-300 hover:-translate-y-0.5"
+                className="rounded-2xl bg-paper-3 px-7 py-3 text-base font-medium text-ink transition-colors hover:bg-vermilion-wash"
               >
                 先看示例
               </a>
@@ -380,9 +380,9 @@ function Index() {
     >
       {/* 今日一名（典籍内容位） */}
       {verse?.text ? (
-        <section className="ink-in d1 mt-6 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+        <section className="ink-in d1 mt-6 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
           <div className="flex items-baseline justify-between">
-            <p className="text-xs font-medium tracking-widest text-ink/45">
+            <p className="text-xs font-medium tracking-widest text-ink-soft">
               今日一名 · 典籍里的好字
             </p>
             <span className="text-[11px] text-ink-faint">{verse.source}</span>
@@ -422,7 +422,7 @@ function Index() {
           {social.feed.slice(0, 6).map((f, i) => (
             <span
               key={i}
-              className="shrink-0 rounded-full bg-paper-2 px-3 py-1.5 text-[11px] text-ink-soft ring-1 ring-ink/5"
+              className="shrink-0 rounded-full bg-paper-3 px-3 py-1.5 text-[11px] text-ink-soft"
             >
               {f.text}
             </span>
@@ -452,7 +452,7 @@ function Index() {
           </p>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {classicBooks.books.map((b) => (
-              <div key={b.book} className="rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5">
+              <div key={b.book} className="rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash">
                 <p className="font-seal text-xl leading-none text-ink">《{b.book}》</p>
                 <p className="mt-2 text-xs leading-relaxed text-ink-soft text-pretty">
                   {b.intro ?? ""}
@@ -469,6 +469,7 @@ function Index() {
                   to="/naming"
                   search={{
                     prefer: undefined,
+                    x: undefined,
                     src: undefined,
                     g: undefined,
                     cat: undefined,
@@ -494,7 +495,7 @@ function Index() {
           {pointCosts.map((c) => (
             <div
               key={c.title}
-              className="flex flex-col rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5"
+              className="flex flex-col rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash"
             >
               <p className="text-sm font-semibold">{c.title}</p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-vermilion-deep">
@@ -506,7 +507,7 @@ function Index() {
         </div>
 
         {/* 充值档位（卡片化）+ 扫码引导 + 畅享双卡 CTA */}
-        <div className="mt-3 rounded-2xl bg-paper-2/60 p-5 ring-1 ring-ink/5">
+        <div className="mt-3 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">
@@ -517,7 +518,7 @@ function Index() {
                 {pointSkus.map((t, i) => (
                   <div
                     key={i}
-                    className={`relative rounded-xl bg-paper p-3 ring-1 ${t.tag ? "ring-vermilion/40" : "ring-ink/10"}`}
+                    className={`relative rounded-xl bg-paper-3 p-3 transition-colors ${t.tag ? "bg-vermilion-wash" : "hover:bg-vermilion-wash"}`}
                   >
                     {t.tag ? (
                       <span className="absolute -top-2 right-2 rounded-full bg-vermilion px-1.5 py-0.5 text-[10px] font-semibold text-paper">
@@ -532,7 +533,7 @@ function Index() {
                 ))}
               </div>
             </div>
-            <div className="flex shrink-0 flex-col items-center gap-1 rounded-xl bg-paper p-3 ring-1 ring-ink/10">
+            <div className="flex shrink-0 flex-col items-center gap-1 rounded-xl bg-paper-2 p-3 transition-colors hover:bg-vermilion-wash">
               <img
                 src="/mp-qrcode.jpg"
                 alt="对脉名鉴小程序码"
@@ -545,11 +546,11 @@ function Index() {
             {passSkus.map((ps) => (
               <div
                 key={ps.kind}
-                className={`flex items-center justify-between gap-2 rounded-xl p-3.5 ring-1 ${ps.kind === "DAY_PASS" ? "bg-amber-700/8 ring-amber-600/30" : "bg-ink ring-ink"}`}
+                className={`flex items-center justify-between gap-2 rounded-xl p-3.5 transition-colors ${ps.kind === "DAY_PASS" ? "bg-amber-50" : "bg-ink "}`}
               >
                 <div>
                   <p
-                    className={`text-xs font-medium ${ps.kind === "DAY_PASS" ? "text-amber-800" : "text-paper/80"}`}
+                    className={`text-xs font-medium ${ps.kind === "DAY_PASS" ? "text-amber-800" : "text-paper"}`}
                   >
                     {ps.kind === "DAY_PASS" ? "起名畅享 · 24 小时" : "起名包月 · 30 天"}
                   </p>
@@ -560,7 +561,7 @@ function Index() {
                   </p>
                 </div>
                 <p
-                  className={`max-w-[14ch] text-right text-[11px] leading-snug ${ps.kind === "DAY_PASS" ? "text-ink-soft" : "text-paper/70"}`}
+                  className={`max-w-[14ch] text-right text-[11px] leading-snug ${ps.kind === "DAY_PASS" ? "text-ink-soft" : "text-paper"}`}
                 >
                   宝宝起名生成与换一批不限次
                 </p>
@@ -577,7 +578,7 @@ function Index() {
       <div className="ink-in d2 mt-8">
         <Link
           to={loggedIn ? "/records" : "/login"}
-          className="flex items-center justify-between rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5 transition-transform duration-300 hover:-translate-y-0.5"
+          className="flex items-center justify-between rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash"
         >
           <div>
             <h2 className="text-lg font-semibold">我的解析</h2>
@@ -599,9 +600,9 @@ function Index() {
           {steps.map((s, i) => (
             <div
               key={s.title}
-              className={`ink-in d${(i % 3) + 1} flex gap-3 rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5`}
+              className={`ink-in d${(i % 3) + 1} flex gap-3 rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash`}
             >
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-ink/85 font-seal text-base text-paper">
+              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-ink font-seal text-base text-paper">
                 {s.seal}
               </span>
               <div>
@@ -623,14 +624,14 @@ function Index() {
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div className="relative rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
-            <div className="absolute top-4 right-4 grid size-11 place-items-center rounded-lg bg-vermilion text-paper shadow-sm">
+          <div className="relative rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+            <div className="absolute top-4 right-4 grid size-11 place-items-center rounded-lg bg-vermilion text-paper">
               <span className="font-seal text-2xl leading-none">佳</span>
             </div>
             <p className="pr-14 font-seal text-4xl leading-none text-ink">{sample.name}</p>
             <p className="mt-2 text-sm tracking-wider text-ink-soft">{sample.pinyin}</p>
 
-            <div className="mt-4 space-y-2 border-t border-ink/5 pt-4 text-sm">
+            <div className="mt-4 space-y-2 pt-4 text-sm">
               {sample.chars.map((c) => (
                 <p key={c.ch} className="flex gap-2">
                   <span className="w-8 shrink-0 text-ink-faint">{c.ch}</span>
@@ -639,19 +640,19 @@ function Index() {
               ))}
             </div>
 
-            <div className="mt-4 rounded-xl bg-ink/[0.04] p-3">
+            <div className="mt-4 rounded-xl bg-paper-2 p-3">
               <p className="text-xs leading-relaxed text-ink-soft text-pretty">{sample.source}</p>
             </div>
 
             <Link
               to="/naming"
-              className="mt-5 block w-full rounded-xl bg-ink py-2.5 text-center text-sm font-medium text-paper ring-1 ring-ink/40 transition-transform duration-300 hover:-translate-y-0.5"
+              className="mt-5 block w-full rounded-xl bg-ink py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
             >
               为我家宝宝生成
             </Link>
           </div>
 
-          <div className="rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+          <div className="rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-xs text-ink-soft">八字合婚示例</p>
@@ -672,7 +673,7 @@ function Index() {
                     <span className="text-ink-soft">{d.label}</span>
                     <span className="tabular-nums">{d.score}</span>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-paper-3">
                     <div
                       className="bar-grow h-full rounded-full bg-vermilion"
                       style={{ width: `${d.score}%` }}
@@ -695,19 +696,19 @@ function Index() {
       <section className="mt-12">
         <h2 className="text-lg font-semibold">被信任的方式</h2>
         <div className="mt-4 grid grid-cols-3 gap-3">
-          <div className="rounded-2xl bg-paper-2 p-4 text-center ring-1 ring-ink/5">
+          <div className="rounded-2xl bg-white p-4 text-center transition-colors hover:bg-vermilion-wash">
             <p className="text-xl font-semibold tabular-nums text-ink">
               {social?.todayCount != null ? fmt(social.todayCount) : "—"}
             </p>
             <p className="mt-1 text-[11px] text-ink-soft">今日已生成</p>
           </div>
-          <div className="rounded-2xl bg-paper-2 p-4 text-center ring-1 ring-ink/5">
+          <div className="rounded-2xl bg-white p-4 text-center transition-colors hover:bg-vermilion-wash">
             <p className="text-xl font-semibold tabular-nums text-ink">
               {social?.namingFamilies ? fmt(social.namingFamilies) : "—"}
             </p>
             <p className="mt-1 text-[11px] text-ink-soft">累计服务家庭</p>
           </div>
-          <div className="rounded-2xl bg-paper-2 p-4 text-center ring-1 ring-ink/5">
+          <div className="rounded-2xl bg-white p-4 text-center transition-colors hover:bg-vermilion-wash">
             <p className="text-xl font-semibold tabular-nums text-ink">
               {social?.avgMinutes ? Math.round(social.avgMinutes) : "—"}
             </p>
@@ -716,7 +717,7 @@ function Index() {
         </div>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {feedbacks.map((f, i) => (
-            <figure key={i} className="rounded-2xl bg-paper-2/60 p-5 ring-1 ring-ink/5">
+            <figure key={i} className="rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               <blockquote className="text-sm leading-relaxed text-ink-soft">
                 「{f.text}」
               </blockquote>
@@ -733,7 +734,7 @@ function Index() {
         <h2 className="text-lg font-semibold">常被问到的</h2>
         <div className="mt-4 space-y-3">
           {faqs.map((f) => (
-            <details key={f.q} className="group rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <details key={f.q} className="group rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium">
                 {f.q}
                 <span className="text-ink-faint transition-transform group-open:rotate-45">＋</span>
@@ -757,13 +758,13 @@ function Index() {
             <Link
               onClick={() => track("home_cta_click", { where: "bottom" })}
               to="/naming"
-              className="mt-5 block w-full max-w-xs rounded-2xl bg-vermilion py-3.5 text-center text-base font-semibold text-paper transition-transform duration-300 hover:-translate-y-0.5"
+              className="mt-5 block w-full max-w-xs rounded-2xl bg-vermilion py-3.5 text-center text-base font-semibold text-paper transition-colors hover:bg-vermilion-deep"
             >
               开始为TA起名
             </Link>
-            <p className="mt-3 text-[11px] text-paper/60">网页与小程序同账号互通 · 点数通用</p>
+            <p className="mt-3 text-[11px] text-paper">网页与小程序同账号互通 · 点数通用</p>
           </div>
-          <div className="flex shrink-0 flex-col items-center gap-2 rounded-2xl bg-paper p-4">
+          <div className="flex shrink-0 flex-col items-center gap-2 rounded-2xl bg-paper-2 p-4 transition-colors hover:bg-vermilion-wash">
             <img
               src="/mp-qrcode.jpg"
               onClick={() => track("mp_qr_click", { where: "home_bottom" })}

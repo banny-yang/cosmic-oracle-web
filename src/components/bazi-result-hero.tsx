@@ -8,11 +8,11 @@ export interface BaziPerson {
 
 /** 沉稳等级色板（低饱和，与宣纸暖调协调；环/徽章/数字同色呼应） */
 const LEVEL_STYLE: Record<string, { badge: string; ring: string; number: string }> = {
-  极佳: { badge: "bg-emerald-800/10 text-emerald-800 ring-emerald-800/30", ring: "#047857", number: "text-emerald-800" },
-  良好: { badge: "bg-emerald-800/10 text-emerald-800 ring-emerald-800/30", ring: "#047857", number: "text-emerald-800" },
-  中上: { badge: "bg-blue-800/10 text-blue-800 ring-blue-800/30", ring: "#1d4ed8", number: "text-blue-800" },
-  一般: { badge: "bg-amber-800/10 text-amber-800 ring-amber-800/30", ring: "#b45309", number: "text-amber-800" },
-  偏低: { badge: "bg-rose-800/10 text-rose-800 ring-rose-800/30", ring: "#be123c", number: "text-rose-800" },
+  极佳: { badge: "bg-emerald-50 text-emerald-800", ring: "#047857", number: "text-emerald-800" },
+  良好: { badge: "bg-emerald-50 text-emerald-800", ring: "#047857", number: "text-emerald-800" },
+  中上: { badge: "bg-blue-50 text-blue-800", ring: "#1d4ed8", number: "text-blue-800" },
+  一般: { badge: "bg-amber-50 text-amber-800", ring: "#b45309", number: "text-amber-800" },
+  偏低: { badge: "bg-rose-50 text-rose-800", ring: "#be123c", number: "text-rose-800" },
 };
 
 /** 日主英文码 → 中文（Gui-Water → 癸水） */
@@ -41,13 +41,13 @@ function dayMasterDot(dm?: string | null): string {
       : e === "土" ? "bg-amber-600"
       : e === "金" ? "bg-yellow-700"
       : e === "水" ? "bg-blue-700"
-      : "bg-ink/30";
+      : "bg-ink-faint";
 }
 
 function PillarColumn({ pillar }: { pillar: string }) {
   const [stem, branch] = [pillar.slice(0, 1), pillar.slice(1, 2)];
   return (
-    <span className="flex w-10 flex-col items-center rounded-md bg-paper py-1 font-seal text-[14px] leading-snug text-ink ring-1 ring-vermilion/25">
+    <span className="flex w-10 flex-col items-center rounded-md bg-paper-2 py-1 font-seal text-[14px] leading-snug text-ink">
       <span>{stem}</span>
       <span>{branch}</span>
     </span>
@@ -58,11 +58,11 @@ function PersonCard({ person, side }: { person?: BaziPerson | undefined; side: "
   const label = side === "male" ? "男方" : "女方";
   const dm = dayMasterZh(person?.dayMaster);
   return (
-    <div className="min-w-0 flex-1 rounded-xl bg-paper px-3 py-2.5 ring-1 ring-ink/5">
+    <div className="min-w-0 flex-1 rounded-xl bg-paper-2 px-3 py-2.5">
       <div className="flex items-center gap-1.5">
         <span className={`size-1.5 shrink-0 rounded-full ${dayMasterDot(person?.dayMaster)}`} />
         <p className="truncate text-sm font-semibold text-ink">{person?.name || label}</p>
-        <span className="shrink-0 rounded-full bg-ink/5 px-1.5 text-[10px] text-ink-soft">{label}</span>
+        <span className="shrink-0 rounded-full bg-paper-3 px-1.5 text-[10px] text-ink-soft">{label}</span>
       </div>
       <div className="mt-2 flex justify-center gap-2">
         {(person?.pillars ?? ["——", "——", "——", "——"]).slice(0, 4).map((p, i) => (
@@ -96,7 +96,7 @@ export function BaziResultHero({
   const worst = data.items.reduce<{ label: string; score: number } | null>((a, b) => (!a || b.score < a.score ? b : a), null);
 
   return (
-    <section className="ink-in relative mt-7 overflow-hidden rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/10">
+    <section className="ink-in relative mt-7 overflow-hidden rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
       <img
         src="/paper-grain.png"
         alt=""
@@ -107,7 +107,7 @@ export function BaziResultHero({
       <div className="relative flex items-center gap-2">
         <PersonCard person={persons?.[0]} side="male" />
         <div className="grid shrink-0 place-items-center self-center px-0.5">
-          <span className="grid size-9 place-items-center rounded-lg bg-vermilion font-seal text-lg text-paper shadow-sm ring-1 ring-vermilion-deep/30">
+          <span className="grid size-9 place-items-center rounded-lg bg-vermilion font-seal text-lg text-paper">
             合
           </span>
         </div>
@@ -135,7 +135,7 @@ export function BaziResultHero({
         </div>
         <div className="min-w-0 max-w-[15rem]">
           <span
-            className={`inline-flex items-center rounded-full px-4 py-1.5 text-base font-bold tracking-wider ring-1 ${style.badge}`}
+            className={`inline-flex items-center rounded-full px-4 py-1.5 text-base font-bold tracking-wider ${style.badge}`}
           >
             {data.level}
           </span>
@@ -145,10 +145,10 @@ export function BaziResultHero({
 
       {/* 统计 chip：数据一行，免责单独降级 */}
       <div className="relative mt-6 flex flex-wrap justify-center gap-2 text-[11px]">
-        <span className="rounded-full bg-paper px-3 py-1 text-ink-soft ring-1 ring-ink/10">
+        <span className="rounded-full bg-paper-2 px-3 py-1 text-ink-soft">
           最强一项 · {best?.label} {best?.score}
         </span>
-        <span className="rounded-full bg-paper px-3 py-1 text-ink-soft ring-1 ring-ink/10">
+        <span className="rounded-full bg-paper-2 px-3 py-1 text-ink-soft">
           最需关注 · {worst?.label} {worst?.score}
         </span>
       </div>

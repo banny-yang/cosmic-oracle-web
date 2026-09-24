@@ -18,6 +18,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as MarriageRouteImport } from './routes/marriage'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as NameRouteImport } from './routes/name'
+import { Route as NameEvalRouteImport } from './routes/name-eval'
 import { Route as NamesRouteImport } from './routes/names'
 import { Route as NamingRouteImport } from './routes/naming'
 import { Route as PersonalityRouteImport } from './routes/personality'
@@ -71,6 +72,11 @@ const MeRoute = MeRouteImport.update({
 const NameRoute = NameRouteImport.update({
   id: '/name',
   path: '/name',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NameEvalRoute = NameEvalRouteImport.update({
+  id: '/name-eval',
+  path: '/name-eval',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NamesRoute = NamesRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
   '/name': typeof NameRoute
+  '/name-eval': typeof NameEvalRoute
   '/names': typeof NamesRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
   '/name': typeof NameRoute
+  '/name-eval': typeof NameEvalRoute
   '/names': typeof NamesRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
   '/name': typeof NameRoute
+  '/name-eval': typeof NameEvalRoute
   '/names': typeof NamesRoute
   '/naming': typeof NamingRoute
   '/personality': typeof PersonalityRoute
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/marriage'
     | '/me'
     | '/name'
+    | '/name-eval'
     | '/names'
     | '/naming'
     | '/personality'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/marriage'
     | '/me'
     | '/name'
+    | '/name-eval'
     | '/names'
     | '/naming'
     | '/personality'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/marriage'
     | '/me'
     | '/name'
+    | '/name-eval'
     | '/names'
     | '/naming'
     | '/personality'
@@ -253,6 +265,7 @@ export interface RootRouteChildren {
   MarriageRoute: typeof MarriageRoute
   MeRoute: typeof MeRoute
   NameRoute: typeof NameRoute
+  NameEvalRoute: typeof NameEvalRoute
   NamesRoute: typeof NamesRoute
   NamingRoute: typeof NamingRoute
   PersonalityRoute: typeof PersonalityRoute
@@ -327,6 +340,13 @@ declare module '@tanstack/react-router' {
       path: '/name'
       fullPath: '/name'
       preLoaderRoute: typeof NameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/name-eval': {
+      id: '/name-eval'
+      path: '/name-eval'
+      fullPath: '/name-eval'
+      preLoaderRoute: typeof NameEvalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/names': {
@@ -405,6 +425,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarriageRoute: MarriageRoute,
   MeRoute: MeRoute,
   NameRoute: NameRoute,
+  NameEvalRoute: NameEvalRoute,
   NamesRoute: NamesRoute,
   NamingRoute: NamingRoute,
   PersonalityRoute: PersonalityRoute,

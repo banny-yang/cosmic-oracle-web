@@ -98,12 +98,12 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
   return (
     <div className="space-y-3">
       {arrived != null ? (
-        <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+        <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
           已到账 +{arrived} 点，可直接继续使用
         </p>
       ) : null}
       {passActive ? (
-        <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+        <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
           畅享已开通，关闭本弹窗即可使用
         </p>
       ) : null}
@@ -117,10 +117,10 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
                 key={s.productId}
                 onClick={() => setSelected(s.productId)}
                 className={
-                  "rounded-xl p-2.5 text-left ring-1 transition-colors " +
+                  "rounded-xl p-2.5 text-left transition-colors " +
                   (selected === s.productId
-                    ? "bg-vermilion/10 ring-vermilion"
-                    : "bg-paper-3 ring-ink/10 hover:bg-paper-2")
+                    ? "bg-vermilion-wash"
+                    : "bg-paper-3 hover:bg-vermilion-wash")
                 }
               >
                 <p className="text-sm font-bold text-ink">{s.credits ?? ""} 点</p>
@@ -141,10 +141,10 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
                 key={s.productId}
                 onClick={() => setSelected(s.productId)}
                 className={
-                  "rounded-xl p-2.5 text-left ring-1 transition-colors " +
+                  "rounded-xl p-2.5 text-left transition-colors " +
                   (selected === s.productId
-                    ? "bg-vermilion/10 ring-vermilion"
-                    : "bg-paper-3 ring-ink/10 hover:bg-paper-2")
+                    ? "bg-vermilion-wash"
+                    : "bg-paper-3 hover:bg-vermilion-wash")
                 }
               >
                 <p className="text-sm font-bold text-ink">
@@ -160,11 +160,11 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
         </div>
       ) : null}
 
-      <div className="flex items-center gap-3 rounded-xl bg-paper-3/60 p-3">
+      <div className="flex items-center gap-3 rounded-xl bg-paper-3 p-3">
         <img
           src={qr || "/mp-qrcode.jpg"}
           alt="对脉名鉴小程序支付码"
-          className="size-24 shrink-0 rounded-lg bg-paper ring-1 ring-ink/10"
+          className="size-24 shrink-0 rounded-lg bg-paper-3"
           onClick={() => track("mp_qr_click", { where: trackWhere })}
         />
         <div className="min-w-0 flex-1">

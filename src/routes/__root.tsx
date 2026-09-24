@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { redeemMpHandoffTicket } from "../lib/mp-handoff";
 import { runtimeApiBaseUrl } from "../lib/runtime-env";
 import { syncToutiaoPush } from "../lib/toutiao-push";
 
@@ -39,17 +40,17 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">页面不存在</h2>
-        <p className="mt-2 text-sm text-muted-foreground">你要找的页面可能已被移动或删除。</p>
+        <p className="mt-2 text-sm text-ink-soft">你要找的页面可能已被移动或删除。</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Link
             to="/naming"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
           >
             去起名
           </Link>
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-md bg-paper-3 px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash"
           >
             回到首页
           </Link>
@@ -70,7 +71,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">页面没能加载出来</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-sm text-ink-soft">
           我们这边出了点问题，你可以刷新重试，或先回首页看看。
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -79,13 +80,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
           >
             重试
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-md bg-paper-3 px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash"
           >
             回到首页
           </a>
@@ -179,6 +180,11 @@ function RootComponent() {
   /* 头条收录 token 以后台配置为准：库里有值时替换构建时注入的标签，为空则原样保留（见 lib/toutiao-push） */
   useEffect(() => {
     void syncToutiaoPush();
+  }, []);
+
+  /* 小程序 web-view 带来的 mp_ticket（若有）：换本站登录态，免二次登录（见 lib/mp-handoff） */
+  useEffect(() => {
+    void redeemMpHandoffTicket();
   }, []);
 
   return (

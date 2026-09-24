@@ -86,7 +86,7 @@ export function NamingDemo() {
                 key={s.key}
                 onClick={() => jump(i)}
                 aria-label={s.title}
-                className={`h-1.5 flex-1 rounded-full transition-colors ${i === scene ? "bg-vermilion" : "bg-ink/10"}`}
+                className={`h-1.5 flex-1 rounded-full transition-colors ${i === scene ? "bg-vermilion" : "bg-paper-3"}`}
               />
             ))}
           </div>
@@ -101,7 +101,7 @@ export function NamingDemo() {
                 <button
                   onClick={() => jump(i)}
                   className={`flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors ${
-                    i === scene ? "bg-vermilion/10 ring-1 ring-vermilion/20" : "hover:bg-paper-2"
+                    i === scene ? "bg-vermilion-wash" : "hover:bg-vermilion-wash"
                   }`}
                 >
                   <span
@@ -132,7 +132,7 @@ export function NamingDemo() {
         </div>
 
         {/* 演示面板 */}
-        <div className="mt-4 min-h-[300px] rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5 md:col-span-7 md:mt-1 md:min-h-[320px]">
+        <div className="mt-4 min-h-[300px] rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash md:col-span-7 md:mt-1 md:min-h-[320px]">
           {scene === 0 ? <SceneForm /> : null}
           {scene === 1 ? <SceneXiyong /> : null}
           {scene === 2 ? <ScenePool /> : null}
@@ -157,14 +157,14 @@ function SceneForm() {
       {rows.map((r, i) => (
         <div
           key={r.label}
-          className="demo-step flex items-center justify-between rounded-xl bg-paper-3/70 px-4 py-3"
+          className="demo-step flex items-center justify-between rounded-xl bg-paper-3 px-4 py-3"
           style={{ animationDelay: `${i * 260}ms` }}
         >
           <span className="text-xs text-ink-faint">{r.label}</span>
           <span className="text-sm font-medium text-ink">{r.value}</span>
         </div>
       ))}
-      <div className="demo-step flex items-center gap-2 rounded-xl bg-vermilion/10 px-4 py-3" style={{ animationDelay: "820ms" }}>
+      <div className="demo-step flex items-center gap-2 rounded-xl bg-vermilion-wash px-4 py-3" style={{ animationDelay: "820ms" }}>
         <span className="grid size-6 place-items-center rounded-full bg-vermilion font-seal text-xs text-paper">时</span>
         <p className="text-xs leading-relaxed text-ink-soft">
           真太阳时校正：<span className="font-semibold text-ink">02:00 → 01:46</span>（按经度 116.4°E 与时区差修正）
@@ -179,15 +179,15 @@ function SceneXiyong() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 py-4">
       <div className="flex items-center gap-3">
-        <span className={`${badge} bg-sky-800/85 text-sky-50`}>日主 · 水</span>
+        <span className={`${badge} bg-sky-800 text-sky-50`}>日主 · 水</span>
         <span className={`${badge} bg-paper-3 text-ink-soft`}>身弱</span>
       </div>
       <span className="demo-step text-ink-faint" style={{ animationDelay: "600ms" }}>↓ 宜生扶</span>
       <div className="flex items-center gap-3">
-        <span className={`demo-step ${badge} bg-stone-600/90 text-stone-50`} style={{ animationDelay: "900ms" }}>
+        <span className={`demo-step ${badge} bg-stone-600 text-stone-50`} style={{ animationDelay: "900ms" }}>
           喜用 · 金主
         </span>
-        <span className={`demo-step ${badge} bg-sky-800/85 text-sky-50`} style={{ animationDelay: "1250ms" }}>
+        <span className={`demo-step ${badge} bg-sky-800 text-sky-50`} style={{ animationDelay: "1250ms" }}>
           水辅
         </span>
       </div>
@@ -206,7 +206,7 @@ function ScenePool() {
           <span
             key={i}
             className={`demo-tile grid aspect-square place-items-center rounded-xl font-seal text-2xl ${
-              c.hit ? "bg-vermilion/12 text-ink ring-1 ring-vermilion/35" : "bg-paper-3/60 text-ink-faint opacity-45"
+              c.hit ? "bg-vermilion-wash text-ink" : "bg-paper-3 text-ink-faint opacity-45"
             }`}
             style={{ animationDelay: `${i * 90}ms` }}
           >
@@ -225,7 +225,7 @@ function SceneClassic({ typed }: { typed: number }) {
   const done = typed >= CLASSIC_TEXT.length;
   return (
     <div className="flex h-full flex-col justify-center gap-4">
-      <p className="rounded-xl bg-paper-3/60 p-4 text-sm leading-loose text-ink">
+      <p className="rounded-xl bg-paper-3 p-4 text-sm leading-loose text-ink">
         {CLASSIC_TEXT.slice(0, typed)}
         {!done ? <span className="animate-pulse text-vermilion">▍</span> : null}
       </p>
@@ -248,7 +248,7 @@ function SceneResult() {
     { label: "总格", value: 22 },
   ];
   return (
-    <div className="relative rounded-2xl bg-paper-3/40 p-5">
+    <div className="relative rounded-2xl bg-paper-3 p-5">
       <span className="absolute top-0 right-5 flex flex-col items-center rounded-b-lg bg-vermilion px-2 py-1.5 font-seal text-xs leading-tight text-paper">
         <span>推</span>
         <span>荐</span>

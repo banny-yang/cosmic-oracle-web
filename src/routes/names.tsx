@@ -101,9 +101,9 @@ const ELEMENT_ZH: Record<string, string> = {
   WATER: "水",
 };
 
-const chips = "rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition-colors";
-const chipOn = "bg-ink text-paper ring-ink";
-const chipOff = "bg-paper-3 text-ink-soft ring-ink/10";
+const chips = "rounded-full px-3 py-1.5 text-xs font-medium transition-colors";
+const chipOn = "bg-ink text-paper";
+const chipOff = "bg-paper-3 text-ink-soft hover:bg-vermilion-wash";
 
 function NameGallery() {
   const keywordSearch = Route.useSearch();
@@ -195,7 +195,7 @@ function NameGallery() {
       />
 
       {/* 筛选区：分类为主轴 + 性别/五行/搜索 */}
-      <section className="mt-7 space-y-3 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+      <section className="mt-7 space-y-3 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
         <div className="flex flex-wrap gap-2">
           <button
             className={[chips, category === "" ? chipOn : chipOff].join(" ")}
@@ -230,7 +230,6 @@ function NameGallery() {
               {g.label}
             </button>
           ))}
-          <span className="mx-1 h-4 w-px bg-ink/10" />
           <button
             className={[chips, element === "" ? chipOn : chipOff].join(" ")}
             onClick={() => pick(() => setElement(""))}
@@ -262,11 +261,11 @@ function NameGallery() {
       {loading ? (
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-44 animate-pulse rounded-2xl bg-paper-2 ring-1 ring-ink/5" />
+            <div key={i} className="h-44 animate-pulse rounded-2xl bg-paper-3" />
           ))}
         </div>
       ) : !data || data.items.length === 0 ? (
-        <div className="mt-8 rounded-2xl bg-paper-2 p-10 text-center ring-1 ring-ink/5">
+        <div className="mt-8 rounded-2xl bg-white p-10 text-center transition-colors hover:bg-vermilion-wash">
           <p className="text-sm text-ink-soft">没有符合条件的名字，换个筛选试试。</p>
         </div>
       ) : (
@@ -279,7 +278,7 @@ function NameGallery() {
                   ? n.elements.split(",")
                   : [];
               return (
-                <div key={n.word} className="rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+                <div key={n.word} className="rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-seal text-3xl leading-none text-ink">{n.word}</p>
@@ -289,7 +288,7 @@ function NameGallery() {
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-1.5">
                       {n.gender === "M" ? (
-                        <span className="rounded-full bg-ink/85 px-2 py-0.5 text-[10px] font-medium text-paper">
+                        <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] font-medium text-paper">
                           男
                         </span>
                       ) : n.gender === "F" ? (
@@ -301,21 +300,21 @@ function NameGallery() {
                         ELEMENT_ZH[e] ? (
                           <span
                             key={i}
-                            className="rounded-full bg-paper-3 px-2 py-0.5 text-[10px] text-ink-soft ring-1 ring-ink/10"
+                            className="rounded-full bg-paper-3 px-2 py-0.5 text-[10px] text-ink-soft"
                           >
                             {ELEMENT_ZH[e]}
                           </span>
                         ) : null,
                       )}
                       {typeof n.score === "number" ? (
-                        <span className="rounded-full bg-vermilion/10 px-2 py-0.5 text-[10px] font-semibold text-vermilion-deep">
+                        <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-semibold text-vermilion-deep">
                           {n.score} 分
                         </span>
                       ) : null}
                     </div>
                   </div>
 
-                  <p className="mt-3 inline-block rounded-full bg-ink/[0.05] px-2.5 py-0.5 text-[11px] text-ink-soft">
+                  <p className="mt-3 inline-block rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] text-ink-soft">
                     {n.category}
                   </p>
 
@@ -325,7 +324,7 @@ function NameGallery() {
                     </p>
                   ) : null}
                   {n.text || n.source ? (
-                    <div className="mt-3 rounded-xl bg-ink/[0.04] p-3">
+                    <div className="mt-3 rounded-xl bg-paper-2 p-3">
                       {n.text ? (
                         <p className="text-xs leading-relaxed text-ink-soft text-pretty">
                           {n.text}
@@ -346,7 +345,7 @@ function NameGallery() {
                       g: n.gender === "M" || n.gender === "F" ? n.gender : undefined,
                       cat: categoryToExpectation(n.category) ? n.category : undefined,
                     }}
-                    className="mt-4 block w-full rounded-xl bg-ink py-2.5 text-center text-sm font-medium text-paper ring-1 ring-ink/40 transition-transform duration-300 hover:-translate-y-0.5"
+                    className="mt-4 block w-full rounded-xl bg-ink py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
                   >
                     按「{n.word}」的风格起名 →
                   </Link>
@@ -360,7 +359,7 @@ function NameGallery() {
             <span>共 {data.total} 个名字</span>
             <div className="flex items-center gap-2">
               <button
-                className="rounded-xl bg-paper-2 px-4 py-2 text-xs font-medium text-ink ring-1 ring-ink/10 disabled:opacity-40"
+                className="rounded-xl bg-paper-3 px-4 py-2 text-xs font-medium text-ink transition-colors hover:bg-vermilion-wash disabled:opacity-40"
                 disabled={page === 0}
                 onClick={() => setPage((p) => p - 1)}
               >
@@ -370,7 +369,7 @@ function NameGallery() {
                 {page + 1} / {totalPages}
               </span>
               <button
-                className="rounded-xl bg-paper-2 px-4 py-2 text-xs font-medium text-ink ring-1 ring-ink/10 disabled:opacity-40"
+                className="rounded-xl bg-paper-3 px-4 py-2 text-xs font-medium text-ink transition-colors hover:bg-vermilion-wash disabled:opacity-40"
                 disabled={page + 1 >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
               >

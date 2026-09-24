@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
@@ -6,6 +6,7 @@ import { BirthplaceInput } from "@/components/birthplace-input";
 import { ScanBuyPanel } from "@/components/scan-buy";
 import { get, patch, post, api } from "@/lib/api";
 import { getToken, getAuthUser, useAuth, updateUser, clearAuth } from "@/lib/auth";
+import { detectMiniProgramEnv, openMpProfilePage } from "@/lib/mp-bridge";
 
 export const Route = createFileRoute("/me")({
   component: MePage,
@@ -64,7 +65,7 @@ const ORDER_STATUS: Record<string, { label: string; cls: string }> = {
   PENDING: { label: "处理中", cls: "bg-amber-100 text-amber-800" },
   PAID: { label: "已到账", cls: "bg-emerald-100 text-emerald-800" },
   SUCCESS: { label: "已到账", cls: "bg-emerald-100 text-emerald-800" },
-  CLOSED: { label: "已关闭", cls: "bg-ink/10 text-ink-faint" },
+  CLOSED: { label: "已关闭", cls: "bg-paper-3 text-ink-soft" },
   REFUNDED: { label: "已退款", cls: "bg-rose-100 text-rose-800" },
 };
 
@@ -114,6 +115,26 @@ function MePage() {
   const [showService, setShowService] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+
+  // 小程序 web-view 内：微信头像昵称只能在原生页用官方弹层获取，这里只做引导
+  const [inMp, setInMp] = useState(false);
+  const [mpHint, setMpHint] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    detectMiniProgramEnv().then((yes) => {
+      if (alive && yes) setInMp(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mpHint) return;
+    const t = window.setTimeout(() => setMpHint(""), 6000);
+    return () => window.clearTimeout(t);
+  }, [mpHint]);
 
   useEffect(() => {
     if (!loggedIn) {
@@ -278,10 +299,10 @@ function MePage() {
       <PageHeader eyebrow="账号" title="我的" desc="昵称、出生信息与登录状态管理。" />
 
       {/* 资料卡 */}
-      <section className="ink-in d1 mt-7 overflow-hidden rounded-2xl bg-paper-2 ring-1 ring-ink/5">
+      <section className="ink-in d1 mt-7 overflow-hidden rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
         <div className="flex items-center gap-4 p-5">
         {user?.avatarUrl ? (
-          <img src={user.avatarUrl} alt="头像" className="size-14 rounded-full object-cover ring-2 ring-ink/10" />
+          <img src={user.avatarUrl} alt="头像" className="size-14 rounded-full object-cover" />
         ) : (
           <span className="grid size-14 place-items-center rounded-full bg-paper-3 font-seal text-xl text-ink">
             {(user?.displayName || "客")[0]}
@@ -298,17 +319,35 @@ function MePage() {
             setName(user?.displayName || "");
             setEditingName(true);
           }}
-          className="shrink-0 rounded-full bg-paper-3 px-4 py-1.5 text-xs font-medium text-ink-soft ring-1 ring-ink/10"
+          className="shrink-0 rounded-full bg-paper-3 px-4 py-1.5 text-xs font-medium text-ink-soft"
         >
           编辑
         </button>
         </div>
+        {/* 小程序内且还没有微信头像时：去小程序「我的」页一键设置（微信头像昵称须在原生页获取） */}
+        {inMp && !user?.avatarUrl ? (
+          <div className="flex items-center justify-between gap-3 px-5 py-2.5">
+            <p className="text-xs text-ink-faint">
+              {mpHint || "微信头像与昵称可在小程序内一键设置"}
+            </p>
+            <button
+              onClick={async () => {
+                if (!(await openMpProfilePage())) {
+                  setMpHint("小程序版本较旧：请在小程序「我的」页顶部一键设置");
+                }
+              }}
+              className="shrink-0 rounded-full bg-vermilion-wash px-3.5 py-1.5 text-xs font-medium text-vermilion-deep"
+            >
+              去设置
+            </button>
+          </div>
+        ) : null}
         {profile?.shortId != null ? (
-          <div className="flex items-center justify-between border-t border-ink/5 px-5 py-2.5">
+          <div className="flex items-center justify-between px-5 py-2.5">
             <p className="text-xs text-ink-faint">用户 ID（客服报号用）</p>
             <button
               onClick={copyShortId}
-              className="flex items-center gap-1.5 rounded-full bg-paper-3 px-2.5 py-1 font-mono text-xs font-medium text-ink ring-1 ring-ink/10"
+              className="flex items-center gap-1.5 rounded-full bg-paper-3 px-2.5 py-1 font-mono text-xs font-medium text-ink"
               title="点击复制"
             >
               {profile.shortId}
@@ -319,13 +358,13 @@ function MePage() {
       </section>
 
       {editingName ? (
-        <section className="ink-in mt-4 space-y-3 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+        <section className="ink-in mt-4 space-y-3 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
           <Field label="昵称">
             <input className={inputCls} maxLength={24} value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
           {err && editingName ? <p className="text-xs text-vermilion-deep">{err}</p> : null}
           <div className="flex gap-3">
-            <button onClick={() => setEditingName(false)} className="flex-1 rounded-xl bg-paper-3 py-2.5 text-sm font-medium text-ink ring-1 ring-ink/10">
+            <button onClick={() => setEditingName(false)} className="flex-1 rounded-xl bg-paper-3 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash">
               取消
             </button>
             <button disabled={savingName} onClick={savePersona} className="flex-1 rounded-xl bg-vermilion py-2.5 text-sm font-semibold text-paper disabled:opacity-60">
@@ -336,8 +375,17 @@ function MePage() {
         </section>
       ) : null}
 
+      {/* 解析记录：原页头的入口迁入这里（页头只留身份，点数余额见下方「点数余额」） */}
+      <Link
+        to="/records"
+        className="ink-in d2 mt-4 flex items-center justify-between rounded-2xl bg-white px-5 py-4 transition-colors hover:bg-vermilion-wash"
+      >
+        <span className="text-sm font-medium">解析记录</span>
+        <span className="text-xs text-ink-faint">历史起名与解析报告</span>
+      </Link>
+
       {/* 出生信息 */}
-      <section className="ink-in d2 mt-4 rounded-2xl bg-paper-2 ring-1 ring-ink/5">
+      <section className="ink-in d2 mt-4 rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-sm font-medium">我的出生信息</p>
@@ -345,13 +393,13 @@ function MePage() {
           </div>
           <button
             onClick={() => setEditingBirth(!editingBirth)}
-            className="shrink-0 rounded-full bg-paper-3 px-4 py-1.5 text-xs font-medium text-ink-soft ring-1 ring-ink/10"
+            className="shrink-0 rounded-full bg-paper-3 px-4 py-1.5 text-xs font-medium text-ink-soft"
           >
             {editingBirth ? "收起" : birthText ? "修改" : "去填写"}
           </button>
         </div>
         {editingBirth ? (
-          <div className="space-y-3 border-t border-ink/5 px-5 py-4">
+          <div className="space-y-3 px-5 py-4">
             <div className="grid grid-cols-2 gap-3">
               <Field label="出生日期">
                 <input className={inputCls} type="date" value={bDate} onChange={(e) => setBDate(e.target.value)} />
@@ -385,12 +433,12 @@ function MePage() {
       </section>
 
       {/* 余额与支付 */}
-      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-paper-2 ring-1 ring-ink/5">
+      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
         <div className="flex items-center justify-between px-5 py-4">
           <p className="text-sm font-medium">点数余额</p>
           <p className="text-sm font-semibold tabular-nums text-vermilion-deep">{user?.tokenBalance ?? 0} 点</p>
         </div>
-        <div className="border-t border-ink/5 px-5 py-4">
+        <div className="px-5 py-4">
           <p className="text-sm font-medium">充值与解锁</p>
           <p className="mt-1 text-xs leading-relaxed text-ink-soft">
             选择套餐后微信扫码支付，点数/畅享直接充入当前账号，到账后自动提示。
@@ -405,13 +453,13 @@ function MePage() {
             setShowPlans(next);
             if (next) loadPlans();
           }}
-          className="flex w-full items-center justify-between border-t border-ink/5 px-5 py-4 text-left"
+          className="flex w-full items-center justify-between px-5 py-4 text-left"
         >
           <span className="text-sm font-medium">我的套餐与畅享</span>
           <span className="text-xs text-ink-faint">{showPlans ? "收起" : "查看"}</span>
         </button>
         {showPlans ? (
-          <div className="border-t border-ink/5 px-5 py-4">
+          <div className="px-5 py-4">
             {plansErr ? <p className="text-xs text-vermilion-deep">{plansErr}</p> : null}
             {!plans && !plansErr ? <p className="text-xs text-ink-faint">加载中…</p> : null}
             {plans ? (
@@ -425,7 +473,7 @@ function MePage() {
                       {active.length === 0 ? (
                         <p className="mt-1 text-xs text-ink-faint">暂无有效套餐</p>
                       ) : (
-                        <ul className="mt-1 divide-y divide-ink/5">
+                        <ul className="mt-1">
                           {active.map((p) => {
                             const days = p.expiresAt
                               ? Math.max(0, Math.ceil((new Date(p.expiresAt.replace(" ", "T")).getTime() - Date.now()) / 86400000))
@@ -452,7 +500,7 @@ function MePage() {
                       {history.length ? (
                         <>
                           <p className="mt-3 text-[11px] font-medium text-ink">历史</p>
-                          <ul className="mt-1 divide-y divide-ink/5">
+                          <ul className="mt-1">
                             {history.map((p) => (
                               <li key={p.planId} className="flex items-center gap-3 py-1.5 first:pt-0">
                                 <p className="min-w-0 flex-1 text-xs text-ink-faint">
@@ -480,22 +528,22 @@ function MePage() {
             setShowOrders(next);
             if (next) loadOrders();
           }}
-          className="flex w-full items-center justify-between border-t border-ink/5 px-5 py-4 text-left"
+          className="flex w-full items-center justify-between px-5 py-4 text-left"
         >
           <span className="text-sm font-medium">充值记录</span>
           <span className="text-xs text-ink-faint">{showOrders ? "收起" : "查看"}</span>
         </button>
         {showOrders ? (
-          <div className="border-t border-ink/5 px-5 py-4">
+          <div className="px-5 py-4">
             {ordersErr ? <p className="text-xs text-vermilion-deep">{ordersErr}</p> : null}
             {!orders && !ordersErr ? <p className="text-xs text-ink-faint">加载中…</p> : null}
             {orders?.length === 0 ? (
               <p className="text-xs text-ink-faint">暂无充值记录</p>
             ) : null}
             {orders?.length ? (
-              <ul className="divide-y divide-ink/5">
+              <ul>
                 {orders.map((o) => {
-                  const st = ORDER_STATUS[o.status] || { label: o.status, cls: "bg-ink/10 text-ink-faint" };
+                  const st = ORDER_STATUS[o.status] || { label: o.status, cls: "bg-paper-3 text-ink-soft" };
                   return (
                     <li key={o.orderId} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
                       <div className="min-w-0 flex-1">
@@ -516,13 +564,13 @@ function MePage() {
             ) : null}
           </div>
         ) : null}
-        <button onClick={logout} className="w-full border-t border-ink/5 px-5 py-4 text-left text-sm font-medium text-vermilion-deep">
+        <button onClick={logout} className="w-full px-5 py-4 text-left text-sm font-medium text-vermilion-deep">
           退出登录
         </button>
       </section>
 
       {/* 反馈与客服 */}
-      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-paper-2 ring-1 ring-ink/5">
+      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
         <button
           onClick={() => {
             setShowFeedback(!showFeedback);
@@ -534,7 +582,7 @@ function MePage() {
           <span className="text-xs text-ink-faint">{showFeedback ? "收起" : "建议或问题"}</span>
         </button>
         {showFeedback ? (
-          <div className="space-y-3 border-t border-ink/5 px-5 py-4">
+          <div className="space-y-3 px-5 py-4">
             {fbDone ? (
               <p className="text-xs text-emerald-700">已收到你的反馈，感谢支持！我们会尽快跟进。</p>
             ) : null}
@@ -571,14 +619,14 @@ function MePage() {
             setShowService(!showService);
             setShowFeedback(false);
           }}
-          className="flex w-full items-center justify-between border-t border-ink/5 px-5 py-4 text-left"
+          className="flex w-full items-center justify-between px-5 py-4 text-left"
         >
           <span className="text-sm font-medium">联系客服</span>
           <span className="text-xs text-ink-faint">{showService ? "收起" : "微信 / 邮箱"}</span>
         </button>
         {showService ? (
-          <div className="space-y-3 border-t border-ink/5 px-5 py-4">
-            <div className="flex items-center justify-between gap-3 rounded-xl bg-paper-3/60 px-3.5 py-3">
+          <div className="space-y-3 px-5 py-4">
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-paper-3 px-3.5 py-3">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-ink">客服微信：duimaikefu</p>
                 <p className="mt-0.5 text-[11px] text-ink-faint">工作日 9:00–18:00</p>

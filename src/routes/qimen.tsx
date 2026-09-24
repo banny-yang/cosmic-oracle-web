@@ -321,17 +321,17 @@ function Qimen() {
           />
 
           {phase === "form" ? (
-            <section className="mt-7 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               {presets.length > 0 ? (
                 <Field label="问题类别（可不选，由 AI 识别）">
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setSceneCode("")}
                       className={[
-                        "rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition-colors",
+                        "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                         sceneCode === ""
-                          ? "bg-vermilion text-paper ring-vermilion"
-                          : "bg-paper-3 text-ink-soft ring-ink/10",
+                          ? "bg-vermilion text-paper"
+                          : "bg-paper-3 text-ink-soft hover:bg-vermilion-wash",
                       ].join(" ")}
                     >
                       自动识别
@@ -344,10 +344,10 @@ function Qimen() {
                           if (p.placeholder && !question.trim()) setQuestion(p.example_query ?? "");
                         }}
                         className={[
-                          "rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition-colors",
+                          "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                           sceneCode === p.scene_code
-                            ? "bg-vermilion text-paper ring-vermilion"
-                            : "bg-paper-3 text-ink-soft ring-ink/10",
+                            ? "bg-vermilion text-paper"
+                            : "bg-paper-3 text-ink-soft hover:bg-vermilion-wash",
                         ].join(" ")}
                       >
                         {p.scene_name ?? p.title}
@@ -442,14 +442,14 @@ function Qimen() {
           ) : (
             <section className="mt-7 space-y-4">
               {intent ? (
-                <div className="flex flex-wrap items-center gap-2 rounded-xl bg-paper-2 p-4 ring-1 ring-ink/5">
-                  <span className="rounded-full bg-vermilion/10 px-2.5 py-1 text-xs font-semibold text-vermilion-deep">
+                <div className="flex flex-wrap items-center gap-2 rounded-xl bg-paper-3 p-4">
+                  <span className="rounded-full bg-vermilion-wash px-2.5 py-1 text-xs font-semibold text-vermilion-deep">
                     {intent.scene_name ?? "断局"}
                   </span>
                   {(intent.yongshen ?? []).map((y) => (
                     <span
                       key={y}
-                      className="rounded-full bg-ink/8 px-2.5 py-1 text-[11px] text-ink-soft"
+                      className="rounded-full bg-paper-3 px-2.5 py-1 text-[11px] text-ink-soft"
                     >
                       用神 · {y}
                     </span>
@@ -459,14 +459,14 @@ function Qimen() {
                   ) : null}
                 </div>
               ) : phase === "running" ? (
-                <div className="flex items-center gap-3 rounded-xl bg-paper-2 p-4 ring-1 ring-ink/5">
+                <div className="flex items-center gap-3 rounded-xl bg-paper-2 p-4 transition-colors hover:bg-vermilion-wash">
                   <span className="size-2 animate-pulse rounded-full bg-vermilion" />
                   <p className="text-sm font-medium">正在起局推演…</p>
                 </div>
               ) : null}
 
               {plate ? (
-                <div className="rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+                <div className="rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
                   <QimenPlateHeader plate={plate} />
                   <div className="mt-4">
                     <QimenPalaceGrid
@@ -512,7 +512,7 @@ function Qimen() {
               </button>
               {records !== null ? (
                 records.length === 0 ? (
-                  <p className="mt-3 rounded-2xl bg-paper-2 p-5 text-center text-xs text-ink-faint ring-1 ring-ink/5">
+                  <p className="mt-3 rounded-2xl bg-white p-5 text-center text-xs text-ink-faint transition-colors hover:bg-vermilion-wash">
                     还没有断局记录。
                   </p>
                 ) : (
@@ -527,7 +527,7 @@ function Qimen() {
                         </p>
                         <div className="space-y-2">
                           {g.items.map((r) => (
-                            <div key={r.logId} className="rounded-2xl bg-paper-2 ring-1 ring-ink/5">
+                            <div key={r.logId} className="rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
                               <button
                                 onClick={() => openRecord(r)}
                                 className="flex w-full items-center justify-between gap-3 p-4 text-left"
@@ -546,7 +546,7 @@ function Qimen() {
                                 </span>
                               </button>
                               {openRec === r.logId && openDetail ? (
-                                <div className="space-y-4 border-t border-ink/5 p-4">
+                                <div className="space-y-4 p-4">
                                   {openDetail.subjectName ? (
                                     <p className="text-[11px] text-ink-faint">
                                       代占：{openDetail.subjectName}

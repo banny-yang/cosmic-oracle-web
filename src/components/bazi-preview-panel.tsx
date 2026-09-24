@@ -52,9 +52,9 @@ export function BaziPreviewPanel({
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   return (
-    <div className="mt-4 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
-      <div className="flex items-center gap-4 rounded-xl bg-paper p-4 ring-1 ring-ink/5">
-        <div className="grid size-16 shrink-0 place-items-center rounded-full ring-2 ring-vermilion/60">
+    <div className="mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+      <div className="flex items-center gap-4 rounded-xl bg-paper-2 p-4">
+        <div className="grid size-16 shrink-0 place-items-center rounded-full">
           <div className="text-center leading-none">
             <p className="text-xl font-bold tabular-nums text-ink">{data.total}</p>
             <p className="mt-0.5 text-[9px] text-ink-faint">综合指数</p>
@@ -69,7 +69,7 @@ export function BaziPreviewPanel({
       </div>
       <div className="mt-3 space-y-1.5">
         {data.items.map((it, idx) => (
-          <div key={it.key} className="rounded-xl bg-paper ring-1 ring-ink/5">
+          <div key={it.key} className="rounded-xl bg-paper-2">
             <button
               onClick={() => setOpenKey(openKey === it.key ? null : it.key)}
               className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left"
@@ -81,7 +81,7 @@ export function BaziPreviewPanel({
                 {it.label}
                 <span className="ml-1 text-[9px] font-normal text-ink-faint">{it.weight}%</span>
               </span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-paper-3">
                 <div className={`h-full rounded-full ${scoreColor(it.score)}`} style={{ width: `${it.score}%` }} />
               </div>
               <span className="w-8 text-right text-sm font-semibold tabular-nums">{it.score}</span>
@@ -90,7 +90,7 @@ export function BaziPreviewPanel({
               />
             </button>
             {openKey === it.key ? (
-              <div className="border-t border-ink/5 px-3.5 py-3 text-xs leading-relaxed">
+              <div className="px-3.5 py-3 text-xs leading-relaxed">
                 <p className="text-[10px] text-ink-faint">
                   权重 {it.weight}% · 证据等级 {it.grade} · {it.summary}
                 </p>

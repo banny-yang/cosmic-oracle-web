@@ -1,79 +1,218 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, ImageDown, Share2, Loader2 } from "lucide-react";
-import QRCode from "qrcode";
+import { post } from "@/lib/api";
 import { track } from "@/lib/track";
-import { posterQrTarget } from "@/lib/promo-config";
+import {
+  ACCENT,
+  ACCENT_LINE,
+  ELEMENT_ORDER,
+  FONT_KAI,
+  FONT_SANS,
+  FONT_SEAL,
+  INK,
+  INK_FAINT,
+  INK_SOFT,
+  createPosterCanvas,
+  dayMasterInfo,
+  drawInnerFrame,
+  drawPaper,
+  drawPosterFooter,
+  drawPosterHeader,
+  drawWuxingPanel,
+  elementZh,
+  ensurePosterFonts,
+  exportPoster,
+  fitFontSize,
+  normElement,
+  normElements,
+  wrapText,
+  wuxingFitRows,
+  wuxingFitFrom,
+  type WuxingFit,
+  type WuxingRow,
+  type WuxingSeg,
+} from "@/lib/poster-kit";
 
-/** 报告海报（canvas → PNG）：通用头部/底部 + 中部由调用方绘制 */
+/** 双规格出图：PNG 供下载（无损），JPEG 供分享（体积友好） */
+export type PosterImages = { png: string; jpg: string };
+
+/** 报告海报底座（720×1280，2x 出图）：纸底 + 页头 + 中部绘制 + 页脚二维码 */
 async function drawPosterBase(opts: {
   subtitle: string;
   draw: (g: CanvasRenderingContext2D, W: number) => void;
   qrPath: string;
   qrHint: string;
   footerLine: string;
-}): Promise<string> {
-  const W = 720, H = 1120;
-  const cv = document.createElement("canvas");
-  cv.width = W; cv.height = H;
-  const g = cv.getContext("2d");
-  if (!g) throw new Error("canvas unavailable");
-  const ink = "#2B2417", accent = "#9E2B25";
-  g.fillStyle = "#F6EFE3"; g.fillRect(0, 0, W, H);
-  g.textAlign = "left"; g.fillStyle = "rgba(43,36,23,.55)"; g.font = "18px sans-serif";
-  g.fillText("对 脉 名 鉴", 48, 64);
-  g.textAlign = "right"; g.fillStyle = accent; g.font = "16px sans-serif";
-  g.fillText(opts.subtitle, W - 48, 64);
+}): Promise<PosterImages> {
+  const W = 720,
+    H = 1280;
+  await ensurePosterFonts();
+  const { cv, g } = createPosterCanvas(W, H);
+  await drawPaper(g, W, H);
+  drawInnerFrame(g, W, H);
+  await drawPosterHeader(g, W, opts.subtitle);
   g.textAlign = "center";
+  g.textBaseline = "alphabetic";
   opts.draw(g, W);
-  let qrOk = false;
-  try {
-    const qrUrl = await QRCode.toDataURL(await posterQrTarget(opts.qrPath ?? "/"), { margin: 1, width: 320, color: { dark: "#2B2417", light: "#F6EFE3" } });
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const im = new Image();
-      im.onload = () => resolve(im);
-      im.onerror = reject;
-      im.src = qrUrl;
-    });
-    g.drawImage(img, W - 48 - 150, H - 48 - 150 - 14, 150, 150);
-    qrOk = true;
-  } catch { /* 二维码失败不阻断 */ }
-  g.textAlign = "left";
-  g.fillStyle = "rgba(43,36,23,.8)"; g.font = "bold 22px sans-serif";
-  g.fillText(opts.footerLine, 48, H - 132);
-  g.fillStyle = "rgba(43,36,23,.55)"; g.font = "17px sans-serif";
-  g.fillText(qrOk ? opts.qrHint : `name.duimai.net${opts.qrPath}`, 48, H - 102);
-  g.fillStyle = "rgba(43,36,23,.4)"; g.font = "15px sans-serif";
-  g.fillText("内容由算法基于传统文化与统计模型生成 · 仅供文化参考与娱乐", 48, H - 72);
-  return cv.toDataURL("image/png");
+  await drawPosterFooter(g, W, H, {
+    qrPath: opts.qrPath,
+    brand: opts.footerLine,
+    hint: opts.qrHint,
+    note: "内容由算法基于传统文化与统计模型生成 · 仅供文化参考与娱乐",
+  });
+  return exportPoster(cv);
 }
 
-/** 海报按钮 + 预览弹层（下载/分享），多报告页复用 */
+/** 双方称呼一行：甲 × 乙（毛笔体，按最长名自适应字号，居中排布） */
+function drawPairNames(
+  g: CanvasRenderingContext2D,
+  W: number,
+  a: string,
+  b: string,
+  y: number,
+): void {
+  const size = fitFontSize(g, `${a} × ${b}`, (px) => `${px}px ${FONT_SEAL}`, 46, W - 150, 22);
+  const xFont = `bold ${Math.max(18, Math.round(size * 0.58))}px ${FONT_SANS}`;
+  const nameFont = `${size}px ${FONT_SEAL}`;
+  g.font = nameFont;
+  const wa = g.measureText(a).width;
+  const wb = g.measureText(b).width;
+  g.font = xFont;
+  const wx = g.measureText("×").width;
+  const gap = 24;
+  let x = (W - (wa + gap + wx + gap + wb)) / 2;
+  g.textAlign = "left";
+  g.fillStyle = INK;
+  g.font = nameFont;
+  g.fillText(a, x, y);
+  x += wa + gap;
+  g.fillStyle = ACCENT;
+  g.font = xFont;
+  g.fillText("×", x, y - 2);
+  x += wx + gap;
+  g.fillStyle = INK;
+  g.font = nameFont;
+  g.fillText(b, x, y);
+}
+
+/** 契合度圆环 + 分数（报告海报共用） */
+function drawScoreRing(
+  g: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+  score: number,
+  label: string,
+): void {
+  const ringHex = (s: number) => (s >= 85 ? "#047857" : s >= 65 ? "#1d4ed8" : "#b45309");
+  g.save();
+  g.lineWidth = 14;
+  g.strokeStyle = "rgba(43,36,23,.08)";
+  g.beginPath();
+  g.arc(cx, cy, r, 0, Math.PI * 2);
+  g.stroke();
+  g.strokeStyle = ringHex(score);
+  g.lineCap = "round";
+  g.beginPath();
+  g.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (Math.min(100, score) / 100));
+  g.stroke();
+  g.fillStyle = INK;
+  g.font = `bold 84px ${FONT_SANS}`;
+  g.textAlign = "center";
+  g.fillText(String(score), cx, cy + 18);
+  g.fillStyle = INK_FAINT;
+  g.font = `17px ${FONT_SANS}`;
+  g.fillText(label, cx, cy + 54);
+  g.restore();
+}
+
+/** 姓名共振海报的五行数据（来自报告元数据 reportMetadataJson） */
+export type NameWuxing = {
+  dayMaster: string | null;
+  favorable: string | null;
+  threeTalents: string | null;
+  attribute: Record<string, string> | null;
+  remedyRate: string | null;
+};
+
+const STRENGTH_ZH: Record<string, string> = { strong: "强", medium: "中", weak: "弱" };
+
+/** 姓名共振五行行：日主 / 喜用 / 三才 / 用字五行画像 / 八字补缺（缺键整行不画） */
+function nameWuxingRows(wx: NameWuxing | null): WuxingRow[] {
+  if (!wx) return [];
+  const rows: WuxingRow[] = [];
+  const dm = dayMasterInfo(wx.dayMaster);
+  if (dm.zh) rows.push({ label: "日主", segs: [{ text: dm.zh, el: dm.element, dot: true }] });
+  const fav = normElements(wx.favorable);
+  if (fav.length) {
+    const segs: WuxingSeg[] = [];
+    fav.forEach((el, i) => {
+      if (i) segs.push({ text: " · ", soft: true });
+      segs.push({ text: elementZh(el), el, dot: true });
+    });
+    rows.push({ label: "喜用", segs });
+  }
+  const talents = (wx.threeTalents ?? "").split("").filter((ch) => ch.trim());
+  if (talents.length) {
+    rows.push({ label: "三才", chips: talents.map((ch) => ({ zh: ch })) });
+  }
+  const attr = new Map<string, string>();
+  for (const [k, v] of Object.entries(wx.attribute ?? {})) {
+    const el = normElement(k);
+    if (el) attr.set(el, v);
+  }
+  const attrSegs: WuxingSeg[] = [];
+  for (const el of ELEMENT_ORDER) {
+    const v = attr.get(el);
+    if (!v) continue;
+    if (attrSegs.length) attrSegs.push({ text: "　", soft: true });
+    attrSegs.push({ text: elementZh(el) || el, el, dot: true });
+    attrSegs.push({ text: ` ${STRENGTH_ZH[v] ?? v}`, soft: true });
+  }
+  if (attrSegs.length) rows.push({ label: "用字五行", segs: attrSegs });
+  if (wx.remedyRate) {
+    rows.push({
+      label: "八字补缺",
+      segs: [{ text: wx.remedyRate }, { text: " 用字补救率", soft: true }],
+    });
+  }
+  return rows;
+}
+
+/** 海报按钮 + 预览弹层（PNG 下载 / JPEG 分享），多报告页复用 */
 export function ReportPosterButtons({
   build,
   fileName,
   trackKey,
 }: {
-  build: () => Promise<string>;
+  build: () => Promise<PosterImages>;
   fileName: string;
   trackKey: string;
 }) {
-  const [poster, setPoster] = useState<string | null>(null);
+  const [poster, setPoster] = useState<PosterImages | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  const share = async (url: string) => {
+  const download = (url: string, name: string) => {
+    const a = document.createElement("a");
+    a.download = name;
+    a.href = url;
+    a.click();
+  };
+
+  const share = async (imgs: PosterImages) => {
     try {
-      const blob = await (await fetch(url)).blob();
-      const file = new File([blob], `${fileName}.png`, { type: "image/png" });
+      const blob = await (await fetch(imgs.jpg)).blob();
+      const file = new File([blob], `${fileName}.jpg`, { type: "image/jpeg" });
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: fileName });
       } else {
-        const a = document.createElement("a");
-        a.download = `${fileName}.png`;
-        a.href = url;
-        a.click();
+        download(imgs.jpg, `${fileName}.jpg`);
       }
-    } catch { /* 用户取消 */ }
+    } catch {
+      /* 用户取消 */
+    }
   };
 
   return (
@@ -82,13 +221,17 @@ export function ReportPosterButtons({
         <button
           onClick={async () => {
             if (busy) return;
-            setBusy(true); setErr("");
+            setBusy(true);
+            setErr("");
             try {
-              const url = await build();
-              setPoster(url);
+              const imgs = await build();
+              setPoster(imgs);
               track(`${trackKey}_open`);
-            } catch { setErr("海报生成失败，请重试"); }
-            finally { setBusy(false); }
+            } catch {
+              setErr("海报生成失败，请重试");
+            } finally {
+              setBusy(false);
+            }
           }}
           disabled={busy}
           className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-ink py-3 text-sm font-semibold text-paper disabled:opacity-60"
@@ -99,13 +242,17 @@ export function ReportPosterButtons({
         <button
           onClick={async () => {
             if (busy) return;
-            setBusy(true); setErr("");
+            setBusy(true);
+            setErr("");
             try {
-              const url = await build();
+              const imgs = await build();
               track(`${trackKey}_share`);
-              await share(url);
-            } catch { /* 用户取消 */ }
-            finally { setBusy(false); }
+              await share(imgs);
+            } catch {
+              /* 用户取消 */
+            } finally {
+              setBusy(false);
+            }
           }}
           disabled={busy}
           className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper disabled:opacity-60"
@@ -115,58 +262,93 @@ export function ReportPosterButtons({
         </button>
       </div>
       {err ? <p className="mt-2 text-center text-xs text-vermilion-deep">{err}</p> : null}
-      {poster ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm" onClick={() => setPoster(null)}>
-          <div className="ink-in max-h-[92vh] w-full max-w-sm overflow-hidden rounded-2xl bg-paper p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold">{fileName}</p>
-              <button onClick={() => setPoster(null)} className="text-ink/50 hover:text-ink" title="关闭">
-                <X className="size-4" />
-              </button>
-            </div>
-            <img src={poster} alt={`${fileName}海报`} className="mt-3 max-h-[64vh] w-full rounded-xl object-contain" />
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => {
-                  const a = document.createElement("a");
-                  a.download = `${fileName}.png`;
-                  a.href = poster;
-                  a.click();
-                  track(`${trackKey}_download`);
-                }}
-                className="flex-1 rounded-xl bg-ink py-2.5 text-sm font-semibold text-paper"
+      {poster
+        ? createPortal(
+            // 弹层挂到 body：结果页各区块的 ink-in 入场动画会让 transform 常驻（形成堆叠上下文，
+            // 并成为 fixed 定位的包含块），留在原位置会被后面的卡片盖住
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4"
+              onClick={() => setPoster(null)}
+            >
+              <div
+                className="ink-in max-h-[92vh] w-full max-w-sm overflow-hidden rounded-2xl bg-white p-4"
+                onClick={(e) => e.stopPropagation()}
               >
-                下载图片
-              </button>
-              <button
-                onClick={() => share(poster)}
-                className="flex-1 rounded-xl bg-vermilion py-2.5 text-sm font-semibold text-paper"
-              >
-                分享
-              </button>
-            </div>
-            <p className="mt-2 text-center text-[11px] text-ink/45">长按图片也可保存或转发（手机端）</p>
-          </div>
-        </div>
-      ) : null}
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">{fileName}</p>
+                  <button
+                    onClick={() => setPoster(null)}
+                    className="text-ink-soft hover:text-ink"
+                    title="关闭"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+                <img
+                  src={poster.png}
+                  alt={`${fileName}海报`}
+                  className="mt-3 max-h-[64vh] w-full rounded-xl object-contain"
+                />
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => {
+                      download(poster.png, `${fileName}.png`);
+                      track(`${trackKey}_download`);
+                    }}
+                    className="flex-1 rounded-xl bg-ink py-2.5 text-sm font-semibold text-paper"
+                  >
+                    下载图片
+                  </button>
+                  <button
+                    onClick={() => share(poster)}
+                    className="flex-1 rounded-xl bg-vermilion py-2.5 text-sm font-semibold text-paper"
+                  >
+                    分享
+                  </button>
+                </div>
+                <p className="mt-2 text-center text-[11px] text-ink-soft">长按图片也可保存或转发（手机端）</p>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
 
 export { drawPosterBase };
 
-const ringHex = (score: number) => (score >= 85 ? "#047857" : score >= 65 ? "#1d4ed8" : "#b45309");
-const ink = "#2B2417";
+/** 缘分伴侣海报：免费合婚预览接口取双方日主与五行契合（best-effort，失败返回 null 隐藏该块） */
+export async function fetchMarriageFitWuxing(
+  a: { name: string; birthTime: string; latitude: number; longitude: number },
+  b: { name: string; birthTime: string; latitude: number; longitude: number },
+): Promise<WuxingFit | null> {
+  try {
+    const d = await post<{
+      persons?: { dayMaster?: string | null }[];
+      items?: { key?: string; score?: number; positives?: string[]; concerns?: string[] }[];
+    }>(
+      "/api/v1/reports/marriage-fit/preview",
+      { personA: a, personB: b },
+      { auth: false, timeoutMs: 6000 },
+    );
+    return wuxingFitFrom(d.persons, d.items);
+  } catch {
+    return null;
+  }
+}
 
 /** 缘分伴侣匹配海报绘制 */
 async function buildCompatibilityPoster(
-  names: string[],
+  nameA: string,
+  nameB: string,
   score: number,
   attraction: string,
   friction: string,
   tags: string[],
   mantra: string | null,
-): Promise<string> {
+  fit: WuxingFit | null,
+): Promise<PosterImages> {
   return drawPosterBase({
     subtitle: "缘分伴侣匹配",
     qrPath: "/personality",
@@ -174,32 +356,48 @@ async function buildCompatibilityPoster(
     footerLine: "对脉名鉴 · 缘分伴侣匹配",
     draw: (g, W) => {
       g.textAlign = "center";
-      g.fillStyle = ink; g.font = "bold 30px sans-serif";
-      g.fillText(names.join("  ×  ") || "缘 分 伴 侣", W / 2, 150);
-      const cx = W / 2, cy = 350, r = 96;
-      g.lineWidth = 14;
-      g.strokeStyle = "rgba(43,36,23,.08)";
-      g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.stroke();
-      g.strokeStyle = ringHex(score); g.lineCap = "round";
-      g.beginPath(); g.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (score / 100)); g.stroke();
-      g.fillStyle = ink; g.font = "bold 84px sans-serif";
-      g.fillText(String(score), cx, cy + 18);
-      g.fillStyle = "rgba(43,36,23,.45)"; g.font = "17px sans-serif";
-      g.fillText("缘分契合度", cx, cy + 54);
+      drawPairNames(g, W, nameA || "我 方", nameB || "对 方", 176);
+      drawScoreRing(g, W / 2, 396, 96, score, "缘分契合度");
       const lv = (v: string) => (v === "HIGH" ? "高" : v === "MEDIUM" ? "中" : v === "LOW" ? "低" : v);
-      g.font = "20px sans-serif";
-      g.fillStyle = "rgba(43,36,23,.5)"; g.fillText("吸引力", W / 2 - 150, 540);
-      g.fillStyle = ink; g.font = "bold 30px sans-serif"; g.fillText(lv(attraction), W / 2 - 150, 576);
-      g.fillStyle = "rgba(43,36,23,.5)"; g.font = "20px sans-serif"; g.fillText("摩擦指数", W / 2 + 150, 540);
-      g.fillStyle = ink; g.font = "bold 30px sans-serif"; g.fillText(lv(friction), W / 2 + 150, 576);
-      g.strokeStyle = "rgba(158,43,37,.3)"; g.strokeRect(70, 640, W - 140, 96);
-      g.fillStyle = "rgba(43,36,23,.75)"; g.font = "20px sans-serif";
-      const t = (tags.slice(0, 6).join(" · ") || "相 处 锦 囊").slice(0, 26);
-      g.fillText(t, W / 2, 696);
+      g.textAlign = "center";
+      g.fillStyle = INK_FAINT;
+      g.font = `20px ${FONT_SANS}`;
+      g.fillText("吸引力", W / 2 - 150, 570);
+      g.fillText("摩擦指数", W / 2 + 150, 570);
+      g.fillStyle = INK;
+      g.font = `bold 30px ${FONT_SANS}`;
+      g.fillText(lv(attraction), W / 2 - 150, 606);
+      g.fillText(lv(friction), W / 2 + 150, 606);
+      // 相处锦囊
+      const tagText = tags.slice(0, 6).join(" · ") || "相 处 锦 囊";
+      g.font = `20px ${FONT_SANS}`;
+      const tagLines = wrapText(g, tagText, W - 176).slice(0, 2);
+      const boxH = 34 + tagLines.length * 30;
+      g.save();
+      g.beginPath();
+      g.roundRect(70, 650, W - 140, boxH, 12);
+      g.fillStyle = "rgba(241,231,215,.55)";
+      g.fill();
+      g.strokeStyle = ACCENT_LINE;
+      g.lineWidth = 1.5;
+      g.stroke();
+      g.fillStyle = "rgba(43,36,23,.75)";
+      g.font = `20px ${FONT_SANS}`;
+      tagLines.forEach((line, i) => g.fillText(line, W / 2, 650 + 40 + i * 30));
+      g.restore();
+      // 五行块
+      let y = 650 + boxH + 34;
+      const rows = wuxingFitRows(fit);
+      if (rows.length) y += drawWuxingPanel(g, 48, y, W - 96, rows) + 30;
       if (mantra) {
-        g.fillStyle = "rgba(43,36,23,.55)"; g.font = "18px sans-serif";
-        const m = mantra.length > 32 ? mantra.slice(0, 32) + "…" : mantra;
-        g.fillText(m, W / 2, 790);
+        g.fillStyle = ACCENT;
+        g.font = `16px ${FONT_SANS}`;
+        g.fillText("能量护身符心咒", W / 2, y + 6);
+        g.fillStyle = "rgba(43,36,23,.75)";
+        g.font = `20px ${FONT_SANS}`;
+        wrapText(g, mantra, W - 160)
+          .slice(0, 2)
+          .forEach((line, i) => g.fillText(line, W / 2, y + 40 + i * 30));
       }
     },
   });
@@ -211,10 +409,10 @@ async function buildNamePoster(
   nameB: string,
   score: number,
   rateLabel: string,
-  threeTalents: string | null,
   resonance: string | null,
   mantra: string | null,
-): Promise<string> {
+  wuxing: NameWuxing | null,
+): Promise<PosterImages> {
   return drawPosterBase({
     subtitle: "姓名共振",
     qrPath: "/analysis",
@@ -222,49 +420,47 @@ async function buildNamePoster(
     footerLine: "对脉名鉴 · 姓名共振",
     draw: (g, W) => {
       g.textAlign = "center";
-      g.fillStyle = ink;
-      g.font = 'bold 76px "STKaiti","KaiTi",serif';
-      g.fillText(nameA, W / 2 - 130, 180);
-      g.fillStyle = "#9E2B25"; g.font = "bold 40px sans-serif";
-      g.fillText("×", W / 2, 170);
-      g.fillStyle = ink; g.font = 'bold 76px "STKaiti","KaiTi",serif';
-      g.fillText(nameB, W / 2 + 130, 180);
-      const cx = W / 2, cy = 420, r = 96;
-      g.lineWidth = 14;
-      g.strokeStyle = "rgba(43,36,23,.08)";
-      g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.stroke();
-      g.strokeStyle = ringHex(score); g.lineCap = "round";
-      g.beginPath(); g.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (score / 100)); g.stroke();
-      g.fillStyle = ink; g.font = "bold 84px sans-serif";
-      g.fillText(String(score), cx, cy + 18);
-      g.fillStyle = "rgba(43,36,23,.45)"; g.font = "17px sans-serif";
-      g.fillText(rateLabel, cx, cy + 54);
-      let y = 640;
-      if (threeTalents) {
-        g.fillStyle = "rgba(43,36,23,.5)"; g.font = "20px sans-serif";
-        g.fillText("三才配置", W / 2, y);
-        g.fillStyle = ink; g.font = 'bold 34px "STKaiti","KaiTi",serif';
-        g.fillText(threeTalents, W / 2, y + 46);
-        y += 110;
+      drawPairNames(g, W, nameA, nameB, 180);
+      drawScoreRing(g, W / 2, 400, 96, score, rateLabel || "双人姓名契合度");
+      let y = 566;
+      const rows = nameWuxingRows(wuxing);
+      if (rows.length) {
+        y += drawWuxingPanel(g, 48, y, W - 96, rows) + 30;
+      } else {
+        // 老报告缺五行键：下方区块整体下移，把余白分到上下两侧
+        const blocks = (resonance ? 96 : 0) + (mantra ? 100 : 0);
+        y += Math.max(0, Math.round((1080 - y - blocks) * 0.45));
       }
       if (resonance) {
-        g.fillStyle = "rgba(43,36,23,.5)"; g.font = "20px sans-serif";
-        g.fillText("共振类型", W / 2, y);
-        g.fillStyle = ink; g.font = "bold 28px sans-serif";
-        g.fillText(resonance, W / 2, y + 42);
-        y += 106;
+        g.fillStyle = INK_FAINT;
+        g.font = `20px ${FONT_SANS}`;
+        g.fillText("共振类型", W / 2, y + 4);
+        g.fillStyle = INK;
+        g.font = `bold 30px ${FONT_KAI}`;
+        g.fillText(resonance, W / 2, y + 44);
+        y += 96;
       }
       if (mantra) {
-        g.strokeStyle = "rgba(158,43,37,.3)"; g.strokeRect(70, y, W - 140, 100);
-        g.fillStyle = "#9E2B25"; g.font = "16px sans-serif";
+        g.save();
+        g.beginPath();
+        g.roundRect(70, y, W - 140, 100, 12);
+        g.fillStyle = "rgba(241,231,215,.55)";
+        g.fill();
+        g.strokeStyle = ACCENT_LINE;
+        g.lineWidth = 1.5;
+        g.stroke();
+        g.fillStyle = ACCENT;
+        g.font = `16px ${FONT_SANS}`;
         g.fillText("能量护身符心咒", W / 2, y + 36);
-        g.fillStyle = "rgba(43,36,23,.75)"; g.font = "20px sans-serif";
-        const m = mantra.length > 26 ? mantra.slice(0, 26) + "…" : mantra;
-        g.fillText(m, W / 2, y + 72);
+        g.fillStyle = "rgba(43,36,23,.75)";
+        g.font = `20px ${FONT_SANS}`;
+        wrapText(g, mantra, W - 176)
+          .slice(0, 2)
+          .forEach((line, i) => g.fillText(line, W / 2, y + 72 + i * 26));
+        g.restore();
       }
     },
   });
 }
-
 
 export { buildCompatibilityPoster, buildNamePoster };

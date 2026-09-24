@@ -165,16 +165,23 @@ export function QimenPalaceGrid({
               key={i}
               className={[
                 "relative aspect-square overflow-hidden rounded-lg",
-                borderColor ? "border-2" : "border border-ink/25",
-                isVoid ? "bg-ink/[0.08]" : isCenter ? "bg-vermilion/[0.08]" : "bg-paper-3",
+                isVoid ? "bg-paper-2" : isCenter ? "bg-vermilion-wash" : "bg-paper-3",
               ].join(" ")}
-              style={borderColor ? { borderColor } : undefined}
             >
+              {/* 主宫/客宫/用神：顶部实色色条（原描边，扁平化后改用色块编码） */}
+              {borderColor ? (
+                <span
+                  aria-hidden
+                  className="absolute inset-x-0 top-0 h-1"
+                  style={{ backgroundColor: borderColor }}
+                />
+              ) : null}
+
               {/* 卦名水印（中宫无卦） */}
               {!isCenter ? (
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-0 grid place-items-center font-seal text-5xl font-bold leading-none text-ink/[0.09]"
+                  className="pointer-events-none absolute inset-0 grid place-items-center font-seal text-5xl font-bold leading-none text-ink opacity-10"
                 >
                   {TRIGRAM_NAMES[i]}
                 </span>
@@ -215,7 +222,7 @@ export function QimenPalaceGrid({
                     </span>
                   ) : null}
                   {isMa ? (
-                    <span className="mt-[1px] rounded-full border border-ink/35 px-1 text-[9px] font-semibold leading-tight text-ink-soft">
+                    <span className="mt-[1px] rounded-full bg-paper px-1 text-[9px] font-semibold leading-tight text-ink-soft">
                       驿马
                     </span>
                   ) : null}

@@ -35,11 +35,12 @@ export const Route = createFileRoute("/dianji")({
   }),
 });
 
-const cardCls = "rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5";
+const cardCls = "rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash";
 
 /** 起名页 search 参数（路由类型要求各键显式出现）：只带书名，按书目取典。 */
 const namingSearchFor = (book?: string) => ({
   prefer: undefined,
+  x: undefined,
   src: undefined,
   g: undefined,
   cat: undefined,
@@ -126,12 +127,12 @@ function ClassicLibrary() {
       </section>
 
       {categories.length === 0 ? (
-        <div className="mt-8 rounded-2xl bg-paper-2 p-10 text-center ring-1 ring-ink/5">
+        <div className="mt-8 rounded-2xl bg-white p-10 text-center transition-colors hover:bg-vermilion-wash">
           <p className="text-sm text-ink-soft">典籍书目暂时未加载出来，稍后刷新，或直接去起名页试试。</p>
           <Link
             to="/naming"
             search={namingSearchFor()}
-            className="mt-4 inline-block rounded-xl bg-ink px-5 py-2.5 text-sm font-medium text-paper ring-1 ring-ink/40"
+            className="mt-4 inline-block rounded-xl bg-ink px-5 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
           >
             去宝宝起名 →
           </Link>
@@ -155,11 +156,11 @@ function ClassicLibrary() {
                       ) : null}
                     </div>
                     {b.sentenceCount > 0 ? (
-                      <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[10px] tabular-nums text-ink-soft ring-1 ring-ink/10">
+                      <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[10px] tabular-nums text-ink-soft">
                         原文 {b.sentenceCount.toLocaleString()} 句
                       </span>
                     ) : b.entryCount > 0 ? (
-                      <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[10px] tabular-nums text-ink-soft ring-1 ring-ink/10">
+                      <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[10px] tabular-nums text-ink-soft">
                         精选条目 {b.entryCount} 条
                       </span>
                     ) : null}
@@ -172,7 +173,7 @@ function ClassicLibrary() {
                   ) : null}
 
                   {b.highlight ? (
-                    <div className="mt-3 rounded-xl bg-ink/[0.04] p-3">
+                    <div className="mt-3 rounded-xl bg-paper-2 p-3">
                       <p className="text-sm leading-relaxed text-ink text-pretty">{b.highlight}</p>
                       {b.highlightSource ? (
                         <p className="mt-1 text-[11px] text-ink-faint">—— {b.highlightSource}</p>
@@ -184,12 +185,12 @@ function ClassicLibrary() {
                     <Link
                       to="/naming"
                       search={namingSearchFor(b.book)}
-                      className="mt-4 block w-full rounded-xl bg-ink py-2.5 text-center text-sm font-medium text-paper ring-1 ring-ink/40 transition-transform duration-300 hover:-translate-y-0.5"
+                      className="mt-4 block w-full rounded-xl bg-ink py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
                     >
                       用《{b.book}》取名 →
                     </Link>
                   ) : (
-                    <p className="mt-4 rounded-xl bg-paper-3 py-2.5 text-center text-xs text-ink-faint ring-1 ring-ink/5">
+                    <p className="mt-4 rounded-xl bg-paper-3 py-2.5 text-center text-xs text-ink-faint">
                       名句已入藏精选条目，整部原文尚未录入，暂不支持指定取名
                     </p>
                   )}
@@ -200,7 +201,7 @@ function ClassicLibrary() {
         ))
       )}
 
-      <section className="mt-12 rounded-2xl bg-paper-2 p-6 ring-1 ring-ink/5">
+      <section className="mt-12 rounded-2xl bg-white p-6 transition-colors hover:bg-vermilion-wash">
         <h2 className="text-lg font-semibold">指定典籍取名，和默认取名有什么不同？</h2>
         <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-ink-soft text-pretty">
           默认取名会在全部语料里为宝宝找字；指定典籍后，候选字与引文都只从这一部书的原文里出，
@@ -214,8 +215,8 @@ function ClassicLibrary() {
               search={namingSearchFor(b.book)}
               className={
                 i === 0
-                  ? "rounded-xl bg-ink px-5 py-2.5 text-sm font-medium text-paper ring-1 ring-ink/40"
-                  : "rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink ring-1 ring-ink/10"
+                  ? "rounded-xl bg-ink px-5 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
+                  : "rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash"
               }
             >
               用《{b.book}》取名 →
@@ -224,7 +225,7 @@ function ClassicLibrary() {
           <Link
             to="/names"
             search={{ keyword: undefined }}
-            className="rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink ring-1 ring-ink/10"
+            className="rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash"
           >
             先看名字灵感库 →
           </Link>

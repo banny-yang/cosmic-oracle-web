@@ -105,7 +105,7 @@ export function MiniMarkdown({ text }: { text: string }) {
 /** 生成中骨架 */
 export function ReportRunning({ error }: { error?: string }) {
   return (
-    <section className="mt-7 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+    <section className="mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
       <div className="flex items-center gap-3">
         <span className="size-2 animate-pulse rounded-full bg-vermilion" />
         <p className="text-sm font-medium">正在撰写报告…</p>
@@ -123,7 +123,7 @@ export function ReportRunning({ error }: { error?: string }) {
 /** 点数不足 / 支付引导卡：选套餐 → 扫码直购（入账当前登录账号，到账自动提示）。 */
 export function PaywallCard({ message, inModal }: { message: string; inModal?: boolean }) {
   return (
-    <section className={(inModal ? "" : "mt-7 ") + "rounded-2xl bg-vermilion/10 p-5 ring-1 ring-vermilion/20"}>
+    <section className={(inModal ? "" : "mt-7 ") + "rounded-2xl bg-vermilion-wash p-5 "}>
       <p className="text-sm font-semibold text-vermilion-deep">{message}</p>
       <p className="mt-1 text-xs text-ink-soft">
         微信扫码支付所选套餐，点数/畅享直接充入当前登录账号，到账后自动提示，即可继续生成。
@@ -139,14 +139,14 @@ export function PaywallCard({ message, inModal }: { message: string; inModal?: b
 export function RechargeModal({ message, onClose }: { message: string; onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/45 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-scrim p-4"
       onClick={onClose}
     >
       <div className="ink-in w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
         <PaywallCard message={message} inModal />
         <button
           onClick={onClose}
-          className="mx-auto mt-3 block rounded-xl bg-paper-2 px-6 py-2 text-xs font-semibold text-ink ring-1 ring-ink/10"
+          className="mx-auto mt-3 block rounded-xl bg-paper-3 px-6 py-2 text-xs font-semibold text-ink transition-colors hover:bg-vermilion-wash"
         >
           我知道了
         </button>
@@ -158,6 +158,6 @@ export function RechargeModal({ message, onClose }: { message: string; onClose: 
 /** 表单容器 */
 export function ReportForm({ children }: { children: ReactNode }) {
   return (
-    <section className="ink-in d1 mt-7 space-y-3 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">{children}</section>
+    <section className="ink-in d1 mt-7 space-y-3 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">{children}</section>
   );
 }

@@ -72,7 +72,7 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
 
 function QuoteBox({ title, text }: { title: string; text: string }) {
   return (
-    <div className="mt-4 rounded-xl bg-paper px-4 py-3 ring-1 ring-ink/10">
+    <div className="mt-4 rounded-xl bg-paper-2 px-4 py-3">
       <p className="flex items-center gap-1.5 text-[11px] font-medium tracking-widest text-vermilion-deep">
         <Quote className="size-3" />{title}
       </p>
@@ -83,7 +83,7 @@ function QuoteBox({ title, text }: { title: string; text: string }) {
 
 function MetricTile({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
-    <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ring-1 ${tone}`}>
+    <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tone}`}>
       <p className="text-[11px] text-ink-soft">{label}</p>
       <p className="mt-0.5 text-base font-bold">{value}</p>
     </div>
@@ -105,14 +105,14 @@ export function CompatibilitySummaryCard({ detail }: { detail: ReportDetail | nu
   const friction = str(meta.friction_index) ?? "MEDIUM";
   const tags = Array.isArray(meta.relational_tags) ? meta.relational_tags.map(String).filter(Boolean) : [];
   const mantra = str(meta.communication_key) ?? str(detail?.annualMantra);
-  const attrTone = attraction === "HIGH" ? "bg-amber-800/10 text-amber-800 ring-amber-800/25"
-    : attraction === "MEDIUM" ? "bg-stone-700/10 text-stone-700 ring-stone-700/25"
-    : "bg-ink/5 text-ink-soft ring-ink/10";
-  const fricTone = friction === "HIGH" ? "bg-rose-800/10 text-rose-800 ring-rose-800/25"
-    : friction === "MEDIUM" ? "bg-stone-700/10 text-stone-700 ring-stone-700/25"
-    : "bg-emerald-800/10 text-emerald-800 ring-emerald-800/25";
+  const attrTone = attraction === "HIGH" ? "bg-amber-50 text-amber-800"
+    : attraction === "MEDIUM" ? "bg-stone-100 text-stone-700"
+    : "bg-paper-3 text-ink-soft";
+  const fricTone = friction === "HIGH" ? "bg-rose-50 text-rose-800"
+    : friction === "MEDIUM" ? "bg-stone-100 text-stone-700"
+    : "bg-emerald-50 text-emerald-800";
   return (
-    <section className="ink-in mt-7 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/10">
+    <section className="ink-in mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
       <div className="flex items-center justify-center gap-5">
         <ScoreRing score={score} label="缘分契合度" />
         <div className="flex min-w-0 max-w-[15rem] flex-1 flex-col gap-2">
@@ -123,7 +123,7 @@ export function CompatibilitySummaryCard({ detail }: { detail: ReportDetail | nu
       {tags.length ? (
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           {tags.slice(0, 8).map((t, i) => (
-            <span key={i} className="rounded-full bg-paper px-3 py-1 text-xs text-ink-soft ring-1 ring-amber-800/25">{t}</span>
+            <span key={i} className="rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-800">{t}</span>
           ))}
         </div>
       ) : null}
@@ -150,7 +150,7 @@ export function NameSummaryCard({ detail }: { detail: ReportDetail | null }) {
   const resonance = str(meta.resonance_type);
   const mantra = str(meta.energy_mantra) ?? str(detail?.annualMantra);
   return (
-    <section className="ink-in mt-7 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/10">
+    <section className="ink-in mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
       <div className="flex items-center justify-center gap-5">
         <ScoreRing score={score} label={multi ? "平均姓名契合度" : names.length ? "双人姓名契合度" : "共振调候率"} />
         <div className="min-w-0 max-w-[15rem]">
@@ -169,9 +169,9 @@ export function NameSummaryCard({ detail }: { detail: ReportDetail | null }) {
         </p>
       ) : destiny != null || soul != null || personality != null ? (
         <div className="mt-4 flex gap-2">
-          {destiny != null ? <MetricTile label="表达数" value={String(destiny)} tone="bg-emerald-800/10 text-emerald-800 ring-emerald-800/25" /> : null}
-          {soul != null ? <MetricTile label="内心数" value={String(soul)} tone="bg-amber-800/10 text-amber-800 ring-amber-800/25" /> : null}
-          {personality != null ? <MetricTile label="外在数" value={String(personality)} tone="bg-blue-800/10 text-blue-800 ring-blue-800/25" /> : null}
+          {destiny != null ? <MetricTile label="表达数" value={String(destiny)} tone="bg-emerald-50 text-emerald-800" /> : null}
+          {soul != null ? <MetricTile label="内心数" value={String(soul)} tone="bg-amber-50 text-amber-800" /> : null}
+          {personality != null ? <MetricTile label="外在数" value={String(personality)} tone="bg-blue-50 text-blue-800" /> : null}
         </div>
       ) : null}
       {resonance ? (

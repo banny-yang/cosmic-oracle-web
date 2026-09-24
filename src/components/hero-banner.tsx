@@ -237,7 +237,7 @@ export function HeroBanner({ children }: { children: ReactNode }) {
     <section className="relative">
       {/* 文字层：小屏常规流，lg+ 叠加在轮播之上（容器放行点击，仅内容块拦截） */}
       <div className={`${shellCls} relative z-10 pt-5 pb-7 lg:pointer-events-none lg:flex lg:min-h-[30rem] lg:items-center`}>
-        <div className="lg:pointer-events-auto lg:max-w-[36rem] lg:rounded-2xl lg:bg-gradient-to-r lg:from-paper/95 lg:via-paper/60 lg:to-transparent lg:py-10 lg:pr-24 lg:pl-7">
+        <div className="lg:pointer-events-auto lg:max-w-[36rem] lg:rounded-2xl lg:bg-paper lg:py-10 lg:pr-24 lg:pl-7">
           {children}
         </div>
       </div>
@@ -253,7 +253,7 @@ export function HeroBanner({ children }: { children: ReactNode }) {
         <Carousel
           opts={{ loop: true, duration: 32 }}
           setApi={setApi}
-          className="group/carousel h-full overflow-hidden rounded-2xl ring-1 ring-ink/10 lg:rounded-none lg:ring-0"
+          className="group/carousel h-full overflow-hidden rounded-2xl lg:rounded-none"
         >
           <CarouselContent className="-ml-0">
             {SLIDES.map((s, i) => (
@@ -268,7 +268,7 @@ export function HeroBanner({ children }: { children: ReactNode }) {
                       alt=""
                       className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-multiply"
                     />
-                    <div className="absolute right-4 bottom-4 flex items-center gap-3 rounded-full bg-paper/85 py-1.5 pr-5 pl-1.5 ring-1 ring-ink/10 backdrop-blur-sm lg:right-8 lg:bottom-6">
+                    <div className="absolute right-4 bottom-4 flex items-center gap-3 rounded-full bg-paper py-1.5 pr-5 pl-1.5 lg:right-8 lg:bottom-6">
                       <span className="grid size-9 place-items-center rounded-full bg-vermilion font-seal text-lg text-paper">
                         {s.seal}
                       </span>
@@ -293,15 +293,15 @@ export function HeroBanner({ children }: { children: ReactNode }) {
                 onClick={() => api?.scrollTo(i)}
                 className={cn(
                   "h-1.5 rounded-full transition-all",
-                  i === active ? "w-7 bg-vermilion" : "w-1.5 bg-ink/25 hover:bg-ink/50",
+                  i === active ? "w-7 bg-vermilion" : "w-1.5 bg-ink-faint hover:bg-ink-soft",
                 )}
               />
             ))}
           </div>
 
           {/* 左右切换（仅桌面，悬停浮现） */}
-          <CarouselPrevious className="left-3 hidden size-9 bg-paper/85 opacity-0 ring-ink/15 backdrop-blur-sm transition-opacity duration-300 group-hover/carousel:opacity-100 hover:bg-paper lg:inline-flex" />
-          <CarouselNext className="right-3 hidden size-9 bg-paper/85 opacity-0 ring-ink/15 backdrop-blur-sm transition-opacity duration-300 group-hover/carousel:opacity-100 hover:bg-paper lg:inline-flex" />
+          <CarouselPrevious className="left-3 hidden size-9 border-0 bg-paper opacity-0 shadow-none transition-opacity duration-300 group-hover/carousel:opacity-100 lg:inline-flex" />
+          <CarouselNext className="right-3 hidden size-9 border-0 bg-paper opacity-0 shadow-none transition-opacity duration-300 group-hover/carousel:opacity-100 lg:inline-flex" />
         </Carousel>
       </div>
     </section>

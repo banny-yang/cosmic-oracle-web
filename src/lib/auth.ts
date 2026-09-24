@@ -40,10 +40,10 @@ export function getAuthUser(): AuthUser | null {
   }
 }
 
-/** 快照必须包含 tokenBalance：余额单独变化也要触发 useAuth 订阅方重渲染（页头余额实时性） */
+/** 快照必须包含 tokenBalance 与头像/昵称：任一单独变化也要触发 useAuth 订阅方重渲染（页头余额与身份实时性） */
 function authSnapshot(): string {
   const u = getAuthUser();
-  return `${getToken()}|${u?.displayName || ""}|${u?.tokenBalance ?? ""}`;
+  return `${getToken()}|${u?.displayName || ""}|${u?.avatarUrl || ""}|${u?.tokenBalance ?? ""}`;
 }
 
 /** React hook：登录态变化时触发重渲染 */

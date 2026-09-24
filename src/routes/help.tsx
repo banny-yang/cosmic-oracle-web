@@ -41,7 +41,7 @@ function HelpPage() {
       <PageHeader eyebrow="支持" title="帮助中心" desc="使用指南与常见问题。" />
       <section className="ink-in d1 mt-7 space-y-3">
         {faq.map(([q, a], i) => (
-          <details key={i} className="group rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5">
+          <details key={i} className="group rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash">
             <summary className="cursor-pointer list-none text-sm font-medium marker:hidden">
               <span className="mr-2 text-vermilion-deep">Q</span>{q}
             </summary>

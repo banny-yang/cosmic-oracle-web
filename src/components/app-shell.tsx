@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useAuth, getToken, updateToken } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
 import { post } from "@/lib/api";
+import { detectMiniProgramEnv, openMpSharePage } from "@/lib/mp-bridge";
 import { useFeatureEnabled } from "@/lib/use-feature-price";
 import {
   Baby,
@@ -14,19 +15,21 @@ import {
   Grid3x3,
   Heart,
   HeartHandshake,
-  History,
   Library,
   Menu,
+  ScanSearch,
+  Share2,
   Waves,
   type LucideIcon,
 } from "lucide-react";
 
 /**
- * 全站顶栏功能菜单（7 项）：管理端关闭的功能（t_feature.enabled=false）自动隐藏。
+ * 全站顶栏功能菜单（8 项）：管理端关闭的功能（t_feature.enabled=false）自动隐藏。
  * 价格在各功能页内动态展示，菜单只放入口；lucide 线性图标与右侧胶囊图标风格统一。
  */
 const FEATURE_MENU = [
   { to: "/naming", code: "BABY_NAMING", icon: Baby, title: "宝宝起名" },
+  { to: "/name-eval", code: "NAME_EVAL", icon: ScanSearch, title: "名字评测" },
   { to: "/analysis", code: "INSIGHT_NAME", icon: Waves, title: "姓名共振" },
   { to: "/personality", code: "INSIGHT_PAIR", icon: HeartHandshake, title: "缘分匹配" },
   { to: "/marriage", code: "MARRIAGE_FIT", icon: Heart, title: "八字合婚" },
@@ -41,17 +44,19 @@ const FEATURE_MENU = [
 }>;
 
 /** 常显入口（不挂功能开关）：典籍馆是内容/文化页，与业务开关无关。 */
-const STATIC_MENU = [{ to: "/dianji", icon: Library, title: "典籍馆" }] as const satisfies
-  ReadonlyArray<{
-    to: string;
-    icon: LucideIcon;
-    title: string;
-  }>;
+const STATIC_MENU = [
+  { to: "/dianji", icon: Library, title: "典籍馆" },
+] as const satisfies ReadonlyArray<{
+  to: string;
+  icon: LucideIcon;
+  title: string;
+}>;
 
 /** 顶栏功能菜单（横排桌面 / 纵排汉堡浮层），受管理端功能开关控制 */
 function FeatureNav({ vertical = false }: { vertical?: boolean }) {
   const enabled = {
     BABY_NAMING: useFeatureEnabled("BABY_NAMING"),
+    NAME_EVAL: useFeatureEnabled("NAME_EVAL"),
     INSIGHT_NAME: useFeatureEnabled("INSIGHT_NAME"),
     INSIGHT_PAIR: useFeatureEnabled("INSIGHT_PAIR"),
     MARRIAGE_FIT: useFeatureEnabled("MARRIAGE_FIT"),
@@ -84,7 +89,7 @@ function FeatureNav({ vertical = false }: { vertical?: boolean }) {
               className: [
                 "relative flex items-center font-medium whitespace-nowrap text-vermilion-deep transition-colors",
                 vertical
-                  ? "gap-3 rounded-xl bg-vermilion/[0.08] px-3.5 py-2.5 text-[15px]"
+                  ? "gap-3 rounded-xl bg-vermilion-wash px-3.5 py-2.5 text-[15px]"
                   : "gap-1.5 px-3 py-2 text-sm",
                 // 横排选中态：底部朱笔短线（朱批），与右侧胶囊拉开层级
                 vertical
@@ -105,14 +110,88 @@ function FeatureNav({ vertical = false }: { vertical?: boolean }) {
 /** 内容列与 banner 内层共用同一套宽度约束，保证左对齐一致 */
 export const shellCls = "mx-auto max-w-[430px] px-5 md:max-w-3xl md:px-8 lg:max-w-5xl";
 
+/**
+ * 已登录用户的头像+昵称入口（需求：登录后右上角展示昵称与头像）。
+ * 头像来自微信（在小程序内设置后回写登录态），缺失时用昵称首字占位（与「我的」页同款）；
+ * 昵称在窄屏（&lt;430px）隐藏只留头像。
+ */
+function UserIdentityLink({
+  displayName,
+  avatarUrl,
+}: {
+  displayName?: string | undefined;
+  avatarUrl?: string | undefined;
+}) {
+  return (
+    <Link
+      to="/me"
+      aria-label={displayName ? `${displayName} 的我的页面` : "我的"}
+      title={displayName || "我的"}
+      className="flex min-w-0 items-center gap-2 rounded-full bg-paper-3 p-1 transition-colors hover:bg-vermilion-wash min-[430px]:pr-3"
+    >
+      {avatarUrl ? (
+        <img src={avatarUrl} alt="" className="size-7 shrink-0 rounded-full object-cover" />
+      ) : (
+        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-paper-3 font-seal text-xs text-ink">
+          {(displayName || "客")[0]}
+        </span>
+      )}
+      <span className="hidden max-w-[8em] truncate text-sm text-ink-soft min-[430px]:inline">
+        {displayName || "未命名用户"}
+      </span>
+    </Link>
+  );
+}
+
 /** 品牌标：与微信小程序同源的朱红方章图标 */
 export function BrandMark({ className = "size-11 shrink-0 rounded-xl" }: { className?: string }) {
+  return <img src="/brand-logo.png" alt="对脉名鉴" className={className} />;
+}
+
+/**
+ * 小程序 web-view 里的分享入口（仅小程序内出现）：
+ * 含 web-view 的页面按微信规则发起不了分享，所以这里只做一件事——
+ * 跳小程序的原生分享页，由它在小程序内发起「发送给朋友 / 分享到朋友圈」。
+ */
+function MpShareEntry() {
+  const [inMp, setInMp] = useState(false);
+  const [hint, setHint] = useState("");
+  useEffect(() => {
+    let alive = true;
+    detectMiniProgramEnv().then((yes) => {
+      if (alive && yes) setInMp(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!hint) return;
+    const t = window.setTimeout(() => setHint(""), 6000);
+    return () => window.clearTimeout(t);
+  }, [hint]);
+  if (!inMp) return null;
   return (
-    <img
-      src="/brand-logo.png"
-      alt="对脉名鉴"
-      className={`shadow-sm ring-1 ring-vermilion-deep/25 ${className}`}
-    />
+    <>
+      <button
+        type="button"
+        aria-label="分享"
+        title="分享"
+        onClick={async () => {
+          if (!(await openMpSharePage())) {
+            setHint("小程序版本较旧：请在小程序「我的 → 分享给朋友」里分享");
+          }
+        }}
+        className="grid size-9 shrink-0 place-items-center rounded-full bg-vermilion-wash text-vermilion-deep transition-colors hover:text-vermilion"
+      >
+        <Share2 className="size-5" strokeWidth={1.75} />
+      </button>
+      {hint ? (
+        <div className="fixed inset-x-4 bottom-6 z-50 rounded-xl bg-ink px-4 py-3 text-center text-sm text-paper-2">
+          {hint}
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -156,8 +235,8 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
 
   return (
     <div className="min-h-screen bg-background font-song text-foreground selection:bg-vermilion/20">
-      {/* 吸顶顶栏：滚动常驻，半透明纸色+毛玻璃；不能加 overflow-hidden（朱笔下划线/浮层阴影需露出） */}
-      <header className="sticky top-0 z-40 border-b border-ink/5 bg-paper-2/85 backdrop-blur-md">
+      {/* 吸顶顶栏：滚动常驻，实色纸色（扁平化：去底边线与毛玻璃）；不能加 overflow-hidden（朱笔下划线需露出） */}
+      <header className="sticky top-0 z-40 bg-paper-2">
         {/* xl+ 顶栏比内容栏宽一档（max-w-7xl）：7 项带图标菜单在内容栏宽度（max-w-5xl）内会逐字断行 */}
         <div className={`${shellCls} pt-3.5 pb-3 xl:max-w-7xl`}>
           <div className="flex items-center gap-2">
@@ -167,7 +246,7 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
                 <p className="truncate text-lg font-semibold tracking-[0.06em] min-[430px]:tracking-[0.14em]">
                   对脉名鉴
                 </p>
-                {/* 小屏省略副标题：与右侧两个胶囊（解析记录+点数）抢宽度会换行挤压 */}
+                {/* 小屏省略副标题：与右侧控件抢宽度会换行挤压 */}
                 <p className="hidden truncate text-sm text-ink-soft min-[430px]:block">
                   起名与姓名文化参考
                 </p>
@@ -184,36 +263,19 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
                 aria-label="功能菜单"
                 aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((o) => !o)}
-                className="grid size-9 place-items-center rounded-full bg-paper-2 text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-ink xl:hidden"
+                className="grid size-9 place-items-center rounded-full bg-paper-3 text-ink-soft transition-colors hover:text-ink xl:hidden"
               >
                 <Menu className="size-5" />
               </button>
+              {/* 小程序内：一键去原生分享页（含 web-view 的页面本身发不了分享） */}
+              <MpShareEntry />
               {loggedIn ? (
-                <>
-                  <Link
-                    to="/records"
-                    aria-label="解析记录"
-                    className="flex items-center rounded-full bg-paper-2 px-3 py-1.5 text-sm font-medium text-ink-soft ring-1 ring-ink/10 transition-colors hover:text-ink min-[430px]:px-3.5"
-                  >
-                    {/* <360px 只留图标，为品牌名腾出宽度 */}
-                    <History className="size-4 min-[360px]:hidden" />
-                    <span className="hidden min-[360px]:inline">解析记录</span>
-                  </Link>
-                  <Link
-                    to="/me"
-                    className="flex items-center gap-1.5 rounded-full bg-vermilion/10 px-3 py-1.5 ring-1 ring-vermilion/20 min-[430px]:px-3.5"
-                  >
-                    <span className="size-1.5 rounded-full bg-vermilion" />
-                    <span className="text-base font-semibold tabular-nums">
-                      {user?.tokenBalance ?? 0}
-                    </span>
-                    <span className="text-sm text-ink-soft">点</span>
-                  </Link>
-                </>
+                /* 右上角只留身份：解析记录与点数余额归入「我的」页 */
+                <UserIdentityLink displayName={user?.displayName} avatarUrl={user?.avatarUrl} />
               ) : (
                 <Link
                   to="/login"
-                  className="rounded-full bg-vermilion/10 px-4 py-1.5 text-base font-medium text-vermilion-deep ring-1 ring-vermilion/20"
+                  className="rounded-full bg-vermilion-wash px-4 py-1.5 text-base font-medium text-vermilion-deep"
                 >
                   登录
                 </Link>
@@ -223,7 +285,7 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
         </div>
         {/* 小屏功能菜单浮层（贴顶栏下沿展开，滚动中不推挤页面内容） */}
         {menuOpen ? (
-          <div className="absolute inset-x-0 top-full border-b border-ink/5 bg-paper-2/95 shadow-lg shadow-ink/5 backdrop-blur-md xl:hidden">
+          <div className="absolute inset-x-0 top-full bg-white xl:hidden">
             <div className={`${shellCls} pt-2 pb-4 xl:max-w-7xl`}>
               <FeatureNav vertical />
             </div>
@@ -352,4 +414,4 @@ export function Field({
 }
 
 export const inputCls =
-  "w-full rounded-xl bg-paper-2 px-3.5 py-2.5 text-base text-ink ring-1 ring-ink/10 outline-none placeholder:text-ink-faint focus:ring-vermilion/50 md:text-sm";
+  "w-full rounded-xl bg-paper-3 px-3.5 py-2.5 text-base text-ink outline-none placeholder:text-ink-faint focus:ring-2 focus:ring-vermilion md:text-sm";

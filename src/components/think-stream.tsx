@@ -22,9 +22,9 @@ export function ThinkAnswerBox({
   // think 是尾部追加增长的：首行只显示尾部（跑马灯式），截头部会让可见内容永远停在开头
   const thinkTail = think.length > 72 ? "…" + think.slice(-72) : think;
   return (
-    <div className="ink-in rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+    <div className="ink-in rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
       {thinkLive ? (
-        <p className="mb-3 flex items-center gap-2 border-b border-ink/5 pb-2 text-xs text-ink-faint">
+        <p className="mb-3 flex items-center gap-2 pb-2 text-xs text-ink-faint">
           <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-vermilion" />
           <span className="truncate">{thinkTail || placeholder}</span>
         </p>

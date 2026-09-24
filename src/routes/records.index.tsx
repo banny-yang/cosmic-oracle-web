@@ -80,11 +80,11 @@ function RecordsPage() {
       {!loaded ? (
         <div className="mt-7 space-y-3">
           {[0, 1].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-paper-2 ring-1 ring-ink/5" />
+            <div key={i} className="h-20 animate-pulse rounded-2xl bg-paper-3" />
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="mt-7 rounded-2xl bg-paper-2 p-10 text-center ring-1 ring-ink/5">
+        <div className="mt-7 rounded-2xl bg-white p-10 text-center transition-colors hover:bg-vermilion-wash">
           <p className="font-seal text-3xl text-ink-faint">析</p>
           <p className="mt-3 text-sm font-medium">暂无解析记录</p>
           <p className="mt-1 text-xs text-ink-faint">到「宝宝起名」体验生成吧</p>
@@ -100,9 +100,9 @@ function RecordsPage() {
                 key={"n" + it.id}
                 to="/records/$id"
                 params={{ id: it.id }}
-                className="ink-in flex items-center gap-4 rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5 transition-transform active:scale-[0.99]"
+                className="ink-in flex items-center gap-4 rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash active:scale-[0.99]"
               >
-                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink/85 font-seal text-lg text-paper">
+                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink font-seal text-lg text-paper">
                   {(it.raw as NamingLog).surname || "名"}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -111,16 +111,16 @@ function RecordsPage() {
                     {(it.raw as NamingLog).card_count ?? 0} 个名字 · {time(it.time)}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full bg-vermilion/10 px-2.5 py-1 text-[11px] font-medium text-vermilion-deep">
+                <span className="shrink-0 rounded-full bg-vermilion-wash px-2.5 py-1 text-[11px] font-medium text-vermilion-deep">
                   详情
                 </span>
               </Link>
             ) : (
               <div
                 key={"r" + it.id}
-                className="ink-in flex items-center gap-4 rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5"
+                className="ink-in flex items-center gap-4 rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash"
               >
-                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-stone-600/90 font-seal text-lg text-paper">
+                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-stone-600 font-seal text-lg text-paper">
                   {SEALS[String((it.raw as ReportItem).reportType || "").toUpperCase()] || "析"}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -137,7 +137,7 @@ function RecordsPage() {
                 <span
                   className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                     (it.raw as ReportItem).status === "FAILED"
-                      ? "bg-vermilion/10 text-vermilion-deep"
+                      ? "bg-vermilion-wash text-vermilion-deep"
                       : "bg-paper-3 text-ink-soft"
                   }`}
                 >

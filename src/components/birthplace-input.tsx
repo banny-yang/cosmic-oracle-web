@@ -122,7 +122,7 @@ export function BirthplaceInput({
         }}
       />
       {open ? (
-        <div className="absolute z-20 mt-1.5 max-h-56 w-full overflow-auto rounded-xl bg-paper p-1 shadow-lg ring-1 ring-ink/15">
+        <div className="absolute z-20 mt-1.5 max-h-56 w-full overflow-auto rounded-xl bg-white p-1">
           {searching ? (
             <p className="px-3 py-2.5 text-xs text-ink-faint">搜索中…</p>
           ) : !getToken() ? (

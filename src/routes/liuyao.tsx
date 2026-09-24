@@ -59,22 +59,22 @@ interface HistoryItem {
   createdAt?: string;
 }
 
-/** 单爻（App 端 HexagramDisplay 同款）：朱砂实条/断条 + 光晕 + 变爻 ○/×（赭金）；未掷=空槽 */
+/** 单爻（App 端 HexagramDisplay 同款）：朱砂实条/断条 + 变爻 ○/×（赭金）；未掷=空槽 */
 function YaoLine({ type, visible }: { type: LineType; visible: boolean }) {
   const yang = type === "oldYang" || type === "youngYang";
   const moving = type === "oldYang" || type === "oldYin";
   if (!visible) {
-    return <span className="block h-3.5 w-full rounded-[2px] border border-ink/25" />;
+    return <span className="block h-3.5 w-full rounded-[2px] bg-paper-3" />;
   }
   return (
     <div className="flex items-center gap-1.5">
       <div className="flex flex-1 items-center gap-3">
         {yang ? (
-          <span className="line-grow block h-3 flex-1 rounded-[2px] bg-vermilion shadow-[0_0_8px_rgba(158,43,37,0.4)]" />
+          <span className="line-grow block h-3 flex-1 rounded-[2px] bg-vermilion" />
         ) : (
           <>
-            <span className="line-grow block h-3 flex-1 rounded-[2px] bg-vermilion shadow-[0_0_8px_rgba(158,43,37,0.4)]" />
-            <span className="line-grow block h-3 flex-1 rounded-[2px] bg-vermilion shadow-[0_0_8px_rgba(158,43,37,0.4)]" />
+            <span className="line-grow block h-3 flex-1 rounded-[2px] bg-vermilion" />
+            <span className="line-grow block h-3 flex-1 rounded-[2px] bg-vermilion" />
           </>
         )}
       </div>
@@ -103,21 +103,19 @@ function HexagramLines({ lines, drawn }: { lines: LineType[]; drawn?: number }) 
   );
 }
 
-/** 铜钱币面（App 端 _CoinFace 同款）：阳=金币渐变+圈点符，阴=灰币+圈竖符 */
+/** 铜钱币面（App 端 _CoinFace 同款）：阳=金币+圈点符，阴=灰币+圈竖符（扁平实色） */
 function CoinFace({ yang }: { yang: boolean }) {
   return (
     <span
       className={[
         "grid size-full place-items-center rounded-full",
-        yang
-          ? "border-2 border-[#A97B1F] bg-[linear-gradient(135deg,#EBD8AC_0%,#C9A85C_100%)] shadow-[0_0_18px_rgba(169,123,31,0.45)]"
-          : "border-2 border-[#8E8578]/60 bg-[linear-gradient(135deg,#DCD5C8_0%,#B9B1A2_100%)] shadow-[0_0_10px_rgba(142,133,120,0.15)]",
+        yang ? "bg-[#E3C98F]" : "bg-[#CAC2B4]",
       ].join(" ")}
     >
       <span
         className={[
-          "grid size-6 place-items-center rounded-full border-2",
-          yang ? "border-[#8A5A1E]" : "border-[#6B6257]",
+          "grid size-6 place-items-center rounded-full",
+          yang ? "bg-[#C9A85C]" : "bg-[#B9B1A2]",
         ].join(" ")}
       >
         {yang ? (
@@ -159,9 +157,9 @@ function CoinArena({
       className="relative mx-auto block h-[280px] w-[280px] max-w-full cursor-pointer"
       aria-label="掷币起卦"
     >
-      {/* 静态外环 + 循环涟漪 */}
-      <span className="absolute left-1/2 top-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-vermilion/15" />
-      <span className="arena-ripple absolute left-1/2 top-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-vermilion/40" />
+      {/* 擂台底盘（实色圆盘）+ 循环涟漪（实色淡盘缩放淡出） */}
+      <span className="absolute left-1/2 top-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-2" />
+      <span className="arena-ripple absolute left-1/2 top-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper-3" />
       {slots.map((s, i) => {
         const face = row[i] ?? 1;
         return (
@@ -170,12 +168,6 @@ function CoinArena({
             className="absolute"
             style={{ left: s.left, top: s.top, ["--sx" as string]: s.sx }}
           >
-            {/* 地面阴影（金色微光，随币升高缩小淡出；key=generation 随每次抛掷重启） */}
-            <span
-              key={`shadow-${generation}-${i}`}
-              className="coin-shadow absolute left-1/2 top-[52px] block h-3 w-12 -translate-x-1/2 rounded-full bg-[rgba(169,123,31,0.35)] blur-[3px]"
-              style={{ animationDelay: s.delay }}
-            />
             {/* 币体：飞行层（coin-fly）+ 双面（coin-face） */}
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <span
@@ -222,7 +214,7 @@ function HexagramBlock({
   // 后端 name 为英文，按文王卦序取中文展示（表外回退原名）
   const displayName = hexagramZh(id, name);
   return (
-    <div className="rounded-2xl bg-paper-2 p-4 ring-1 ring-ink/5">
+    <div className="rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash">
       <p className="text-xs font-semibold tracking-widest text-vermilion-deep">{title}</p>
       {displayName ? (
         <p className="mt-1 text-center text-lg font-bold text-ink">{displayName}</p>
@@ -429,7 +421,7 @@ function Liuyao() {
           />
 
           {phase === "form" ? (
-            <section className="mt-7 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               <Field label="所问之事" required>
                 <textarea
                   className={inputCls + " min-h-28 resize-none"}
@@ -455,7 +447,7 @@ function Liuyao() {
               </button>
             </section>
           ) : phase === "toss" ? (
-            <section className="mt-7 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+            <section className="mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               {/* 已掷 N 爻 + 提示（App 端 castProgress / tapHint 同款版式） */}
               <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
                 已掷 {tossed} 爻
@@ -504,22 +496,22 @@ function Liuyao() {
                     if (e.key === "Enter" || e.key === " ") tossNext();
                   }}
                   className={[
-                    "relative mt-6 h-20 w-full cursor-pointer select-none overflow-hidden rounded-[20px] border-[1.5px] transition-colors",
-                    holdPct > 0 ? "border-[#A97B1F]/70 bg-paper-3" : "border-ink/20 bg-paper-3/60",
+                    "relative mt-6 h-20 w-full cursor-pointer select-none overflow-hidden rounded-[20px] transition-colors",
+                    holdPct > 0 ? "bg-amber-50" : "bg-paper-3",
                   ].join(" ")}
                 >
                   {holdPct > 0 ? (
                     <span
-                      className="absolute bottom-0 left-0 w-full bg-[#A97B1F]/25"
+                      className="absolute bottom-0 left-0 w-full bg-amber-200"
                       style={{ height: `${holdPct * 100}%` }}
                     />
                   ) : null}
                   {rolling ? (
-                    <span className="absolute inset-x-0 bottom-0 h-1.5 animate-pulse bg-[#A97B1F]/70" />
+                    <span className="absolute inset-x-0 bottom-0 h-1.5 animate-pulse bg-amber-600" />
                   ) : null}
                   <span className="absolute inset-0 grid place-items-center">
                     {holdPct > 0 ? (
-                      <span className="text-lg font-bold tabular-nums text-[#8A5A1E]">
+                      <span className="text-lg font-bold tabular-nums text-amber-800">
                         {Math.round(holdPct * 100)}%
                       </span>
                     ) : (
@@ -577,7 +569,7 @@ function Liuyao() {
                 ) : null}
               </div>
               {phase === "reading" && !stream.visible && !stream.thinkLive ? (
-                <div className="flex items-center gap-3 rounded-xl bg-paper-2 p-4 ring-1 ring-ink/5">
+                <div className="flex items-center gap-3 rounded-xl bg-paper-2 p-4 transition-colors hover:bg-vermilion-wash">
                   <span className="size-2 animate-pulse rounded-full bg-vermilion" />
                   <p className="text-sm font-medium">正在推演卦意…</p>
                 </div>
@@ -610,13 +602,13 @@ function Liuyao() {
               </button>
               {history !== null ? (
                 history.length === 0 ? (
-                  <p className="mt-3 rounded-2xl bg-paper-2 p-5 text-center text-xs text-ink-faint ring-1 ring-ink/5">
+                  <p className="mt-3 rounded-2xl bg-white p-5 text-center text-xs text-ink-faint transition-colors hover:bg-vermilion-wash">
                     还没有卦象记录，起第一卦吧。
                   </p>
                 ) : (
                   <div className="mt-3 space-y-2">
                     {history.map((h) => (
-                      <div key={h.logId} className="rounded-2xl bg-paper-2 ring-1 ring-ink/5">
+                      <div key={h.logId} className="rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
                         <button
                           onClick={() => openHistory(h)}
                           className="flex w-full items-center justify-between gap-3 p-4 text-left"
@@ -638,7 +630,7 @@ function Liuyao() {
                           </span>
                         </button>
                         {openLog === h.logId ? (
-                          <div className="border-t border-ink/5 p-4">
+                          <div className="p-4">
                             <MiniMarkdown text={openReading || "（暂无解读）"} />
                           </div>
                         ) : null}

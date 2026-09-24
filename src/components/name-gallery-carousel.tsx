@@ -90,7 +90,7 @@ export function NameGalleryCarousel() {
               <CarouselItem key={n.word} className="pl-3 md:basis-1/2 lg:basis-1/3">
                 <Link
                   to="/names"
-                  className="flex h-full flex-col rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5 transition-transform duration-300 hover:-translate-y-1"
+                  className="flex h-full flex-col rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -99,7 +99,7 @@ export function NameGalleryCarousel() {
                         <p className="mt-1.5 text-xs tracking-wider text-ink-soft">{n.pinyin}</p>
                       ) : null}
                     </div>
-                    <span className="shrink-0 rounded-full bg-ink/[0.05] px-2.5 py-0.5 text-[11px] text-ink-soft">
+                    <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] text-ink-soft">
                       {n.category}
                     </span>
                   </div>
@@ -109,7 +109,7 @@ export function NameGalleryCarousel() {
                     </p>
                   ) : null}
                   {n.text || n.source ? (
-                    <div className="mt-auto rounded-xl bg-ink/[0.04] p-3 pt-2.5">
+                    <div className="mt-auto rounded-xl bg-paper-2 p-3 pt-2.5">
                       {n.text ? (
                         <p className="line-clamp-2 text-xs leading-relaxed text-ink-soft text-pretty">
                           {n.text}
@@ -124,8 +124,8 @@ export function NameGalleryCarousel() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-1.5 hidden size-8 border-ink/15 bg-paper-2/90 text-ink md:inline-flex" />
-          <CarouselNext className="right-1.5 hidden size-8 border-ink/15 bg-paper-2/90 text-ink md:inline-flex" />
+          <CarouselPrevious className="left-1.5 hidden size-8 border-0 bg-paper-2 text-ink shadow-none md:inline-flex" />
+          <CarouselNext className="right-1.5 hidden size-8 border-0 bg-paper-2 text-ink shadow-none md:inline-flex" />
         </Carousel>
 
         <div className="mt-2 flex justify-center gap-1.5 md:hidden">
@@ -134,7 +134,7 @@ export function NameGalleryCarousel() {
               key={n.word}
               className={[
                 "h-1.5 rounded-full transition-all",
-                i === active % Math.min(items.length, 8) ? "w-4 bg-vermilion" : "w-1.5 bg-ink/15",
+                i === active % Math.min(items.length, 8) ? "w-4 bg-vermilion" : "w-1.5 bg-paper-3",
               ].join(" ")}
             />
           ))}

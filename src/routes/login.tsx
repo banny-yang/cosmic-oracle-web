@@ -168,7 +168,7 @@ function LoginPage() {
         desc="登录后同步解析记录、购买内容与亲友投票——网页与小程序同账号互通，点数通用。"
       />
 
-      <div className="ink-in d1 mt-7 flex rounded-xl bg-paper-2 p-1 ring-1 ring-ink/10">
+      <div className="ink-in d1 mt-7 flex rounded-xl bg-paper-2 p-1">
         {(
           [
             ["phone", "手机验证码"],
@@ -188,7 +188,7 @@ function LoginPage() {
       </div>
 
       {tab === "phone" ? (
-        <section className="ink-in d2 mt-4 space-y-3 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+        <section className="ink-in d2 mt-4 space-y-3 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
           <Field label="手机号">
             <input
               className={inputCls}
@@ -212,11 +212,11 @@ function LoginPage() {
                   src={captchaImg}
                   alt="图形验证码，点击刷新"
                   title="点击刷新"
-                  className="h-10 w-28 shrink-0 cursor-pointer rounded-lg object-contain ring-1 ring-ink/10"
+                  className="h-10 w-28 shrink-0 cursor-pointer rounded-lg object-contain bg-paper-3"
                   onClick={loadCaptcha}
                 />
               ) : (
-                <div className="h-10 w-28 shrink-0 rounded-lg bg-paper-3 ring-1 ring-ink/10" />
+                <div className="h-10 w-28 shrink-0 rounded-lg bg-paper-3" />
               )}
             </div>
           </Field>
@@ -233,7 +233,7 @@ function LoginPage() {
               <button
                 disabled={countdown > 0 || sending}
                 onClick={sendCode}
-                className="h-10 w-24 shrink-0 rounded-xl bg-paper-3 text-xs font-medium text-ink ring-1 ring-ink/10 transition-colors disabled:text-ink-faint"
+                className="h-10 w-24 shrink-0 rounded-xl bg-paper-3 text-xs font-medium text-ink transition-colors hover:bg-vermilion-wash disabled:text-ink-faint"
               >
                 {countdown > 0 ? `${countdown}s 后重发` : sending ? "发送中…" : "发送验证码"}
               </button>
@@ -250,13 +250,13 @@ function LoginPage() {
           <p className="text-center text-[11px] text-ink-faint">未注册的手机号，验证通过后将自动创建账号</p>
         </section>
       ) : (
-        <section className="ink-in d2 mt-4 rounded-2xl bg-paper-2 p-5 ring-1 ring-ink/5">
+        <section className="ink-in d2 mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
           <p className="text-sm leading-relaxed text-ink-soft">
             使用微信扫描二维码，在「对脉名鉴」小程序里确认后自动返回。
           </p>
           <div className="mt-4 flex flex-col items-center gap-3">
             {qr ? (
-              <img src={qr} alt="微信登录二维码" className="w-48 rounded-xl ring-1 ring-ink/10" />
+              <img src={qr} alt="微信登录二维码" className="w-48 rounded-xl" />
             ) : (
               <div className="grid size-48 place-items-center rounded-xl bg-paper-3 text-xs text-ink-faint">
                 {qrWaiting ? "生成中…" : "点击下方按钮生成二维码"}

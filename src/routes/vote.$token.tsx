@@ -152,7 +152,7 @@ function VotePage() {
         </p>
 
         {gone ? (
-          <div className="mt-7 rounded-2xl bg-paper-2 p-8 text-center ring-1 ring-ink/5">
+          <div className="mt-7 rounded-2xl bg-white p-8 text-center transition-colors hover:bg-vermilion-wash">
             <span className="font-seal text-3xl text-ink-faint">过</span>
             <p className="mt-3 text-sm font-medium text-ink">投票链接已失效或不存在</p>
             <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">
@@ -166,7 +166,7 @@ function VotePage() {
             </Link>
           </div>
         ) : error ? (
-          <div className="mt-7 rounded-2xl bg-paper-2 p-8 text-center ring-1 ring-ink/5">
+          <div className="mt-7 rounded-2xl bg-white p-8 text-center transition-colors hover:bg-vermilion-wash">
             <p className="text-sm text-vermilion-deep">{error}</p>
             <button onClick={refresh} className="mt-4 rounded-xl bg-ink px-6 py-2.5 text-sm font-semibold text-paper">
               重新加载
@@ -175,7 +175,7 @@ function VotePage() {
         ) : !loaded ? (
           <div className="mt-7 space-y-3">
             {[0, 1].map((i) => (
-              <div key={i} className="h-20 animate-pulse rounded-2xl bg-paper-2 ring-1 ring-ink/5" />
+              <div key={i} className="h-20 animate-pulse rounded-2xl bg-paper-3" />
             ))}
           </div>
         ) : (
@@ -190,12 +190,12 @@ function VotePage() {
                     key={c.name}
                     disabled={chosen}
                     onClick={() => vote(c.name)}
-                    className={`relative w-full overflow-hidden rounded-2xl bg-paper-2 p-4 text-left ring-1 transition-transform ${
-                      mine ? "ring-vermilion" : "ring-ink/5"
+                    className={`relative w-full overflow-hidden rounded-2xl bg-white p-4 text-left transition-colors ${
+                      mine ? "bg-vermilion-wash" : "hover:bg-vermilion-wash"
                     } ${chosen ? "" : "active:scale-[0.99]"}`}
                   >
                     <span
-                      className="absolute inset-y-0 left-0 bg-vermilion/10"
+                      className="absolute inset-y-0 left-0 bg-vermilion-wash"
                       style={{ width: `${((c.votes || 0) / maxVotes) * 100}%` }}
                     />
                     <span className="relative flex items-center justify-between">

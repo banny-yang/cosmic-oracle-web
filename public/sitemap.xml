@@ -1,14 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://name.duimai.net/</loc><lastmod>2026-09-23</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://name.duimai.net/naming</loc><lastmod>2026-09-23</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://name.duimai.net/dianji</loc><lastmod>2026-09-23</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/</loc><lastmod>2026-09-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/naming</loc><lastmod>2026-09-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/name-eval</loc><lastmod>2026-09-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/dianji</loc><lastmod>2026-09-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/shu</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/niu</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/hu</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/tu</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/long</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/she</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/ma</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/yang</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/hou</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/ji</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/gou</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/zhu</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/ma/2026</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://name.duimai.net/zodiac/yang/2027</loc><lastmod>2026-09-25</lastmod><changefreq>monthly</changefreq></url>
   <url><loc>https://name.duimai.net/analysis</loc><lastmod>2026-09-20</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://name.duimai.net/personality</loc><lastmod>2026-09-20</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://name.duimai.net/marriage</loc><lastmod>2026-09-20</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://name.duimai.net/liuyao</loc><lastmod>2026-09-20</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://name.duimai.net/qimen</loc><lastmod>2026-09-20</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://name.duimai.net/names</loc><lastmod>2026-09-22</lastmod><changefreq>daily</changefreq></url>
+  <url><loc>https://name.duimai.net/names</loc><lastmod>2026-09-25</lastmod><changefreq>daily</changefreq></url>
   <url><loc>https://name.duimai.net/privacy</loc><lastmod>2026-09-20</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://name.duimai.net/terms</loc><lastmod>2026-09-20</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://name.duimai.net/help</loc><lastmod>2026-09-20</lastmod><changefreq>weekly</changefreq></url>

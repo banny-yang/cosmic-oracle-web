@@ -17,6 +17,14 @@ import { PenLine, Lock } from "lucide-react";
 import { getAuthUser, useAuth } from "@/lib/auth";
 import { post } from "@/lib/api";
 import { refreshBalance } from "@/lib/balance";
+import { useQrEnv, type QrEnv } from "@/lib/qr-env";
+
+/** 解锁遮罩里二维码旁的提示：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+const QR_HINT: Record<QrEnv, string> = {
+  mp: "长按二维码充值，到账后回到本页解锁",
+  mobile: "微信扫码充值，到账后回到本页解锁",
+  desktop: "手机微信扫码充值，到账后回到本页解锁",
+};
 
 export const Route = createFileRoute("/marriage")({
   component: Marriage,
@@ -93,6 +101,7 @@ const FEMALE: Party = { name: "", date: "", time: "12:00", lat: 31.2, lng: 121.5
 
 /** 点数不足毛玻璃锁定层：结果已在后台算好，充值到账后回到本页自动清晰展示。 */
 function LockedOverlay({ price, balance, loggedIn }: { price: number; balance: number; loggedIn: boolean }) {
+  const qrEnv = useQrEnv();
   return (
     <div className="absolute inset-0 z-10 grid place-items-center bg-scrim p-4">
       <div className="w-full max-w-xs rounded-2xl bg-white p-5 text-center">
@@ -107,7 +116,7 @@ function LockedOverlay({ price, balance, loggedIn }: { price: number; balance: n
             </p>
             <div className="mt-3 flex flex-col items-center gap-1.5">
               <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-20 rounded object-contain" />
-              <p className="text-[11px] text-ink-faint">微信扫码充值，到账后回到本页解锁</p>
+              <p className="text-[11px] text-ink-faint">{QR_HINT[qrEnv]}</p>
             </div>
           </>
         ) : (
@@ -212,7 +221,7 @@ function Marriage() {
                 <input className={inputCls} type="time" value={male.time} onChange={(e) => setMale({ ...male, time: e.target.value })} />
               </Field>
               <Field label="出生地（真太阳时校正）">
-                <BirthplaceInput lat={male.lat} lng={male.lng} onPick={(v) => setMale({ ...male, lat: v.lat, lng: v.lng })} />
+                <BirthplaceInput lat={male.lat} lng={male.lng} placeholder="城市或地区名" onPick={(v) => setMale({ ...male, lat: v.lat, lng: v.lng })} />
               </Field>
             </div>
             <p className="mt-4 text-sm font-semibold">女方</p>
@@ -227,7 +236,7 @@ function Marriage() {
                 <input className={inputCls} type="time" value={female.time} onChange={(e) => setFemale({ ...female, time: e.target.value })} />
               </Field>
               <Field label="出生地（真太阳时校正）">
-                <BirthplaceInput lat={female.lat} lng={female.lng} onPick={(v) => setFemale({ ...female, lat: v.lat, lng: v.lng })} />
+                <BirthplaceInput lat={female.lat} lng={female.lng} placeholder="城市或地区名" onPick={(v) => setFemale({ ...female, lat: v.lat, lng: v.lng })} />
               </Field>
             </div>
             {err ? <p className="text-xs text-vermilion-deep">{err}</p> : null}

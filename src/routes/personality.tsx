@@ -115,7 +115,12 @@ function Personality() {
               <input className={inputCls} type="time" value={timeA} onChange={(e) => setTimeA(e.target.value)} />
             </Field>
             <Field label="出生地（真太阳时校正）">
-              <BirthplaceInput lat={latA} lng={lngA} onPick={(v) => { setLatA(v.lat); setLngA(v.lng); }} />
+              <BirthplaceInput
+                lat={latA}
+                lng={lngA}
+                placeholder="城市或地区名"
+                onPick={(v) => { setLatA(v.lat); setLngA(v.lng); }}
+              />
             </Field>
           </div>
           <p className="mt-4 text-sm font-semibold">对方</p>
@@ -130,7 +135,12 @@ function Personality() {
               <input className={inputCls} type="time" value={timeB} onChange={(e) => setTimeB(e.target.value)} />
             </Field>
             <Field label="出生地（真太阳时校正）">
-              <BirthplaceInput lat={latB} lng={lngB} onPick={(v) => { setLatB(v.lat); setLngB(v.lng); }} />
+              <BirthplaceInput
+                lat={latB}
+                lng={lngB}
+                placeholder="城市或地区名"
+                onPick={(v) => { setLatB(v.lat); setLngB(v.lng); }}
+              />
             </Field>
           </div>
           {err ? <p className="text-xs text-vermilion-deep">{err}</p> : null}

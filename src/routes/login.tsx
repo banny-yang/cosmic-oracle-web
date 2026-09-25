@@ -4,6 +4,14 @@ import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/compo
 import { get, post, apiBase } from "@/lib/api";
 import { saveAuth } from "@/lib/auth";
 import { track } from "@/lib/track";
+import { useQrEnv, type QrEnv } from "@/lib/qr-env";
+
+/** 扫码登录引导语：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+const QR_HINT: Record<QrEnv, string> = {
+  mp: "长按二维码 → 前往小程序确认登录，确认后自动返回本页。",
+  mobile: "使用微信扫描二维码，在「对脉名鉴」小程序里确认后自动返回。",
+  desktop: "请用手机微信扫一扫二维码，在「对脉名鉴」小程序里确认后自动返回。",
+};
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -23,6 +31,7 @@ type Tab = "phone" | "wechat";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const qrEnv = useQrEnv();
   const params = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
   const redirect = params.get("redirect") || "/";
 
@@ -251,9 +260,7 @@ function LoginPage() {
         </section>
       ) : (
         <section className="ink-in d2 mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
-          <p className="text-sm leading-relaxed text-ink-soft">
-            使用微信扫描二维码，在「对脉名鉴」小程序里确认后自动返回。
-          </p>
+          <p className="text-sm leading-relaxed text-ink-soft">{QR_HINT[qrEnv]}</p>
           <div className="mt-4 flex flex-col items-center gap-3">
             {qr ? (
               <img src={qr} alt="微信登录二维码" className="w-48 rounded-xl" />

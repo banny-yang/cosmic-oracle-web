@@ -8,6 +8,7 @@ import { streamPost, type StreamHandle } from "@/lib/sse";
 import { getToken } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
 import { ScanBuyPanel } from "@/components/scan-buy";
+import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
 export type ReportPhase = "form" | "running" | "done";
 
@@ -121,13 +122,21 @@ export function ReportRunning({ error }: { error?: string }) {
 }
 
 /** 点数不足 / 支付引导卡：选套餐 → 扫码直购（入账当前登录账号，到账自动提示）。 */
+/** 引导语按打开环境分档：小程序内长按二维码，手机浏览器扫码，电脑用手机微信扫 */
+const QR_HINT: Record<QrEnv, string> = {
+  mp: "长按二维码 → 前往小程序支付所选套餐，点数/畅享直接充入当前登录账号，到账后自动提示，即可继续生成。",
+  mobile:
+    "微信扫码支付所选套餐，点数/畅享直接充入当前登录账号，到账后自动提示，即可继续生成。",
+  desktop:
+    "请用手机微信扫一扫二维码支付所选套餐，点数/畅享直接充入当前登录账号，到账后自动提示，即可继续生成。",
+};
+
 export function PaywallCard({ message, inModal }: { message: string; inModal?: boolean }) {
+  const qrEnv = useQrEnv();
   return (
     <section className={(inModal ? "" : "mt-7 ") + "rounded-2xl bg-vermilion-wash p-5 "}>
       <p className="text-sm font-semibold text-vermilion-deep">{message}</p>
-      <p className="mt-1 text-xs text-ink-soft">
-        微信扫码支付所选套餐，点数/畅享直接充入当前登录账号，到账后自动提示，即可继续生成。
-      </p>
+      <p className="mt-1 text-xs text-ink-soft">{QR_HINT[qrEnv]}</p>
       <div className="mt-3">
         <ScanBuyPanel trackWhere="paywall" />
       </div>

@@ -6,18 +6,21 @@ import { sourceToCategory, categoryToExpectation } from "@/lib/gallery-signals";
 
 export const Route = createFileRoute("/names")({
   component: NameGallery,
-  // 环 1 回流深链：起名结果「灵感库同款」徽章带 ?keyword=名字 直达搜索
-  validateSearch: (search: Record<string, unknown>) => ({
+  // 环 1 回流深链：起名结果「灵感库同款」徽章带 ?keyword=名字 直达搜索；生肖页深链带 ?zodiac=ma
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { keyword?: string | undefined; zodiac?: string | undefined } => ({
     keyword: typeof search["keyword"] === "string" ? search["keyword"].slice(0, 20) : undefined,
+    zodiac: typeof search["zodiac"] === "string" ? search["zodiac"].slice(0, 12) : undefined,
   }),
   // 首屏数据在服务端取好，名字内容随 SSR HTML 直出（AI/搜索引擎不执行 JS 也能读到）
-  loaderDeps: ({ search }) => ({ keyword: search["keyword"] ?? "" }),
+  loaderDeps: ({ search }) => ({ keyword: search.keyword ?? "", zodiac: search.zodiac ?? "" }),
   loader: async ({ deps }) => {
     const [initial, meta] = await Promise.all([
-      fetchGallery({ page: 0, keyword: deps.keyword }).catch(() => null),
+      fetchGallery({ page: 0, keyword: deps.keyword, zodiac: deps.zodiac }).catch(() => null),
       fetchCategories().catch(() => null),
     ]);
-    return { initial, meta, keyword: deps.keyword };
+    return { initial, meta, keyword: deps.keyword, zodiac: deps.zodiac };
   },
   head: () => ({
     links: [{ rel: "canonical", href: "https://name.duimai.net/names" }],
@@ -60,6 +63,8 @@ interface CategoryInfo {
   categories: { category: string; count: number }[];
   genders: string[];
   elements: string[];
+  /** 生肖筛选项（地支顺序，后端按引擎规则表给出）。 */
+  zodiacs?: { branch: string; animal: string; slug: string }[];
 }
 
 const GALLERY_PAGE_SIZE = 20;
@@ -70,6 +75,7 @@ function fetchGallery(opts: {
   gender?: string;
   element?: string;
   keyword?: string;
+  zodiac?: string;
 }) {
   return get<GalleryPage>(
     "/api/v1/naming/name-gallery",
@@ -80,6 +86,7 @@ function fetchGallery(opts: {
       ...(opts.gender ? { gender: opts.gender } : {}),
       ...(opts.element ? { element: opts.element } : {}),
       ...(opts.keyword ? { keyword: opts.keyword } : {}),
+      ...(opts.zodiac ? { zodiac: opts.zodiac } : {}),
     },
     { auth: false, timeoutMs: 10000 },
   );
@@ -108,6 +115,7 @@ const chipOff = "bg-paper-3 text-ink-soft hover:bg-vermilion-wash";
 function NameGallery() {
   const keywordSearch = Route.useSearch();
   const loaderKeyword = keywordSearch["keyword"] ?? "";
+  const loaderZodiac = keywordSearch["zodiac"] ?? "";
   const { initial, meta: initialMeta } = Route.useLoaderData();
   const [meta, setMeta] = useState<CategoryInfo | null>(initialMeta);
   const [data, setData] = useState<GalleryPage | null>(initial);
@@ -117,6 +125,7 @@ function NameGallery() {
   const [category, setCategory] = useState("");
   const [gender, setGender] = useState("");
   const [element, setElement] = useState("");
+  const [zodiac, setZodiac] = useState(() => keywordSearch["zodiac"] ?? "");
   const [keywordInput, setKeywordInput] = useState(() => keywordSearch["keyword"] ?? "");
   const [keyword, setKeyword] = useState(() => keywordSearch["keyword"] ?? "");
   const hydrated = useRef(false);
@@ -138,6 +147,7 @@ function NameGallery() {
         !category &&
         !gender &&
         !element &&
+        zodiac === loaderZodiac &&
         keyword === loaderKeyword
       ) {
         return;
@@ -145,7 +155,7 @@ function NameGallery() {
     }
     let cancelled = false;
     setLoading(true);
-    fetchGallery({ page, category, gender, element, keyword })
+    fetchGallery({ page, category, gender, element, keyword, zodiac })
       .then((r) => {
         if (!cancelled) setData(r);
       })
@@ -158,7 +168,7 @@ function NameGallery() {
     return () => {
       cancelled = true;
     };
-  }, [page, category, gender, element, keyword, initial, loaderKeyword]);
+  }, [page, category, gender, element, zodiac, keyword, initial, loaderKeyword, loaderZodiac]);
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.size)) : 1;
   const pick = (fn: () => void) => {
@@ -246,7 +256,8 @@ function NameGallery() {
             </button>
           ))}
           <input
-            className={inputCls + " ml-auto max-w-44"}
+            // 手机端（含 430px 宽的 Pro Max 机型）搜索框独占整行；≥768px 才回到右对齐窄框
+            className={inputCls + " md:ml-auto md:max-w-44"}
             placeholder="搜名字 / 出处…"
             value={keywordInput}
             onChange={(e) => setKeywordInput(e.target.value)}
@@ -255,6 +266,26 @@ function NameGallery() {
             }}
           />
         </div>
+        {/* 生肖维度：按出生年地支筛字（宜用部首命中、忌用部首不踩），口径见 /zodiac */}
+        {(meta?.zodiacs ?? []).length > 0 ? (
+          <div className="flex flex-wrap gap-2 border-t border-paper-3 pt-3">
+            <button
+              className={[chips, zodiac === "" ? chipOn : chipOff].join(" ")}
+              onClick={() => pick(() => setZodiac(""))}
+            >
+              不限生肖
+            </button>
+            {(meta?.zodiacs ?? []).map((z) => (
+              <button
+                key={z.slug}
+                className={[chips, zodiac === z.slug ? chipOn : chipOff].join(" ")}
+                onClick={() => pick(() => setZodiac(z.slug))}
+              >
+                属{z.animal}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       {/* 名字卡网格 */}

@@ -18,11 +18,22 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
+/** 爬虫 UA：通用词根即可覆盖 Baiduspider/Googlebot/Bingbot/360Spider/YisouSpider/Bytespider 等 */
+const CRAWLER_UA = /bot|spider|crawler|slurp/i;
+
+function isCrawler(request: Request): boolean {
+  return CRAWLER_UA.test(request.headers.get("user-agent") ?? "");
+}
+
 // HTML 文档原先不带任何缓存指令：iOS Safari 与微信 WebView 会启发式长期缓存，
 // 一旦它引用的 /assets/** 哈希随部署被替换，旧页面就再也取不到样式与脚本。
-function withDocumentCacheHeaders(response: Response): Response {
+function withDocumentCacheHeaders(response: Response, request: Request): Response {
   if (!(response.headers.get("content-type") ?? "").includes("text/html")) return response;
   if (response.headers.has("cache-control")) return response;
+
+  // 蜘蛛走原样返回：no-store 会让搜索引擎不缓存页面、不生成快照并压低抓取频次。
+  // 只对成功文档放行；4xx/5xx 仍带 no-store，避免错误页被搜索引擎缓存。
+  if (response.status < 400 && isCrawler(request)) return response;
 
   const headers = new Headers(response.headers);
   headers.set("cache-control", "no-cache, no-store, must-revalidate");
@@ -79,7 +90,7 @@ export default {
 
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return withDocumentCacheHeaders(await normalizeCatastrophicSsrResponse(response));
+      return withDocumentCacheHeaders(await normalizeCatastrophicSsrResponse(response), request);
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

@@ -7,6 +7,14 @@ import { ScanBuyPanel } from "@/components/scan-buy";
 import { get, patch, post, api } from "@/lib/api";
 import { getToken, getAuthUser, useAuth, updateUser, clearAuth } from "@/lib/auth";
 import { detectMiniProgramEnv, openMpProfilePage } from "@/lib/mp-bridge";
+import { useQrEnv, type QrEnv } from "@/lib/qr-env";
+
+/** 充值与解锁的引导语：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+const QR_HINT: Record<QrEnv, string> = {
+  mp: "选择套餐后长按二维码 → 前往小程序支付，点数/畅享直接充入当前账号，到账后自动提示。",
+  mobile: "选择套餐后微信扫码支付，点数/畅享直接充入当前账号，到账后自动提示。",
+  desktop: "选择套餐后用手机微信扫一扫二维码支付，点数/畅享直接充入当前账号，到账后自动提示。",
+};
 
 export const Route = createFileRoute("/me")({
   component: MePage,
@@ -77,6 +85,7 @@ const CHANNEL_LABEL: Record<string, string> = {
 function MePage() {
   const navigate = useNavigate();
   const { loggedIn, user } = useAuth();
+  const qrEnv = useQrEnv();
 
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState("");
@@ -440,9 +449,7 @@ function MePage() {
         </div>
         <div className="px-5 py-4">
           <p className="text-sm font-medium">充值与解锁</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-            选择套餐后微信扫码支付，点数/畅享直接充入当前账号，到账后自动提示。
-          </p>
+          <p className="mt-1 text-xs leading-relaxed text-ink-soft">{QR_HINT[qrEnv]}</p>
           <div className="mt-3">
             <ScanBuyPanel trackWhere="me" />
           </div>

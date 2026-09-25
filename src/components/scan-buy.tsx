@@ -7,6 +7,16 @@ import { post, get } from "@/lib/api";
 import { getAuthUser } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
 import { track } from "@/lib/track";
+import { useQrEnv, type QrEnv } from "@/lib/qr-env";
+
+/** 二维码旁的操作提示：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+const QR_HINT: Record<QrEnv, string> = {
+  mp: "长按左侧二维码 → 前往小程序完成支付，点数/畅享直接充入当前账号，到账后这里会自动提示。",
+  mobile:
+    "微信扫一扫左侧二维码支付所选套餐（也可在微信里点下方链接），点数/畅享直接充入当前账号，到账后这里会自动提示。",
+  desktop:
+    "请用手机微信扫一扫左侧二维码支付所选套餐，点数/畅享直接充入当前账号，到账后这里会自动提示。",
+};
 
 interface Sku {
   productId: string;
@@ -24,6 +34,7 @@ function yuan(priceFen?: number): string {
 }
 
 export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string }) {
+  const qrEnv = useQrEnv();
   const [skus, setSkus] = useState<Sku[] | null>(null);
   const [selected, setSelected] = useState("");
   const [qr, setQr] = useState("");
@@ -168,9 +179,7 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
           onClick={() => track("mp_qr_click", { where: trackWhere })}
         />
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] leading-relaxed text-ink-soft">
-            微信扫左侧码支付所选套餐（或在微信里点下方链接），点数/畅享直接充入当前账号，到账后这里会自动提示。
-          </p>
+          <p className="text-[11px] leading-relaxed text-ink-soft">{QR_HINT[qrEnv]}</p>
           <a
             href={link || "weixin://"}
             className="mt-2 inline-block rounded-lg bg-vermilion px-4 py-1.5 text-[11px] font-semibold text-paper"

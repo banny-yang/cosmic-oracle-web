@@ -28,6 +28,9 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as RecordsIndexRouteImport } from './routes/records.index'
 import { Route as RecordsIdRouteImport } from './routes/records.$id'
 import { Route as VoteTokenRouteImport } from './routes/vote.$token'
+import { Route as ZodiacIndexRouteImport } from './routes/zodiac/index'
+import { Route as ZodiacAnimalIndexRouteImport } from './routes/zodiac/$animal/index'
+import { Route as ZodiacAnimalYearRouteImport } from './routes/zodiac/$animal/$year'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -124,6 +127,21 @@ const VoteTokenRoute = VoteTokenRouteImport.update({
   path: '/vote/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ZodiacIndexRoute = ZodiacIndexRouteImport.update({
+  id: '/zodiac/',
+  path: '/zodiac/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ZodiacAnimalIndexRoute = ZodiacAnimalIndexRouteImport.update({
+  id: '/zodiac/$animal/',
+  path: '/zodiac/$animal/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ZodiacAnimalYearRoute = ZodiacAnimalYearRouteImport.update({
+  id: '/zodiac/$animal/$year',
+  path: '/zodiac/$animal/$year',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -145,6 +163,9 @@ export interface FileRoutesByFullPath {
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
   '/records/': typeof RecordsIndexRoute
+  '/zodiac/': typeof ZodiacIndexRoute
+  '/zodiac/$animal/$year': typeof ZodiacAnimalYearRoute
+  '/zodiac/$animal/': typeof ZodiacAnimalIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -166,6 +187,9 @@ export interface FileRoutesByTo {
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
   '/records': typeof RecordsIndexRoute
+  '/zodiac': typeof ZodiacIndexRoute
+  '/zodiac/$animal/$year': typeof ZodiacAnimalYearRoute
+  '/zodiac/$animal': typeof ZodiacAnimalIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -188,6 +212,9 @@ export interface FileRoutesById {
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
   '/records/': typeof RecordsIndexRoute
+  '/zodiac/': typeof ZodiacIndexRoute
+  '/zodiac/$animal/$year': typeof ZodiacAnimalYearRoute
+  '/zodiac/$animal/': typeof ZodiacAnimalIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -211,6 +238,9 @@ export interface FileRouteTypes {
     | '/records/$id'
     | '/vote/$token'
     | '/records/'
+    | '/zodiac/'
+    | '/zodiac/$animal/$year'
+    | '/zodiac/$animal/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -232,6 +262,9 @@ export interface FileRouteTypes {
     | '/records/$id'
     | '/vote/$token'
     | '/records'
+    | '/zodiac'
+    | '/zodiac/$animal/$year'
+    | '/zodiac/$animal'
   id:
     | '__root__'
     | '/'
@@ -253,6 +286,9 @@ export interface FileRouteTypes {
     | '/records/$id'
     | '/vote/$token'
     | '/records/'
+    | '/zodiac/'
+    | '/zodiac/$animal/$year'
+    | '/zodiac/$animal/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -275,6 +311,9 @@ export interface RootRouteChildren {
   RecordsIdRoute: typeof RecordsIdRoute
   VoteTokenRoute: typeof VoteTokenRoute
   RecordsIndexRoute: typeof RecordsIndexRoute
+  ZodiacIndexRoute: typeof ZodiacIndexRoute
+  ZodiacAnimalYearRoute: typeof ZodiacAnimalYearRoute
+  ZodiacAnimalIndexRoute: typeof ZodiacAnimalIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -412,6 +451,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VoteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/zodiac/': {
+      id: '/zodiac/'
+      path: '/zodiac'
+      fullPath: '/zodiac/'
+      preLoaderRoute: typeof ZodiacIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zodiac/$animal/': {
+      id: '/zodiac/$animal/'
+      path: '/zodiac/$animal'
+      fullPath: '/zodiac/$animal/'
+      preLoaderRoute: typeof ZodiacAnimalIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zodiac/$animal/$year': {
+      id: '/zodiac/$animal/$year'
+      path: '/zodiac/$animal/$year'
+      fullPath: '/zodiac/$animal/$year'
+      preLoaderRoute: typeof ZodiacAnimalYearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -435,6 +495,9 @@ const rootRouteChildren: RootRouteChildren = {
   RecordsIdRoute: RecordsIdRoute,
   VoteTokenRoute: VoteTokenRoute,
   RecordsIndexRoute: RecordsIndexRoute,
+  ZodiacIndexRoute: ZodiacIndexRoute,
+  ZodiacAnimalYearRoute: ZodiacAnimalYearRoute,
+  ZodiacAnimalIndexRoute: ZodiacAnimalIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -45,6 +45,19 @@ import { ScanBuyPanel } from "@/components/scan-buy";
 import { getToken, getAuthUser } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
 import { setupWxShare } from "@/lib/wx-share";
+import { useQrEnv, type QrEnv } from "@/lib/qr-env";
+
+/** 小程序码旁的提示：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+const QR_HINT_LOCK: Record<QrEnv, string> = {
+  mp: "长按二维码进入「对脉名鉴」小程序充值",
+  mobile: "微信扫码进入「对脉名鉴」小程序充值",
+  desktop: "请用手机微信扫码进入「对脉名鉴」小程序充值",
+};
+const QR_HINT_BUY: Record<QrEnv, string> = {
+  mp: "或长按二维码直购（点数/畅享充入当前账号，到账自动提示）",
+  mobile: "或微信扫码直购（点数/畅享充入当前账号，到账自动提示）",
+  desktop: "或手机微信扫码直购（点数/畅享充入当前账号，到账自动提示）",
+};
 import {
   Baby,
   Users,
@@ -57,10 +70,12 @@ import {
   PenLine,
   Clock3,
   ShieldCheck,
-  LocateFixed,
   SlidersHorizontal,
   ChevronDown,
+  PawPrint,
 } from "lucide-react";
+import { ZodiacNotice, ZodiacRadicalChips, ZodiacYearHeadline } from "@/components/zodiac-blocks";
+import type { ZodiacInfo } from "@/lib/zodiac-guide";
 
 export const Route = createFileRoute("/naming")({
   component: Naming,
@@ -153,6 +168,14 @@ interface NameCardData {
   goodNameHit?: boolean;
   /** 姓+名整体搭配说明（后端 surnameNote：姓氏融合）——与连读徽章不同，这是一句话结论。 */
   surnameNote?: string;
+  /** 生肖用字宜忌命中明细（后端 zodiacHits：命中喜用部首 / 踩到忌用部首 + 一句话说明）。 */
+  zodiacHits?: {
+    animal?: string;
+    branch?: string;
+    preferred?: string[];
+    forbidden?: string[];
+    note?: string;
+  } | null;
 }
 
 /** 起名畅享权益状态（GET /api/v1/naming/pass/status）。 */
@@ -313,6 +336,8 @@ interface Diagnosis {
   pillars?: string[];
   poolSize?: number;
   wuxingMatch?: boolean;
+  /** 生肖用字宜忌（后端 zodiacGuide：干支/立春区间/宜忌部首，随出生年现算）。 */
+  zodiacGuide?: ZodiacInfo | null;
 }
 
 /** 维度白话解释（hover title）。 */
@@ -745,13 +770,16 @@ const parentExpectTags = [
 ];
 const classicGroups = [
   {
-    name: "诗词歌赋",
+    name: "诗文辞赋",
     items: [
       ["shijing", "诗经"],
       ["chuci", "楚辞"],
       ["tangshi", "唐诗"],
       ["songci", "宋词"],
+      ["songshi", "宋诗"],
       ["weijin", "世说文心"],
+      ["songwen", "宋文"],
+      ["weijinwen", "魏晋文"],
     ],
   },
   {
@@ -767,7 +795,10 @@ const classicGroups = [
     name: "史书博物",
     items: [
       ["shishi", "史记通鉴"],
-      ["bowu", "山海本草"],
+      ["zhanguoce", "战国策"],
+      ["shanhaijing", "山海经"],
+      ["shuijingzhu", "水经注"],
+      ["bencaogangmu", "本草纲目"],
     ],
   },
   {
@@ -784,6 +815,7 @@ function genderSuffix(g: "M" | "F" | "U"): string {
 function Naming() {
   // 环 1：灵感库跳转带入的四信号（prefer/src/g/cat）
   const preferSearch = Route.useSearch();
+  const qrEnv = useQrEnv();
   // 表单
   // 姓氏预填：名字评测的低分升级 CTA（/naming?x=傅）免重复输入
   const [surname, setSurname] = useState(() => preferSearch["x"] ?? "");
@@ -852,7 +884,6 @@ function Naming() {
 
   // P1：高级选项折叠（起名偏好 + 家族避讳），标题徽标显示已选数量
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [locating, setLocating] = useState(false);
   const advancedCount =
     (generationChar.trim() ? 1 : 0) +
     (tabooText.trim() ? 1 : 0) +
@@ -929,28 +960,6 @@ function Naming() {
       return idx >= 0 ? idx : gi;
     });
   }, [bookTree, preferBook, catByBook, booksByCat]);
-
-  /** 浏览器定位 → 直接取经纬度（真太阳时校正只需经度，地名仅为展示）。 */
-  const locateMe = () => {
-    if (!navigator.geolocation) {
-      setFormErr("当前浏览器不支持定位，请输入城市名搜索");
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLat(pos.coords.latitude);
-        setLng(pos.coords.longitude);
-        setPlaceName("已定位当前位置");
-        setLocating(false);
-      },
-      () => {
-        setFormErr("定位失败，请输入城市名搜索");
-        setLocating(false);
-      },
-      { timeout: 8000 },
-    );
-  };
 
   /** P2：一键填入演示数据，降低新访客尝试门槛。 */
   const fillDemo = () => {
@@ -1254,6 +1263,7 @@ function Naming() {
   }, []);
 
   const hasResult = cards.length > 0;
+  const zodiacInfo = diagnosis?.zodiacGuide ?? null;
   const trial = !!diagnosis?.freeTrial && (diagnosis?.lockedCount ?? 0) > 0;
   const birthLabel = born ? `${birthDate || "-"} ${birthTime || ""}` : `预产期 ${birthDate || "-"}`;
   const infoLine = `${surname}家${genderSuffix(gender)} · ${birthLabel}${placeName ? ` · ${shortPlace(placeName)}` : ""}`;
@@ -1293,7 +1303,7 @@ function Naming() {
                 <div className="flex items-center justify-between gap-2 text-[11px] text-ink-soft">
                   <span className="flex min-w-0 items-center gap-1.5">
                     <ShieldCheck aria-hidden className="size-3.5 shrink-0 text-emerald-700" />
-                    典藏 440+ 典籍名句 · 信息仅用于本次起名
+                    典藏 118 万句典籍语料 · 信息仅用于本次起名
                   </span>
                   <button
                     type="button"
@@ -1407,33 +1417,17 @@ function Naming() {
                   label={born ? "出生地（用于真太阳时校正）" : "计划出生地（用于真太阳时校正）"}
                   required
                 >
-                  <div className="flex items-stretch gap-2">
-                    <div className="min-w-0 flex-1">
-                      <BirthplaceInput
-                        lat={lat}
-                        lng={lng}
-                        place={placeName}
-                        placeholder={born ? "输入城市或地区名，如：杭州" : "计划出生地，如：杭州"}
-                        onPick={(v) => {
-                          setLat(v.lat);
-                          setLng(v.lng);
-                          setPlaceName(v.place || "");
-                        }}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={locateMe}
-                      disabled={locating}
-                      className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-paper-3 px-3 text-xs font-medium text-ink hover:bg-vermilion-wash transition-colors hover:text-vermilion-deep disabled:opacity-60"
-                    >
-                      <LocateFixed
-                        aria-hidden
-                        className={`size-3.5 ${locating ? "animate-pulse" : ""}`}
-                      />
-                      {locating ? "定位中" : "定位"}
-                    </button>
-                  </div>
+                  <BirthplaceInput
+                    lat={lat}
+                    lng={lng}
+                    place={placeName}
+                    placeholder={born ? "输入城市或地区名，如：杭州" : "计划出生地，如：杭州"}
+                    onPick={(v) => {
+                      setLat(v.lat);
+                      setLng(v.lng);
+                      setPlaceName(v.place || "");
+                    }}
+                  />
                 </Field>
                 <Field label="家长期望（最多 3 个，选填）">
                   <div className="flex flex-wrap gap-2">
@@ -1984,6 +1978,12 @@ function Naming() {
                         <p className="mt-0.5 font-seal text-lg leading-relaxed tracking-[0.2em] text-ink">
                           {pl}
                         </p>
+                        {/* 年柱即生肖（立春为界），点名生肖名便于与下面的宜忌板块对上 */}
+                        {i === 0 && zodiacInfo ? (
+                          <p className="mt-0.5 text-[10px] text-ink-faint">
+                            属{zodiacInfo.animal}
+                          </p>
+                        ) : null}
                       </div>
                     );
                   })}
@@ -2066,6 +2066,31 @@ function Naming() {
                   {diagnosis.reason}
                 </p>
               ) : null}
+            </section>
+          ) : null}
+
+          {/* 生肖用字宜忌：与生成评分的「生肖契合」同源（规则表与年份区间均由服务端现算） */}
+          {zodiacInfo ? (
+            <section className="ink-in d1 mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+              <div className="flex flex-wrap items-center gap-2">
+                <PawPrint aria-hidden className="size-5 text-ink-soft" />
+                <h2 className="text-lg font-semibold tracking-wide">生肖用字宜忌</h2>
+              </div>
+              <div className="mt-3">
+                <ZodiacYearHeadline info={zodiacInfo} />
+                <ZodiacRadicalChips info={zodiacInfo} />
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-ink-faint">
+                名字卡的「生肖契合」按用字部首是否命中宜用、是否踩到忌用综合计分（展开名字卡可见逐个名字的命中说明）。
+                <Link
+                  to="/zodiac/$animal"
+                  params={{ animal: zodiacInfo.slug }}
+                  className="ml-1 text-vermilion-deep transition-colors hover:text-vermilion"
+                >
+                  看属{zodiacInfo.animal}的完整宜忌与好名 →
+                </Link>
+              </p>
+              <ZodiacNotice />
             </section>
           ) : null}
 
@@ -2286,7 +2311,7 @@ function Naming() {
                           充值解锁全部 {diagnosis?.lockedCount} 个名字
                         </p>
                         <p className="px-6 text-center text-[11px] leading-relaxed text-ink-soft">
-                          微信扫码进入「对脉名鉴」小程序充值
+                          {QR_HINT_LOCK[qrEnv]}
                           <br />
                           点数网页端与小程序通用，登录同一账号即可
                         </p>
@@ -2486,7 +2511,7 @@ function Naming() {
                 ) : null}
                 <div className="mt-4">
                   <p className="mb-1.5 text-[11px] font-medium text-ink-faint">
-                    或微信扫码直购（点数/畅享充入当前账号，到账自动提示）
+                    {QR_HINT_BUY[qrEnv]}
                   </p>
                   <ScanBuyPanel trackWhere="naming_paywall" />
                 </div>
@@ -3054,6 +3079,12 @@ function NameCardView({
                 ) : null}
                 {c.wugeWarning ? (
                   <p className="text-[11px] leading-relaxed text-amber-700">· {c.wugeWarning}</p>
+                ) : null}
+                {c.zodiacHits?.note ? (
+                  <p className="flex items-start gap-1.5 pt-0.5 text-[11px] leading-relaxed text-ink-soft">
+                    <PawPrint aria-hidden className="mt-0.5 size-3 shrink-0" />
+                    {c.zodiacHits.note}
+                  </p>
                 ) : null}
               </div>
             </div>

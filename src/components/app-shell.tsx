@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { useAuth, getToken, updateToken } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
 import { post } from "@/lib/api";
-import { detectMiniProgramEnv, openMpSharePage } from "@/lib/mp-bridge";
 import { useFeatureEnabled } from "@/lib/use-feature-price";
 import {
   Baby,
@@ -17,8 +16,8 @@ import {
   HeartHandshake,
   Library,
   Menu,
+  PawPrint,
   ScanSearch,
-  Share2,
   Waves,
   type LucideIcon,
 } from "lucide-react";
@@ -43,9 +42,10 @@ const FEATURE_MENU = [
   title: string;
 }>;
 
-/** 常显入口（不挂功能开关）：典籍馆是内容/文化页，与业务开关无关。 */
+/** 常显入口（不挂功能开关）：典籍馆/生肖取名是内容/文化页，与业务开关无关。 */
 const STATIC_MENU = [
   { to: "/dianji", icon: Library, title: "典籍馆" },
+  { to: "/zodiac", icon: PawPrint, title: "生肖取名" },
 ] as const satisfies ReadonlyArray<{
   to: string;
   icon: LucideIcon;
@@ -148,53 +148,6 @@ export function BrandMark({ className = "size-11 shrink-0 rounded-xl" }: { class
   return <img src="/brand-logo.png" alt="对脉名鉴" className={className} />;
 }
 
-/**
- * 小程序 web-view 里的分享入口（仅小程序内出现）：
- * 含 web-view 的页面按微信规则发起不了分享，所以这里只做一件事——
- * 跳小程序的原生分享页，由它在小程序内发起「发送给朋友 / 分享到朋友圈」。
- */
-function MpShareEntry() {
-  const [inMp, setInMp] = useState(false);
-  const [hint, setHint] = useState("");
-  useEffect(() => {
-    let alive = true;
-    detectMiniProgramEnv().then((yes) => {
-      if (alive && yes) setInMp(true);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-  useEffect(() => {
-    if (!hint) return;
-    const t = window.setTimeout(() => setHint(""), 6000);
-    return () => window.clearTimeout(t);
-  }, [hint]);
-  if (!inMp) return null;
-  return (
-    <>
-      <button
-        type="button"
-        aria-label="分享"
-        title="分享"
-        onClick={async () => {
-          if (!(await openMpSharePage())) {
-            setHint("小程序版本较旧：请在小程序「我的 → 分享给朋友」里分享");
-          }
-        }}
-        className="grid size-9 shrink-0 place-items-center rounded-full bg-vermilion-wash text-vermilion-deep transition-colors hover:text-vermilion"
-      >
-        <Share2 className="size-5" strokeWidth={1.75} />
-      </button>
-      {hint ? (
-        <div className="fixed inset-x-4 bottom-6 z-50 rounded-xl bg-ink px-4 py-3 text-center text-sm text-paper-2">
-          {hint}
-        </div>
-      ) : null}
-    </>
-  );
-}
-
 export function AppShell({ banner, children }: { banner?: ReactNode; children: ReactNode }) {
   // 自建统计（V162）：路由变化上报 PV（仅生产 + VITE_TRACKING=1，失败静默）
   const location = useLocation();
@@ -267,8 +220,6 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
               >
                 <Menu className="size-5" />
               </button>
-              {/* 小程序内：一键去原生分享页（含 web-view 的页面本身发不了分享） */}
-              <MpShareEntry />
               {loggedIn ? (
                 /* 右上角只留身份：解析记录与点数余额归入「我的」页 */
                 <UserIdentityLink displayName={user?.displayName} avatarUrl={user?.avatarUrl} />
@@ -398,7 +349,7 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-1.5 block text-xs font-medium text-ink-soft">
         {required ? (
           <span

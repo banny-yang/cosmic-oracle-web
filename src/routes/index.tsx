@@ -8,6 +8,19 @@ import { useAuth } from "@/lib/auth";
 import { get } from "@/lib/api";
 import { fetchClassicBookTree, promotedCategories, type ClassicBookTree } from "@/lib/classic-books";
 import { track } from "@/lib/track";
+import { useQrEnv, type QrEnv } from "@/lib/qr-env";
+
+/** 小程序码旁的操作提示：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+const QR_HINT_TIER: Record<QrEnv, string> = {
+  mp: "长按二维码充值",
+  mobile: "扫一扫二维码充值",
+  desktop: "手机微信扫码充值",
+};
+const QR_HINT_BOTTOM: Record<QrEnv, string> = {
+  mp: "长按二维码 · 进入小程序",
+  mobile: "微信扫码 · 进入小程序",
+  desktop: "手机微信扫码 · 进入小程序",
+};
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -112,11 +125,11 @@ const feedbacks = [
 const faqs = [
   {
     q: "对脉名鉴是什么？",
-    a: "对脉名鉴（name.duimai.net）是中文起名与姓名文化 Web 应用，浏览器直接使用无需下载：主打有出处、有数理、有温度的宝宝起名，并提供姓名共振、缘分伴侣匹配、八字合婚、六爻与奇门工具。起名引擎基于 69 万句典籍语料，引文可回查《诗经》《楚辞》等古籍原文；内容仅供文化参考。",
+    a: "对脉名鉴（name.duimai.net）是中文起名与姓名文化 Web 应用，浏览器直接使用无需下载：主打有出处、有数理、有温度的宝宝起名，并提供姓名共振、缘分伴侣匹配、八字合婚、六爻与奇门工具。起名引擎基于 118 万句典籍语料（诗经、楚辞、唐诗宋词、宋诗宋文、魏晋文、战国策、山海经、水经注、本草纲目等），引文可回查古籍原文；内容仅供文化参考。",
   },
   {
     q: "名字是怎么生成的？",
-    a: "按出生信息完成真太阳时校正与喜用五行判定后，从候选字库筛选并参考《诗经》《楚辞》、唐宋诗词等典籍推演组合，再经五格数理与谐音安全核验，按推荐指数排序呈现。内容由算法基于传统文化整理，仅供文化参考。",
+    a: "按出生信息完成真太阳时校正与喜用五行判定后，从候选字库筛选并参考《诗经》《楚辞》、唐诗宋词、宋诗宋文等典籍推演组合，再经五格数理与谐音安全核验，按推荐指数排序呈现。内容由算法基于传统文化整理，仅供文化参考。",
   },
   {
     q: "起名为什么要做真太阳时校正？",
@@ -124,7 +137,7 @@ const faqs = [
   },
   {
     q: "名字的出处可信吗？",
-    a: "每个荐名都标注典籍原文与出处（诗经、楚辞、唐诗、宋词等），后端对引文做原文回查校验，拼接式引用会被判废，出处可以在生成结果里逐条核对。",
+    a: "每个荐名都标注典籍原文与出处（诗经、楚辞、唐诗、宋词、宋诗、宋文、魏晋文、战国策、山海经、水经注、本草纲目等），后端对引文做原文回查校验，拼接式引用会被判废，出处可以在生成结果里逐条核对。",
   },
   {
     q: "有没有现成的好名字可以直接看？",
@@ -188,6 +201,7 @@ function classicSection(tree: ClassicBookTree | null) {
 function Index() {
   const { loggedIn } = useAuth();
   const { classic } = Route.useLoaderData();
+  const qrEnv = useQrEnv();
   const [social, setSocial] = useState<SocialProof | null>(null);
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
   // 充值档位与畅享卡：公开只读接口动态渲染（1 点 = ¥1；接口失败回落静态兜底）
@@ -319,7 +333,7 @@ function Index() {
                 "中文起名与姓名文化 Web 应用：宝宝起名（典籍语料 + 真太阳时 + 喜用神 + 五格数理）、姓名解析、八字合婚、六爻与奇门，网页直接使用。",
               inLanguage: "zh-CN",
               featureList: [
-                "宝宝起名：69 万句典籍语料，引文回查原文",
+                "宝宝起名：118 万句典籍语料，引文回查原文",
                 "真太阳时校正排盘",
                 "姓名数理与五行分析",
                 "八字合婚与缘分匹配",
@@ -447,8 +461,8 @@ function Index() {
             </Link>
           </div>
           <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
-            起名引擎收录的典籍书目（诗经、楚辞、唐诗宋词、蒙学等）。看中哪一部，就指定它为宝宝取名——
-            名字的出处只来自这一部书。
+            起名引擎收录的典籍书目（诗经、楚辞、唐诗宋词、宋诗宋文、魏晋文、战国策、山海经、水经注、
+            本草纲目、蒙学等）。看中哪一部，就指定它为宝宝取名——名字的出处只来自这一部书。
           </p>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {classicBooks.books.map((b) => (
@@ -485,6 +499,41 @@ function Index() {
         </section>
       ) : null}
 
+      {/* 生肖取名入口（常青：年份/干支/宜忌由服务端按立春现算，入口不写死年份） */}
+      <section className="mt-12">
+        <div className="rounded-2xl bg-white p-6 transition-colors hover:bg-vermilion-wash">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold">生肖取名</h2>
+            <Link
+              to="/zodiac"
+              className="text-xs font-medium text-vermilion-deep underline underline-offset-2"
+            >
+              看十二生肖的用字宜忌 →
+            </Link>
+          </div>
+          <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+            十二生肖各有一套传统用字宜忌，且随年份流转——生肖年以立春为界。按当年或任意年份看该年干支、
+            宜用与忌用部首，以及命中部首的名字；起名时这一维度也会一并计入推荐指数。
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              to="/zodiac"
+              onClick={() => track("home_cta_click", { where: "zodiac" })}
+              className="rounded-xl bg-ink px-5 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
+            >
+              生肖取名 · 逐年看宜忌 →
+            </Link>
+            <Link
+              to="/names"
+              search={{ keyword: undefined }}
+              className="rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash"
+            >
+              按生肖筛名字 →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* 点数与价格 */}
       <section className="mt-12">
         <h2 className="text-lg font-semibold">点数怎么算，先说清楚</h2>
@@ -508,13 +557,14 @@ function Index() {
 
         {/* 充值档位（卡片化）+ 扫码引导 + 畅享双卡 CTA */}
         <div className="mt-3 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          {/* 手机端纵向堆叠：档位占满整行（三格各约 98px，价格与角标不再挤），二维码横排在下方；≥768px 回到「档位左 + 码右」 */}
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">
                 小程序充值档位
                 <span className="ml-2 text-[11px] font-normal text-ink-faint">1 点 ≈ ¥1</span>
               </p>
-              <div className="mt-3 grid max-w-md grid-cols-3 gap-2">
+              <div className="mt-3 grid grid-cols-3 gap-2 md:max-w-md">
                 {pointSkus.map((t, i) => (
                   <div
                     key={i}
@@ -533,13 +583,13 @@ function Index() {
                 ))}
               </div>
             </div>
-            <div className="flex shrink-0 flex-col items-center gap-1 rounded-xl bg-paper-2 p-3 transition-colors hover:bg-vermilion-wash">
+            <div className="flex items-center gap-3 rounded-xl bg-paper-2 p-3 transition-colors hover:bg-vermilion-wash md:flex-col md:items-center md:gap-1 md:shrink-0">
               <img
                 src="/mp-qrcode.jpg"
                 alt="对脉名鉴小程序码"
-                className="size-20 rounded object-contain"
+                className="size-20 shrink-0 rounded object-contain"
               />
-              <p className="text-[10px] font-medium text-ink">扫码充值</p>
+              <p className="text-[11px] font-medium text-ink md:text-[10px]">{QR_HINT_TIER[qrEnv]}</p>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
@@ -771,7 +821,7 @@ function Index() {
               alt="对脉名鉴小程序码"
               className="size-32 rounded-lg object-contain md:size-36"
             />
-            <p className="text-[11px] font-medium text-ink">微信扫码 · 进入小程序</p>
+            <p className="text-[11px] font-medium text-ink">{QR_HINT_BOTTOM[qrEnv]}</p>
           </div>
         </div>
       </section>

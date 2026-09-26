@@ -8,15 +8,20 @@ import { getAuthUser } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
 import { track } from "@/lib/track";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
+import { openMpRechargePage } from "@/lib/mp-bridge";
 
-/** 二维码旁的操作提示：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+/** 二维码旁的操作提示：按打开环境分档（小程序内点按钮 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT: Record<QrEnv, string> = {
-  mp: "长按左侧二维码 → 前往小程序完成支付，点数/畅享直接充入当前账号，到账后这里会自动提示。",
+  mp: "点击下方按钮 → 在小程序内完成支付（也可长按左侧二维码），点数/畅享直接充入当前账号，到账后这里会自动提示。",
   mobile:
     "微信扫一扫左侧二维码支付所选套餐（也可在微信里点下方链接），点数/畅享直接充入当前账号，到账后这里会自动提示。",
   desktop:
     "请用手机微信扫一扫左侧二维码支付所选套餐，点数/畅享直接充入当前账号，到账后这里会自动提示。",
 };
+
+/** 支付入口样式：小程序内是按钮（桥接跳原生页），其它环境是链接（URL Link），共用一份 */
+const PAY_BTN_CLS =
+  "mt-2 inline-block rounded-lg bg-vermilion px-4 py-1.5 text-[11px] font-semibold text-paper";
 
 interface Sku {
   productId: string;
@@ -39,6 +44,8 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
   const [selected, setSelected] = useState("");
   const [qr, setQr] = useState("");
   const [link, setLink] = useState("");
+  const [ticket, setTicket] = useState("");
+  const [mpHint, setMpHint] = useState("");
   // 到账提示：点数增加 / 畅享开通（二者只提示一次，随后停止轮询对应项）
   const [arrived, setArrived] = useState<number | null>(null);
   const [passActive, setPassActive] = useState(false);
@@ -70,15 +77,22 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
     if (!selected) return;
     setQr("");
     setLink("");
-    post<{ qrCodeBase64?: string; urlLink?: string }>("/api/v1/users/wechat/login-ticket", {
-      mpSource: "self",
-      pagePath: "pages/mine/recharge",
-      bindUserId: getAuthUser()?.userId,
-      productId: selected,
-    })
+    setTicket("");
+    setMpHint("");
+    post<{ qrCodeBase64?: string; urlLink?: string; ticket?: string }>(
+      "/api/v1/users/wechat/login-ticket",
+      {
+        mpSource: "self",
+        pagePath: "pages/mine/recharge",
+        bindUserId: getAuthUser()?.userId,
+        productId: selected,
+      },
+    )
       .then((r) => {
         if (r?.qrCodeBase64) setQr(r.qrCodeBase64);
         if (r?.urlLink) setLink(r.urlLink);
+        // 站内（小程序 web-view）也复用这张票：跳转时带上，充值页据它入账当前账号并预选档位
+        if (r?.ticket) setTicket(r.ticket);
       })
       .catch(() => {});
   }, [selected]);
@@ -179,13 +193,25 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
           onClick={() => track("mp_qr_click", { where: trackWhere })}
         />
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] leading-relaxed text-ink-soft">{QR_HINT[qrEnv]}</p>
-          <a
-            href={link || "weixin://"}
-            className="mt-2 inline-block rounded-lg bg-vermilion px-4 py-1.5 text-[11px] font-semibold text-paper"
-          >
-            去小程序支付
-          </a>
+          <p className="text-[11px] leading-relaxed text-ink-soft">{mpHint || QR_HINT[qrEnv]}</p>
+          {qrEnv === "mp" ? (
+            <button
+              type="button"
+              className={PAY_BTN_CLS}
+              onClick={async () => {
+                // 站内直接用桥接跳到原生充值页：web-view 里打不开 URL Link，点链接只会卡加载
+                if (!(await openMpRechargePage(ticket))) {
+                  setMpHint("当前小程序版本较旧：请长按左侧二维码完成支付");
+                }
+              }}
+            >
+              去小程序支付
+            </button>
+          ) : (
+            <a href={link || "weixin://"} className={PAY_BTN_CLS}>
+              去小程序支付
+            </a>
+          )}
         </div>
       </div>
       {skus === null ? <p className="text-[11px] text-ink-faint">档位加载中…</p> : null}

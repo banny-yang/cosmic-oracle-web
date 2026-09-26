@@ -10,9 +10,9 @@ import { getUnreadCount } from "@/lib/ops";
 import { detectMiniProgramEnv, openMpProfilePage } from "@/lib/mp-bridge";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
-/** 充值与解锁的引导语：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+/** 充值与解锁的引导语：按打开环境分档（小程序内点按钮 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT: Record<QrEnv, string> = {
-  mp: "选择套餐后长按二维码 → 前往小程序支付，点数/畅享直接充入当前账号，到账后自动提示。",
+  mp: "选择套餐后点「去小程序支付」在小程序内完成（也可长按二维码），点数/畅享直接充入当前账号，到账后自动提示。",
   mobile: "选择套餐后微信扫码支付，点数/畅享直接充入当前账号，到账后自动提示。",
   desktop: "选择套餐后用手机微信扫一扫二维码支付，点数/畅享直接充入当前账号，到账后自动提示。",
 };

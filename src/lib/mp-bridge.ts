@@ -8,6 +8,7 @@
  */
 const JSSDK_SRC = "https://res.wx.qq.com/open/js/jweixin-1.6.0.js";
 const MINE_PAGE = "/pages/mine/index";
+const RECHARGE_PAGE = "/pages/mine/recharge";
 
 function loadWxSdk(): Promise<Record<string, any> | null> {
   return new Promise((resolve) => {
@@ -72,6 +73,31 @@ export async function openMpProfilePage(): Promise<boolean> {
   return new Promise((resolve) => {
     mp["switchTab"]({
       url: MINE_PAGE,
+      success: () => resolve(true),
+      fail: () => resolve(false),
+    });
+  });
+}
+
+/**
+ * 站内 H5（小程序 web-view 内）直达小程序充值页。返回是否跳转成功。
+ *
+ * web-view 里微信不允许打开 URL Link / weixin://（点了只会卡在加载态），
+ * 所以站内改走桥接 API 把小程序推到原生充值页——与扫网页充值码共用一张票据：
+ * state（login-ticket 返回的 ticket）让充值页把支付入账网页账号并预选档位；
+ * from=webview 让充值页支付成功后退回 H5（那边在轮询到账），
+ * 而不是像扫码入口那样退出小程序。旧版本小程序忽略未知参数。
+ * 充值页是普通页，用 navigateTo（tabBar 页才必须 switchTab）；
+ * 加载不出 JSSDK 时返回 false，由调用方给兜底文案。
+ */
+export async function openMpRechargePage(state?: string): Promise<boolean> {
+  const wx = await loadWxSdk();
+  const mp = wx?.["miniProgram"];
+  if (!mp || !mp["navigateTo"]) return false;
+  const query = "?from=webview" + (state ? "&state=" + encodeURIComponent(state) : "");
+  return new Promise((resolve) => {
+    mp["navigateTo"]({
+      url: RECHARGE_PAGE + query,
       success: () => resolve(true),
       fail: () => resolve(false),
     });

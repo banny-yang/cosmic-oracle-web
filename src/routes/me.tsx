@@ -5,7 +5,8 @@ import { AppShell, PageHeader, Field, inputCls } from "@/components/app-shell";
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { ScanBuyPanel } from "@/components/scan-buy";
 import { get, patch, post, api } from "@/lib/api";
-import { getToken, getAuthUser, useAuth, updateUser, clearAuth } from "@/lib/auth";
+import { getToken, getAuthUser, useAuth, updateUser, clearAuth, subscribeAuth } from "@/lib/auth";
+import { getUnreadCount } from "@/lib/ops";
 import { detectMiniProgramEnv, openMpProfilePage } from "@/lib/mp-bridge";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
@@ -124,6 +125,7 @@ function MePage() {
   const [showService, setShowService] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   // 小程序 web-view 内：微信头像昵称只能在原生页用官方弹层获取，这里只做引导
   const [inMp, setInMp] = useState(false);
@@ -144,6 +146,24 @@ function MePage() {
     const t = window.setTimeout(() => setMpHint(""), 6000);
     return () => window.clearTimeout(t);
   }, [mpHint]);
+
+  // 消息中心红点：已登录才拉，登录态变化（登录/退出）即时同步
+  useEffect(() => {
+    const sync = () => {
+      if (!getToken()) {
+        setUnread(0);
+        return;
+      }
+      getUnreadCount()
+        .then((r) => setUnread(Number(r?.unread || 0)))
+        .catch(() => {});
+    };
+    sync();
+    const unsubscribe = subscribeAuth(sync);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!loggedIn) {
@@ -391,6 +411,37 @@ function MePage() {
       >
         <span className="text-sm font-medium">解析记录</span>
         <span className="text-xs text-ink-faint">历史起名与解析报告</span>
+      </Link>
+
+      <Link
+        to="/messages"
+        className="ink-in d2 mt-4 flex items-center justify-between rounded-2xl bg-white px-5 py-4 transition-colors hover:bg-vermilion-wash"
+      >
+        <span className="flex items-center gap-2 text-sm font-medium">
+          消息中心
+          {unread > 0 ? (
+            <span className="rounded-full bg-vermilion px-1.5 py-0.5 text-[10px] font-semibold text-paper">
+              {unread > 99 ? "99+" : unread}
+            </span>
+          ) : null}
+        </span>
+        <span className="text-xs text-ink-faint">活动通知与到期提醒</span>
+      </Link>
+
+      <Link
+        to="/coupons"
+        className="ink-in d2 mt-4 flex items-center justify-between rounded-2xl bg-white px-5 py-4 transition-colors hover:bg-vermilion-wash"
+      >
+        <span className="text-sm font-medium">我的券</span>
+        <span className="text-xs text-ink-faint">兑换码兑换与券包</span>
+      </Link>
+
+      <Link
+        to="/invite"
+        className="ink-in d2 mt-4 flex items-center justify-between rounded-2xl bg-white px-5 py-4 transition-colors hover:bg-vermilion-wash"
+      >
+        <span className="text-sm font-medium">邀请好友</span>
+        <span className="text-xs text-ink-faint">分享链接，好友首充有奖</span>
       </Link>
 
       {/* 出生信息 */}

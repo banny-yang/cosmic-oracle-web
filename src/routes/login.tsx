@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/components/app-shell";
 import { get, post, apiBase } from "@/lib/api";
 import { saveAuth } from "@/lib/auth";
+import { loginAttribution } from "@/lib/attribution";
 import { track } from "@/lib/track";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
@@ -106,7 +107,7 @@ function LoginPage() {
     try {
       const res = await post<LoginResponse>(
         "/api/v1/users/phone-login",
-        { phone, code: smsCode },
+        { phone, code: smsCode, ...loginAttribution() },
         { auth: false },
       );
       finish(res, "wechat");

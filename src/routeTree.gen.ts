@@ -11,12 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalysisRouteImport } from './routes/analysis'
+import { Route as CouponsRouteImport } from './routes/coupons'
 import { Route as DianjiRouteImport } from './routes/dianji'
 import { Route as HelpRouteImport } from './routes/help'
+import { Route as InviteRouteImport } from './routes/invite'
 import { Route as LiuyaoRouteImport } from './routes/liuyao'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MarriageRouteImport } from './routes/marriage'
 import { Route as MeRouteImport } from './routes/me'
+import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as NameRouteImport } from './routes/name'
 import { Route as NameEvalRouteImport } from './routes/name-eval'
 import { Route as NamesRouteImport } from './routes/names'
@@ -42,6 +45,11 @@ const AnalysisRoute = AnalysisRouteImport.update({
   path: '/analysis',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CouponsRoute = CouponsRouteImport.update({
+  id: '/coupons',
+  path: '/coupons',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DianjiRoute = DianjiRouteImport.update({
   id: '/dianji',
   path: '/dianji',
@@ -50,6 +58,11 @@ const DianjiRoute = DianjiRouteImport.update({
 const HelpRoute = HelpRouteImport.update({
   id: '/help',
   path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteRoute = InviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LiuyaoRoute = LiuyaoRouteImport.update({
@@ -70,6 +83,11 @@ const MarriageRoute = MarriageRouteImport.update({
 const MeRoute = MeRouteImport.update({
   id: '/me',
   path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NameRoute = NameRouteImport.update({
@@ -146,12 +164,15 @@ const ZodiacAnimalYearRoute = ZodiacAnimalYearRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
+  '/coupons': typeof CouponsRoute
   '/dianji': typeof DianjiRoute
   '/help': typeof HelpRoute
+  '/invite': typeof InviteRoute
   '/liuyao': typeof LiuyaoRoute
   '/login': typeof LoginRoute
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
+  '/messages': typeof MessagesRoute
   '/name': typeof NameRoute
   '/name-eval': typeof NameEvalRoute
   '/names': typeof NamesRoute
@@ -170,12 +191,15 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
+  '/coupons': typeof CouponsRoute
   '/dianji': typeof DianjiRoute
   '/help': typeof HelpRoute
+  '/invite': typeof InviteRoute
   '/liuyao': typeof LiuyaoRoute
   '/login': typeof LoginRoute
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
+  '/messages': typeof MessagesRoute
   '/name': typeof NameRoute
   '/name-eval': typeof NameEvalRoute
   '/names': typeof NamesRoute
@@ -195,12 +219,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
+  '/coupons': typeof CouponsRoute
   '/dianji': typeof DianjiRoute
   '/help': typeof HelpRoute
+  '/invite': typeof InviteRoute
   '/liuyao': typeof LiuyaoRoute
   '/login': typeof LoginRoute
   '/marriage': typeof MarriageRoute
   '/me': typeof MeRoute
+  '/messages': typeof MessagesRoute
   '/name': typeof NameRoute
   '/name-eval': typeof NameEvalRoute
   '/names': typeof NamesRoute
@@ -221,12 +248,15 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/analysis'
+    | '/coupons'
     | '/dianji'
     | '/help'
+    | '/invite'
     | '/liuyao'
     | '/login'
     | '/marriage'
     | '/me'
+    | '/messages'
     | '/name'
     | '/name-eval'
     | '/names'
@@ -245,12 +275,15 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/analysis'
+    | '/coupons'
     | '/dianji'
     | '/help'
+    | '/invite'
     | '/liuyao'
     | '/login'
     | '/marriage'
     | '/me'
+    | '/messages'
     | '/name'
     | '/name-eval'
     | '/names'
@@ -269,12 +302,15 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/analysis'
+    | '/coupons'
     | '/dianji'
     | '/help'
+    | '/invite'
     | '/liuyao'
     | '/login'
     | '/marriage'
     | '/me'
+    | '/messages'
     | '/name'
     | '/name-eval'
     | '/names'
@@ -294,12 +330,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalysisRoute: typeof AnalysisRoute
+  CouponsRoute: typeof CouponsRoute
   DianjiRoute: typeof DianjiRoute
   HelpRoute: typeof HelpRoute
+  InviteRoute: typeof InviteRoute
   LiuyaoRoute: typeof LiuyaoRoute
   LoginRoute: typeof LoginRoute
   MarriageRoute: typeof MarriageRoute
   MeRoute: typeof MeRoute
+  MessagesRoute: typeof MessagesRoute
   NameRoute: typeof NameRoute
   NameEvalRoute: typeof NameEvalRoute
   NamesRoute: typeof NamesRoute
@@ -332,6 +371,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnalysisRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coupons': {
+      id: '/coupons'
+      path: '/coupons'
+      fullPath: '/coupons'
+      preLoaderRoute: typeof CouponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dianji': {
       id: '/dianji'
       path: '/dianji'
@@ -344,6 +390,13 @@ declare module '@tanstack/react-router' {
       path: '/help'
       fullPath: '/help'
       preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite': {
+      id: '/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof InviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/liuyao': {
@@ -372,6 +425,13 @@ declare module '@tanstack/react-router' {
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/name': {
@@ -478,12 +538,15 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysisRoute: AnalysisRoute,
+  CouponsRoute: CouponsRoute,
   DianjiRoute: DianjiRoute,
   HelpRoute: HelpRoute,
+  InviteRoute: InviteRoute,
   LiuyaoRoute: LiuyaoRoute,
   LoginRoute: LoginRoute,
   MarriageRoute: MarriageRoute,
   MeRoute: MeRoute,
+  MessagesRoute: MessagesRoute,
   NameRoute: NameRoute,
   NameEvalRoute: NameEvalRoute,
   NamesRoute: NamesRoute,

@@ -1,5 +1,6 @@
 import "./lib/error-capture";
 
+import { pushUrlToBaidu } from "./lib/baidu-push";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
@@ -43,6 +44,21 @@ function withDocumentCacheHeaders(response: Response, request: Request): Respons
     statusText: response.statusText,
     headers,
   });
+}
+
+// 渲染成功的页面回报给后端做百度主动推送（见 lib/baidu-push）。
+// 只挑「本文档可收录」这一类：非 GET、4xx/5xx、非 HTML 一律不报。
+// 私有路径、查询串、重复 URL 交给后端判定——过滤名单只在后端维护一份。
+function notifyBaiduOfPage(response: Response, request: Request): void {
+  if (request.method !== "GET") return;
+  if (response.status >= 400) return;
+  if (!(response.headers.get("content-type") ?? "").includes("text/html")) return;
+
+  try {
+    pushUrlToBaidu(new URL(request.url).pathname);
+  } catch {
+    /* 上报是尽力而为，绝不影响页面返回 */
+  }
 }
 
 // /assets/** 命中时在 Nitro 静态处理器就短路了，走到这里即该哈希文件不存在。
@@ -90,7 +106,9 @@ export default {
 
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return withDocumentCacheHeaders(await normalizeCatastrophicSsrResponse(response), request);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      notifyBaiduOfPage(normalized, request);
+      return withDocumentCacheHeaders(normalized, request);
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

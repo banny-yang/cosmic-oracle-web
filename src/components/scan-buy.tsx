@@ -1,6 +1,8 @@
 /**
- * 扫码直购面板：选套餐 → 微信扫该套餐专属码（bindUserId+productId 随票据携带）→
- * 小程序内支付入账当前登录账号 → 本面板轮询余额/畅享状态，到账自动提示。
+ * 扫码直购面板：选点数档 → 微信扫该档位专属码（bindUserId+productId 随票据携带）→
+ * 小程序内支付入账当前登录账号 → 本面板轮询余额，到账自动提示。
+ *
+ * 套餐（畅享卡）不在小程序售卖，故本面板只列点数档：小程序端不再出现套餐类文案。
  */
 import { useEffect, useRef, useState } from "react";
 import { post, get } from "@/lib/api";
@@ -12,11 +14,11 @@ import { openMpRechargePage } from "@/lib/mp-bridge";
 
 /** 二维码旁的操作提示：按打开环境分档（小程序内点按钮 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT: Record<QrEnv, string> = {
-  mp: "点击下方按钮 → 在小程序内完成支付（也可长按左侧二维码），点数/畅享直接充入当前账号，到账后这里会自动提示。",
+  mp: "点击下方按钮 → 在小程序内完成支付（也可长按左侧二维码），点数直接充入当前账号，到账后这里会自动提示。",
   mobile:
-    "微信扫一扫左侧二维码支付所选套餐（也可在微信里点下方链接），点数/畅享直接充入当前账号，到账后这里会自动提示。",
+    "微信扫一扫左侧二维码支付所选点数（也可在微信里点下方链接），点数直接充入当前账号，到账后这里会自动提示。",
   desktop:
-    "请用手机微信扫一扫左侧二维码支付所选套餐，点数/畅享直接充入当前账号，到账后这里会自动提示。",
+    "请用手机微信扫一扫左侧二维码支付所选点数，点数直接充入当前账号，到账后这里会自动提示。",
 };
 
 /** 支付入口样式：小程序内是按钮（桥接跳原生页），其它环境是链接（URL Link），共用一份 */
@@ -46,16 +48,12 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
   const [link, setLink] = useState("");
   const [ticket, setTicket] = useState("");
   const [mpHint, setMpHint] = useState("");
-  // 到账提示：点数增加 / 畅享开通（二者只提示一次，随后停止轮询对应项）
+  // 到账提示：点数增加（只提示一次，随后停止轮询）
   const [arrived, setArrived] = useState<number | null>(null);
-  const [passActive, setPassActive] = useState(false);
   const baseBalanceRef = useRef<number | null>(null);
 
   const list = skus ?? [];
   const pointTiers = list.filter((s) => !s.kind || s.kind === "POINTS");
-  const passTiers = list.filter((s) => s.kind === "DAY_PASS" || s.kind === "MONTH_PASS");
-  const selectedSku = list.find((s) => s.productId === selected);
-  const passMode = selectedSku?.kind === "DAY_PASS" || selectedSku?.kind === "MONTH_PASS";
 
   useEffect(() => {
     get<Sku[]>("/api/v1/payments/client/virtual/products", {}, { auth: false, timeoutMs: 6000 })
@@ -97,7 +95,7 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
       .catch(() => {});
   }, [selected]);
 
-  // 支付到账感知：点数余额轮询；选中畅享卡时另轮询畅享状态
+  // 支付到账感知：轮询点数余额
   useEffect(() => {
     const timer = setInterval(async () => {
       if (arrived == null) {
@@ -109,27 +107,15 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
           baseBalanceRef.current = b;
         }
       }
-      if (passMode && !passActive) {
-        get<{ active?: boolean }>("/api/v1/naming/pass/status", {}, { timeoutMs: 6000 })
-          .then((p) => {
-            if (p?.active) setPassActive(true);
-          })
-          .catch(() => {});
-      }
     }, 5000);
     return () => clearInterval(timer);
-  }, [arrived, passMode, passActive]);
+  }, [arrived]);
 
   return (
     <div className="space-y-3">
       {arrived != null ? (
         <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
           已到账 +{arrived} 点，可直接继续使用
-        </p>
-      ) : null}
-      {passActive ? (
-        <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-          畅享已开通，关闭本弹窗即可使用
         </p>
       ) : null}
 
@@ -151,34 +137,6 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
                 <p className="text-sm font-bold text-ink">{s.credits ?? ""} 点</p>
                 <p className="mt-0.5 text-xs font-semibold text-vermilion-deep">¥{yuan(s.priceFen)}</p>
                 {s.tag ? <p className="mt-0.5 text-[10px] text-ink-faint">{s.tag}</p> : null}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {passTiers.length ? (
-        <div>
-          <p className="text-[11px] font-medium text-ink-faint">宝宝起名畅享</p>
-          <div className="mt-1.5 grid grid-cols-2 gap-2">
-            {passTiers.map((s) => (
-              <button
-                key={s.productId}
-                onClick={() => setSelected(s.productId)}
-                className={
-                  "rounded-xl p-2.5 text-left transition-colors " +
-                  (selected === s.productId
-                    ? "bg-vermilion-wash"
-                    : "bg-paper-3 hover:bg-vermilion-wash")
-                }
-              >
-                <p className="text-sm font-bold text-ink">
-                  {s.kind === "MONTH_PASS" ? "包月畅享" : "24 小时畅享"}
-                </p>
-                <p className="mt-0.5 text-xs font-semibold text-vermilion-deep">¥{yuan(s.priceFen)}</p>
-                <p className="mt-0.5 text-[10px] text-ink-faint">
-                  {s.kind === "MONTH_PASS" ? "30 天不限次生成与换一批" : "24 小时不限次生成与换一批"}
-                </p>
               </button>
             ))}
           </div>

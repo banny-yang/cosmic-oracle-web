@@ -54,9 +54,9 @@ const QR_HINT_LOCK: Record<QrEnv, string> = {
   desktop: "请用手机微信扫码进入「对脉名鉴」小程序充值",
 };
 const QR_HINT_BUY: Record<QrEnv, string> = {
-  mp: "或长按二维码直购（点数/畅享充入当前账号，到账自动提示）",
-  mobile: "或微信扫码直购（点数/畅享充入当前账号，到账自动提示）",
-  desktop: "或手机微信扫码直购（点数/畅享充入当前账号，到账自动提示）",
+  mp: "或长按二维码直购（点数充入当前账号，到账自动提示）",
+  mobile: "或微信扫码直购（点数充入当前账号，到账自动提示）",
+  desktop: "或手机微信扫码直购（点数充入当前账号，到账自动提示）",
 };
 import {
   Baby,
@@ -183,8 +183,6 @@ type PassStatus = {
   active?: boolean;
   passType?: string;
   expiresAtEpochMs?: number;
-  dayPriceFen?: number;
-  monthPriceFen?: number;
   dayPricePoints?: number;
   monthPricePoints?: number;
   batchLockEnabled?: boolean;
@@ -1019,7 +1017,7 @@ function Naming() {
     }
   };
 
-  // 开始推演前检：未开通畅享且余额足以扣本次点数 → 先弹"开通畅享"建议（点数/¥ 均可），
+  // 开始推演前检：未开通畅享且余额足以扣本次点数 → 先弹"开通畅享"建议（点数开通），
   // 用户可选直接生成或先开畅享；余额不足走原流程（服务端 402 弹充值引导）
   const handleStartClick = () => {
     if (passInfo?.active || trial) {
@@ -1185,11 +1183,6 @@ function Naming() {
         }
         if (code === "NAMING_BATCH_LOCKED") {
           // 单次 10 个名字已出完：换一批需畅享卡/包月，或再付一次点数生成新一批
-          const err = e as Error & { dayPriceFen?: number; monthPriceFen?: number };
-          if (err.dayPriceFen)
-            setPassInfo((p) => ({ ...(p || {}), dayPriceFen: err.dayPriceFen }) as PassStatus);
-          if (err.monthPriceFen)
-            setPassInfo((p) => ({ ...(p || {}), monthPriceFen: err.monthPriceFen }) as PassStatus);
           setUpgradeMode("locked");
           setUpgradeOpen(true);
           setLoading(false);
@@ -2394,7 +2387,7 @@ function Naming() {
                         }}
                         className="text-xs font-medium text-vermilion-deep underline underline-offset-2"
                       >
-                        开通畅享不限次（点数 / ¥ 均可） →
+                        开通畅享不限次（点数开通） →
                       </button>
                     ) : null}
                     <button
@@ -2470,7 +2463,7 @@ function Naming() {
                   <div className="rounded-xl bg-amber-50 p-3">
                     <p className="text-[11px] font-medium text-amber-800">24 小时畅享</p>
                     <p className="mt-0.5 text-xl font-bold text-amber-900">
-                      ¥{((passInfo?.dayPriceFen ?? 3990) / 100).toFixed(1)}
+                      {passInfo?.dayPricePoints ?? 40} 点
                     </p>
                     <p className="mt-1 text-[11px] leading-snug text-ink-soft">
                       当日不限次生成与换批
@@ -2480,15 +2473,13 @@ function Naming() {
                       disabled={purchasingPass !== ""}
                       className="mt-2 w-full rounded-lg bg-amber-600 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
                     >
-                      {purchasingPass === "DAY"
-                        ? "开通中..."
-                        : `点数开通（${passInfo?.dayPricePoints ?? 40} 点）`}
+                      {purchasingPass === "DAY" ? "开通中..." : "用点数开通"}
                     </button>
                   </div>
                   <div className="rounded-xl bg-paper-3 p-3">
                     <p className="text-[11px] font-medium text-ink-soft">包月畅享</p>
                     <p className="mt-0.5 text-xl font-bold text-ink">
-                      ¥{((passInfo?.monthPriceFen ?? 9900) / 100).toFixed(0)}
+                      {passInfo?.monthPricePoints ?? 100} 点
                     </p>
                     <p className="mt-1 text-[11px] leading-snug text-ink-soft">
                       30 天不限次，适合慢慢挑
@@ -2498,9 +2489,7 @@ function Naming() {
                       disabled={purchasingPass !== ""}
                       className="mt-2 w-full rounded-lg bg-ink py-1.5 text-xs font-semibold text-paper transition-colors hover:bg-ink-soft disabled:opacity-50"
                     >
-                      {purchasingPass === "MONTH"
-                        ? "开通中..."
-                        : `点数开通（${passInfo?.monthPricePoints ?? 100} 点）`}
+                      {purchasingPass === "MONTH" ? "开通中..." : "用点数开通"}
                     </button>
                   </div>
                 </div>
@@ -2530,7 +2519,7 @@ function Naming() {
             </div>
           ) : null}
 
-          {/* 开始推演前检：余额足够时先建议开通畅享（点数/¥ 均可），可直接生成 */}
+          {/* 开始推演前检：余额足够时先建议开通畅享（点数开通），可直接生成 */}
           {precheckOpen ? (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4"

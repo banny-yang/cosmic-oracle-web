@@ -204,7 +204,7 @@ function Index() {
   const qrEnv = useQrEnv();
   const [social, setSocial] = useState<SocialProof | null>(null);
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
-  // 充值档位与畅享卡：公开只读接口动态渲染（1 点 = ¥1；接口失败回落静态兜底）
+  // 充值档位：公开只读接口动态渲染（1 点 = ¥1；接口失败回落静态兜底）
   const [pointSkus, setPointSkus] = useState<{ credits: number; priceFen: number; tag?: string }[]>(
     [
       { credits: 10, priceFen: 990 },
@@ -212,10 +212,6 @@ function Index() {
       { credits: 85, priceFen: 6800, tag: "最惠" },
     ],
   );
-  const [passSkus, setPassSkus] = useState<{ kind: string; priceFen: number }[]>([
-    { kind: "DAY_PASS", priceFen: 3990 },
-    { kind: "MONTH_PASS", priceFen: 9900 },
-  ]);
   const yuan = (fen: number) => (fen % 100 ? (fen / 100).toFixed(1) : String(fen / 100));
 
   const [verse, setVerse] = useState<{ text?: string; source?: string; meaning?: string } | null>(
@@ -251,7 +247,7 @@ function Index() {
         setPrices(map);
       })
       .catch(() => {});
-    // 充值档位（点数 + 畅享卡）动态读取：管理端/配置调价后官网同步生效
+    // 充值档位（点数）动态读取：管理端/配置调价后官网同步生效
     get<
       {
         productId: string;
@@ -269,11 +265,6 @@ function Index() {
           .map((it) => ({ credits: it.credits ?? 0, priceFen: it.priceFen ?? 0, tag: it.tag }))
           .filter((it) => it.credits > 0 && it.priceFen > 0);
         if (points.length) setPointSkus(points);
-        const passes = arr
-          .filter((it) => it.kind === "DAY_PASS" || it.kind === "MONTH_PASS")
-          .map((it) => ({ kind: it.kind, priceFen: it.priceFen ?? 0 }))
-          .filter((it) => it.priceFen > 0);
-        if (passes.length === 2) setPassSkus(passes);
       })
       .catch(() => {});
   }, []);
@@ -592,26 +583,30 @@ function Index() {
               <p className="text-[11px] font-medium text-ink md:text-[10px]">{QR_HINT_TIER[qrEnv]}</p>
             </div>
           </div>
+          {/* 畅享卡只在网页端展示与开通（小程序不售卖套餐）：不写死点数价，点数价在起名下单单弹出里显示 */}
           <div className="mt-4 grid grid-cols-2 gap-2">
-            {passSkus.map((ps) => (
+            {[
+              { title: "起名畅享 · 24 小时", dark: false },
+              { title: "起名包月 · 30 天", dark: true },
+            ].map((ps) => (
               <div
-                key={ps.kind}
-                className={`flex items-center justify-between gap-2 rounded-xl p-3.5 transition-colors ${ps.kind === "DAY_PASS" ? "bg-amber-50" : "bg-ink "}`}
+                key={ps.title}
+                className={`flex items-center justify-between gap-2 rounded-xl p-3.5 transition-colors ${ps.dark ? "bg-ink" : "bg-amber-50"}`}
               >
                 <div>
                   <p
-                    className={`text-xs font-medium ${ps.kind === "DAY_PASS" ? "text-amber-800" : "text-paper"}`}
+                    className={`text-xs font-medium ${ps.dark ? "text-paper" : "text-amber-800"}`}
                   >
-                    {ps.kind === "DAY_PASS" ? "起名畅享 · 24 小时" : "起名包月 · 30 天"}
+                    {ps.title}
                   </p>
                   <p
-                    className={`mt-1 text-base font-bold leading-none ${ps.kind === "DAY_PASS" ? "text-amber-900" : "text-paper"}`}
+                    className={`mt-1 text-base font-bold leading-none ${ps.dark ? "text-paper" : "text-amber-900"}`}
                   >
-                    ¥{yuan(ps.priceFen)}
+                    点数开通
                   </p>
                 </div>
                 <p
-                  className={`max-w-[14ch] text-right text-[11px] leading-snug ${ps.kind === "DAY_PASS" ? "text-ink-soft" : "text-paper"}`}
+                  className={`max-w-[14ch] text-right text-[11px] leading-snug ${ps.dark ? "text-paper" : "text-ink-soft"}`}
                 >
                   宝宝起名生成与换一批不限次
                 </p>
@@ -619,7 +614,7 @@ function Index() {
             ))}
           </div>
           <p className="mt-3 text-[11px] leading-relaxed text-ink-faint">
-            首次起名免费体验 3 个精选名字；点数与畅享权益登录同一账号，网页端与小程序通用。
+            首次起名免费体验 3 个精选名字；点数与畅享登录同一账号、网页端与小程序通用，畅享卡在起名页用点数开通。
           </p>
         </div>
       </section>

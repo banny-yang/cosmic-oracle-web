@@ -49,8 +49,11 @@ function withDocumentCacheHeaders(response: Response, request: Request): Respons
 // 渲染成功的页面回报给后端做百度主动推送（见 lib/baidu-push）。
 // 只挑「本文档可收录」这一类：非 GET、4xx/5xx、非 HTML 一律不报。
 // 私有路径、查询串、重复 URL 交给后端判定——过滤名单只在后端维护一份。
+// HEAD 会被 Nitro 链路归一成 GET（实测），真实方法由 nginx 用 X-Original-Method 透传；
+// 直连容器（无该头）时退回 request.method。
 function notifyBaiduOfPage(response: Response, request: Request): void {
-  if (request.method !== "GET") return;
+  const method = request.headers.get("x-original-method") ?? request.method;
+  if (method !== "GET") return;
   if (response.status >= 400) return;
   if (!(response.headers.get("content-type") ?? "").includes("text/html")) return;
 

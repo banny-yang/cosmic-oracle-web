@@ -282,6 +282,15 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
             >
               蜀ICP备16031368号-2
             </a>
+            ·
+            <a
+              href="https://www.duimai.net/"
+              target="_blank"
+              rel="noreferrer"
+              className="mx-1 hover:text-ink-soft"
+            >
+              对麦智能
+            </a>
           </p>
         </footer>
       </div>

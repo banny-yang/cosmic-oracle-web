@@ -163,6 +163,8 @@ interface NameCardData {
   classicMeaning?: string;
   charCitations?: { char: string; citation: string; source: string }[];
   sameClassicSource?: boolean;
+  /** 双胞胎配对序号（twin 模式后端下发）：同对两名同出一部典籍，相邻排列。 */
+  pairIndex?: number;
   originalCouplet?: boolean;
   /** 名字命中名字灵感库（后端 goodNameHit）：徽标链回 /names。 */
   goodNameHit?: boolean;
@@ -831,6 +833,8 @@ function Naming() {
   const [birthTime, setBirthTime] = useState(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
   // 出生状态：已出生填出生日期+时间；未出生填预产期（按当日午时 12:00 推演）
   const [born, setBorn] = useState(true);
+  /** 双胞胎模式：结果两两成对，同对两名同出一部典籍。 */
+  const [twin, setTwin] = useState(false);
   const [lat, setLat] = useState(39.9);
   const [lng, setLng] = useState(116.4);
   const [nameLength, setNameLength] = useState<"DOUBLE" | "SINGLE">("DOUBLE");
@@ -1077,6 +1081,7 @@ function Naming() {
     longitude: lng,
     nameLength,
     wuxingMatch,
+    ...(twin ? { twin: true } : {}),
     ...(generationChar.trim() ? { generationChar: generationChar.trim() } : {}),
     ...(preferChars.length ? { preferredChars: preferChars } : {}),
     ...(tabooText.trim()
@@ -1270,7 +1275,63 @@ function Naming() {
     }
     return list;
   }, [cards, sortKey, onlyCited]);
+  /** 双胞胎分组：按 pairIndex 聚对（同对同典），未配对的孤卡单独渲染。 */
+  const twinPairs = useMemo(() => {
+    if (!twin) return null;
+    const byPair = new Map<number, NameCardData[]>();
+    const singles: NameCardData[] = [];
+    for (const c of sortedCards) {
+      if (c.pairIndex === undefined || c.pairIndex === null) {
+        singles.push(c);
+      } else {
+        byPair.set(c.pairIndex, [...(byPair.get(c.pairIndex) ?? []), c]);
+      }
+    }
+    return { pairs: [...byPair.entries()].sort((a, b) => a[0] - b[0]), singles };
+  }, [twin, sortedCards]);
   const chips = "rounded-full px-3 py-1.5 text-xs font-medium transition-colors";
+
+  /** 名字卡渲染（单胎网格 / 双胞胎对内共用）。 */
+  const renderCard = (c: NameCardData, i: number) => (
+    <NameCardView
+      key={c.name + i}
+      c={c}
+      picking={picking}
+      compareMode={compareMode}
+      compareChecked={compareSel.includes(c.name)}
+      onCompare={() =>
+        setCompareSel((p) =>
+          p.includes(c.name)
+            ? p.filter((x) => x !== c.name)
+            : p.length < 3
+              ? [...p, c.name]
+              : p,
+        )
+      }
+      onListen={() => {
+        track("name_listen", { name: c.name });
+        speakName(c.name);
+      }}
+      onShortlist={() => toggleShortlist(c.name)}
+      shortlisted={shortlist.includes(c.name)}
+      onPoster={async () => {
+        setPosterBusy(true);
+        try {
+          const shot = await buildPoster(c, infoLine, diagnosis ?? undefined);
+          setPoster({ name: c.name, url: shot.png, jpg: shot.jpg });
+          track("poster_open", { name: c.name });
+        } catch {
+          /* 忽略：canvas 异常 */
+        } finally {
+          setPosterBusy(false);
+        }
+      }}
+      picked={picked.includes(c.name)}
+      onPick={() => togglePick(c.name)}
+      wuge={wugeCells(c)}
+      xiPrimary={diagnosis?.primaryElement}
+    />
+  );
 
   return (
     <AppShell>
@@ -1379,6 +1440,33 @@ function Naming() {
                           </button>
                         ))}
                       </div>
+                    </Field>
+                  </div>
+                  {/* 双胞胎：两名成对推荐、同出一典 */}
+                  <div className="col-span-2">
+                    <Field label="宝宝数量">
+                      <div className="grid grid-cols-2 gap-2">
+                        {(
+                          [
+                            [false, "单胞胎"],
+                            [true, "双胞胎"],
+                          ] as const
+                        ).map(([v, l]) => (
+                          <button
+                            key={l}
+                            type="button"
+                            onClick={() => setTwin(v)}
+                            className={`rounded-xl py-2.5 text-sm font-medium transition-colors ${twin === v ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                          >
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                      {twin ? (
+                        <p className="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
+                          双胞胎模式：名字两两成对推荐，同对两名取自同一部典籍（如上下句），供两个孩子分别使用
+                        </p>
+                      ) : null}
                     </Field>
                   </div>
                   <Field label={born ? "出生日期" : "预产期"} required>
@@ -1977,6 +2065,12 @@ function Naming() {
                             属{zodiacInfo.animal}
                           </p>
                         ) : null}
+                        {/* 时柱点名时辰（取名与时辰相关的可见化：时支定十二时辰） */}
+                        {i === 3 ? (
+                          <p className="mt-0.5 text-[10px] text-ink-faint">
+                            {pl[pl.length - 1]}时
+                          </p>
+                        ) : null}
                       </div>
                     );
                   })}
@@ -2239,48 +2333,29 @@ function Naming() {
                   )}
                 </div>
               ) : null}
-              <div className="mt-3 grid grid-cols-1 gap-5">
-                {sortedCards.map((c, i) => (
-                  <NameCardView
-                    key={c.name + i}
-                    c={c}
-                    picking={picking}
-                    compareMode={compareMode}
-                    compareChecked={compareSel.includes(c.name)}
-                    onCompare={() =>
-                      setCompareSel((p) =>
-                        p.includes(c.name)
-                          ? p.filter((x) => x !== c.name)
-                          : p.length < 3
-                            ? [...p, c.name]
-                            : p,
-                      )
-                    }
-                    onListen={() => {
-                      track("name_listen", { name: c.name });
-                      speakName(c.name);
-                    }}
-                    onShortlist={() => toggleShortlist(c.name)}
-                    shortlisted={shortlist.includes(c.name)}
-                    onPoster={async () => {
-                      setPosterBusy(true);
-                      try {
-                        const shot = await buildPoster(c, infoLine, diagnosis ?? undefined);
-                        setPoster({ name: c.name, url: shot.png, jpg: shot.jpg });
-                        track("poster_open", { name: c.name });
-                      } catch {
-                        /* 忽略：canvas 异常 */
-                      } finally {
-                        setPosterBusy(false);
-                      }
-                    }}
-                    picked={picked.includes(c.name)}
-                    onPick={() => togglePick(c.name)}
-                    wuge={wugeCells(c)}
-                    xiPrimary={diagnosis?.primaryElement}
-                  />
-                ))}
-              </div>
+              {twinPairs ? (
+                <div className="mt-3 space-y-5">
+                  {twinPairs.pairs.map(([idx, pair]) => (
+                    <div key={`pair-${idx}`} className="rounded-2xl bg-vermilion-wash/50 p-3.5">
+                      <p className="flex flex-wrap items-center gap-2 text-xs font-semibold text-vermilion-deep">
+                        <span className="rounded-full bg-vermilion px-2 py-0.5 text-paper">
+                          第 {idx + 1} 对
+                        </span>
+                        同出{pair[0].classicSource ? `「${pair[0].classicSource}」` : "一典"} ·
+                        供两个孩子分别使用
+                      </p>
+                      <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {pair.map((c, j) => renderCard(c, j))}
+                      </div>
+                    </div>
+                  ))}
+                  {twinPairs.singles.map((c, i) => renderCard(c, 100 + i))}
+                </div>
+              ) : (
+                <div className="mt-3 grid grid-cols-1 gap-5">
+                  {sortedCards.map((c, i) => renderCard(c, i))}
+                </div>
+              )}
 
               {trial
                 ? Array.from({ length: Math.min(diagnosis?.lockedCount ?? 0, 10) }).map((_, i) => (

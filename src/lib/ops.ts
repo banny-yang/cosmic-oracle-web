@@ -59,6 +59,29 @@ export interface CouponWallet {
 /** 我的券包 */
 export const listMyCoupons = () => get<CouponWallet>("/api/v1/ops/coupons");
 
+/** 可自助领取的券（进站弹窗 / 领券区用），已领满限领的不会出现在列表里 */
+export interface ClaimableCoupon {
+  templateId: string;
+  name: string;
+  /** FIXED_TOKENS（面值为点数） / DISCOUNT_FEN（面值为分） */
+  couponType: string;
+  value: number;
+  minSpendFen: number;
+  validDays: number;
+  validTo: string | null;
+}
+
+/** 可领取的券列表 */
+export const listClaimableCoupons = () =>
+  get<{ data: ClaimableCoupon[] }>("/api/v1/ops/coupons/claimable");
+
+/** 领取优惠券：点数券立即到账，抵扣券进券包 */
+export const claimCoupon = (templateId: string) =>
+  post<ClaimableCoupon & { couponId: string; tokenBalance?: number }>(
+    "/api/v1/ops/coupons/claim",
+    { templateId },
+  );
+
 export interface RedeemResult {
   couponId: string;
   couponName: string;

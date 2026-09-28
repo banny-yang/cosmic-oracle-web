@@ -3,12 +3,15 @@ import { useEffect, useState } from "react";
 import { track } from "@/lib/track";
 import { pageView } from "@/lib/analytics";
 import type { ReactNode } from "react";
-import { useAuth, getToken, updateToken } from "@/lib/auth";
+import { useAuth, getToken, subscribeAuth, updateToken } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
 import { post } from "@/lib/api";
+import { getUnreadCount } from "@/lib/ops";
 import { useFeatureEnabled } from "@/lib/use-feature-price";
+import { CouponEntryPopup } from "@/components/coupon-entry-popup";
 import {
   Baby,
+  Bell,
   BookOpen,
   Coins,
   Grid3x3,
@@ -70,7 +73,9 @@ function FeatureNav({ vertical = false }: { vertical?: boolean }) {
   ];
   return (
     <nav
-      className={vertical ? "flex flex-col items-stretch gap-1" : "flex items-center gap-1"}
+      className={
+        vertical ? "flex flex-col items-stretch gap-1" : "flex min-w-0 items-center gap-0.5"
+      }
       aria-label="功能菜单"
     >
       {items.map((f) => {
@@ -83,14 +88,14 @@ function FeatureNav({ vertical = false }: { vertical?: boolean }) {
               "group relative flex items-center text-sm whitespace-nowrap text-ink-soft transition-colors hover:text-ink",
               vertical
                 ? "gap-3 rounded-xl px-3.5 py-2.5 text-[15px] hover:bg-paper-3"
-                : "gap-1.5 px-3 py-2",
+                : "gap-1 px-2 py-2",
             ].join(" ")}
             activeProps={{
               className: [
                 "relative flex items-center font-medium whitespace-nowrap text-vermilion-deep transition-colors",
                 vertical
                   ? "gap-3 rounded-xl bg-vermilion-wash px-3.5 py-2.5 text-[15px]"
-                  : "gap-1.5 px-3 py-2 text-sm",
+                  : "gap-1 px-2 py-2 text-sm",
                 // 横排选中态：底部朱笔短线（朱批），与右侧胶囊拉开层级
                 vertical
                   ? ""
@@ -98,7 +103,8 @@ function FeatureNav({ vertical = false }: { vertical?: boolean }) {
               ].join(" "),
             }}
           >
-            <Icon aria-hidden className={vertical ? "size-[18px]" : "size-4"} strokeWidth={1.75} />
+            {/* 横排不排图标：顶栏容器在 xl+ 恒为 max-w-7xl，10 项带图标必挤出 logo；图标留给汉堡纵排 */}
+            {vertical ? <Icon aria-hidden className="size-[18px]" strokeWidth={1.75} /> : null}
             {f.title}
           </Link>
         );
@@ -148,6 +154,51 @@ export function BrandMark({ className = "size-11 shrink-0 rounded-xl" }: { class
   return <img src="/brand-logo.png" alt="对脉名鉴" className={className} />;
 }
 
+/**
+ * 顶栏消息入口（用户名旁）：铃铛 + 未读红点。
+ * 与「我的」页同用 /ops/messages/unread；60s 轮询 + 窗口聚焦/登录态变化即时刷新。
+ */
+function MessagesBellLink() {
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    const sync = () => {
+      if (!getToken()) {
+        setUnread(0);
+        return;
+      }
+      getUnreadCount()
+        .then((r) => setUnread(Number(r?.unread || 0)))
+        .catch(() => {});
+    };
+    sync();
+    const timer = window.setInterval(sync, 60_000);
+    window.addEventListener("focus", sync);
+    const unsubscribe = subscribeAuth(sync);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", sync);
+      unsubscribe();
+    };
+  }, []);
+
+  return (
+    <Link
+      to="/messages"
+      aria-label={unread > 0 ? `消息中心（${unread} 条未读）` : "消息中心"}
+      title="消息中心"
+      className="relative grid size-9 shrink-0 place-items-center rounded-full bg-paper-3 text-ink-soft transition-colors hover:text-ink"
+    >
+      <Bell className="size-[18px]" strokeWidth={1.75} />
+      {unread > 0 ? (
+        <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-vermilion px-1 text-[10px] font-semibold leading-none text-paper">
+          {unread > 99 ? "99+" : unread}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
 export function AppShell({ banner, children }: { banner?: ReactNode; children: ReactNode }) {
   // 自建统计（V162）：路由变化上报 PV（仅生产 + VITE_TRACKING=1，失败静默）
   const location = useLocation();
@@ -188,6 +239,8 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
 
   return (
     <div className="min-h-screen bg-background font-song text-foreground selection:bg-vermilion/20">
+      {/* 进站优惠券弹窗：有可领的券才出现，关闭后当日不再打扰 */}
+      <CouponEntryPopup />
       {/* 吸顶顶栏：滚动常驻，实色纸色（扁平化：去底边线与毛玻璃）；不能加 overflow-hidden（朱笔下划线需露出） */}
       <header className="sticky top-0 z-40 bg-paper-2">
         {/* xl+ 顶栏比内容栏宽一档（max-w-7xl）：7 项带图标菜单在内容栏宽度（max-w-5xl）内会逐字断行 */}
@@ -205,8 +258,9 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
                 </p>
               </div>
             </Link>
-            {/* 桌面端功能菜单（xl+ 一排铺开居中）；管理端关闭的项自动隐藏 */}
-            <div className="mx-auto hidden xl:block">
+            {/* 桌面端功能菜单（xl+ 一排铺开居中）；管理端关闭的项自动隐藏。
+                可横向滑动且不显滚动条：极端宽度下兜底，绝不允许压住 logo */}
+            <div className="mx-auto hidden min-w-0 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:block">
               <FeatureNav />
             </div>
             <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -221,8 +275,11 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
                 <Menu className="size-5" />
               </button>
               {loggedIn ? (
-                /* 右上角只留身份：解析记录与点数余额归入「我的」页 */
-                <UserIdentityLink displayName={user?.displayName} avatarUrl={user?.avatarUrl} />
+                /* 右上角：消息红点 + 身份入口；解析记录与点数余额归入「我的」页 */
+                <>
+                  <MessagesBellLink />
+                  <UserIdentityLink displayName={user?.displayName} avatarUrl={user?.avatarUrl} />
+                </>
               ) : (
                 <Link
                   to="/login"

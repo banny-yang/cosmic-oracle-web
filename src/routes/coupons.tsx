@@ -1,7 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell, PageHeader, inputCls } from "@/components/app-shell";
-import { listMyCoupons, redeemCouponCode, type UserCoupon } from "@/lib/ops";
+import {
+  claimCoupon,
+  listClaimableCoupons,
+  listMyCoupons,
+  redeemCouponCode,
+  type ClaimableCoupon,
+  type UserCoupon,
+} from "@/lib/ops";
 import { getToken, updateUser } from "@/lib/auth";
 import { track } from "@/lib/track";
 
@@ -27,6 +34,78 @@ function faceValue(c: UserCoupon): string {
   if (c.couponType === "FIXED_TOKENS") return `${c.value ?? 0} 点`;
   if (c.couponType === "DISCOUNT_FEN") return `¥${(((c.value ?? 0) || 0) / 100).toFixed(2)}`;
   return "-";
+}
+
+/** 可领取券的面值展示（同一套口径）。 */
+function claimableValue(c: ClaimableCoupon): string {
+  if (c.couponType === "FIXED_TOKENS") return `${c.value} 点`;
+  if (c.couponType === "DISCOUNT_FEN") return `¥${(c.value / 100).toFixed(2)}`;
+  return "-";
+}
+
+function claimableDesc(c: ClaimableCoupon): string {
+  const spend =
+    c.couponType === "DISCOUNT_FEN" && c.minSpendFen > 0 ? `满 ¥${(c.minSpendFen / 100).toFixed(2)} 可用` : "";
+  const validity = c.validDays > 0 ? `领取后 ${c.validDays} 天有效` : c.validTo ? `${c.validTo.slice(0, 10)} 前有效` : "长期有效";
+  return [spend, validity].filter(Boolean).join(" · ");
+}
+
+/** 可领取的券：管理端开启「用户可领取」的模板，点击领取后进券包/到账。 */
+function ClaimableSection({ onChanged }: { onChanged: () => void }) {
+  const [items, setItems] = useState<ClaimableCoupon[]>([]);
+  const [claimingId, setClaimingId] = useState("");
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    listClaimableCoupons()
+      .then((res) => setItems(res?.data || []))
+      .catch(() => {});
+  }, []);
+
+  const claim = async (c: ClaimableCoupon) => {
+    setClaimingId(c.templateId);
+    setErr("");
+    try {
+      const res = await claimCoupon(c.templateId);
+      track("coupon_claim", { type: c.couponType });
+      if (res.tokenBalance !== undefined) updateUser({ tokenBalance: res.tokenBalance });
+      setItems((prev) => prev.filter((i) => i.templateId !== c.templateId));
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "领取失败");
+    } finally {
+      setClaimingId("");
+    }
+  };
+
+  if (items.length === 0) return null;
+
+  return (
+    <section className="ink-in d1 rounded-2xl bg-vermilion-wash p-5">
+      <p className="text-sm font-medium text-vermilion-deep">可领取的福利</p>
+      <p className="mt-1 text-xs text-ink-faint">点击领取后即可使用</p>
+      <div className="mt-3 space-y-2.5">
+        {items.map((c) => (
+          <div key={c.templateId} className="flex items-center gap-3 rounded-xl bg-white p-3.5">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{c.name}</p>
+              <p className="mt-0.5 text-xs text-ink-soft">
+                {claimableValue(c)} · {claimableDesc(c)}
+              </p>
+            </div>
+            <button
+              onClick={() => claim(c)}
+              disabled={claimingId === c.templateId}
+              className="shrink-0 rounded-xl bg-vermilion px-4 py-2 text-xs font-semibold text-paper disabled:opacity-60"
+            >
+              {claimingId === c.templateId ? "领取中…" : "领取"}
+            </button>
+          </div>
+        ))}
+      </div>
+      {err ? <p className="mt-2 text-xs text-vermilion-deep">{err}</p> : null}
+    </section>
+  );
 }
 
 function CouponsPage() {
@@ -89,7 +168,9 @@ function CouponsPage() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="账号" title="我的券" desc="兑换码兑换、券包与有效期。" />
+      <PageHeader eyebrow="账号" title="我的券" desc="领取福利、兑换码兑换、券包与有效期。" />
+
+      <ClaimableSection onChanged={load} />
 
       {/* 兑换码 */}
       <section className="ink-in d1 mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">

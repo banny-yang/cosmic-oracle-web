@@ -1,4 +1,4 @@
-import { get } from "@/lib/api";
+import { ApiError, get } from "@/lib/api";
 
 /**
  * 生肖取名（年份与取名的关系，公开接口 GET /api/v1/naming/zodiac-guide）。
@@ -116,6 +116,14 @@ export interface ZodiacOverview {
   next: ZodiacGuideView;
 }
 
+/** 查询结果：view 为 null 时，用 invalid 区分「服务端判定参数无效」与「接口不可用」。 */
+export interface ZodiacGuideLookup {
+  view: ZodiacGuideView | null;
+  /** true = 服务端明确拒绝参数（未知生肖 / 非 4 位年份 / 超出 1901-2099）→ 调用方应 404；
+   *  false = 接口不可用或未就绪 → 调用方保留 200 兜底页，不能把暂时故障写成 404。 */
+  invalid: boolean;
+}
+
 /** 该生肖最近一轮（animal 可传拼音 slug 如 ma，或生肖名如 马）；未知生肖返回 null。 */
 export function fetchZodiacGuide(opts: {
   animal?: string;
@@ -123,11 +131,29 @@ export function fetchZodiacGuide(opts: {
   gender?: string;
   limit?: number;
 }): Promise<ZodiacGuideView | null> {
-  return get<ZodiacGuideView>(
-    "/api/v1/naming/zodiac-guide",
-    { animal: opts.animal, year: opts.year, gender: opts.gender, limit: opts.limit },
-    { auth: false, timeoutMs: 12000 },
-  ).catch(() => null);
+  return lookupZodiacGuide(opts).then((r) => r.view);
+}
+
+/** 同 fetchZodiacGuide，但把「参数无效」与「接口不可用」分开（/zodiac 两族页面据此决定 404）。 */
+export async function lookupZodiacGuide(opts: {
+  animal?: string;
+  year?: number;
+  gender?: string;
+  limit?: number;
+}): Promise<ZodiacGuideLookup> {
+  try {
+    const view = await get<ZodiacGuideView>(
+      "/api/v1/naming/zodiac-guide",
+      { animal: opts.animal, year: opts.year, gender: opts.gender, limit: opts.limit },
+      { auth: false, timeoutMs: 12000 },
+    );
+    return { view, invalid: false };
+  } catch (e) {
+    return {
+      view: null,
+      invalid: e instanceof ApiError && (e.statusCode === 400 || e.statusCode === 404),
+    };
+  }
 }
 
 /** 生肖总览（当年 + 次年 + 十二生肖宫格）；失败返回 null（页面走兜底不空白）。 */

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { AppShell, PageHeader, BreadcrumbJsonLd } from "@/components/app-shell";
 import {
   ZodiacCharChips,
@@ -14,6 +14,7 @@ import {
   animalPath,
   animalYearPath,
   fetchZodiacGuide,
+  lookupZodiacGuide,
   type ZodiacGuideView,
   type ZodiacInfo,
 } from "@/lib/zodiac-guide";
@@ -26,17 +27,17 @@ export const Route = createFileRoute("/zodiac/$animal/$year")({
   component: ZodiacYearPage,
   loader: async ({ params }) => {
     const year = /^\d{4}$/.test(params.year) ? Number(params.year) : null;
-    if (year === null) {
-      return { view: null, prev: null, next: null, slug: params.animal, raw: params.year };
-    }
+    if (year === null) throw notFound();
     // 前后年只取元信息（limit=1）：用于跨生肖的年份导航，越界年份由接口拒绝（返回 400 → null）
-    const [view, prev, next] = await Promise.all([
-      fetchZodiacGuide({ year, limit: 18 }),
+    const [main, prev, next] = await Promise.all([
+      lookupZodiacGuide({ year, limit: 18 }),
       fetchZodiacGuide({ year: year - 1, limit: 1 }),
       fetchZodiacGuide({ year: year + 1, limit: 1 }),
     ]);
+    // 服务端判定年份超范围（400）→ 404：这种地址永远不会有内容，兜底空页不该被收录
+    if (main.invalid) throw notFound();
     return {
-      view,
+      view: main.view,
       prev: prev?.info ?? null,
       next: next?.info ?? null,
       slug: params.animal,

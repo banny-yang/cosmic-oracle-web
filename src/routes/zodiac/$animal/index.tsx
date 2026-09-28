@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { AppShell, PageHeader, BreadcrumbJsonLd } from "@/components/app-shell";
 import {
   ZodiacCharChips,
@@ -11,15 +11,17 @@ import {
   ZodiacYearHeadline,
   ZodiacYearNav,
 } from "@/components/zodiac-blocks";
-import { animalPath, fetchZodiacGuide, type ZodiacGuideView } from "@/lib/zodiac-guide";
+import { animalPath, lookupZodiacGuide, type ZodiacGuideView } from "@/lib/zodiac-guide";
 
 /** 生肖常青页：/zodiac/{slug}（slug 为服务端下发的拼音，如 ma）。 */
 export const Route = createFileRoute("/zodiac/$animal/")({
   component: ZodiacAnimalPage,
-  loader: async ({ params }) => ({
-    view: await fetchZodiacGuide({ animal: params.animal, limit: 18 }),
-    slug: params.animal,
-  }),
+  loader: async ({ params }) => {
+    const lookup = await lookupZodiacGuide({ animal: params.animal, limit: 18 });
+    // 服务端判定生肖不存在（400）→ 404：这种地址永远不会有内容，兜底空页不该被收录
+    if (lookup.invalid) throw notFound();
+    return { view: lookup.view, slug: params.animal };
+  },
   // 标题/描述/FAQ 取自 t_zodiac_guide（运营可在后台改文案，改完刷新即生效）
   head: ({ loaderData }) => {
     const view = loaderData?.view ?? null;

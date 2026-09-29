@@ -79,7 +79,11 @@ export interface ApiOptions {
 
 export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Promise<T> {
   const { method = "GET", data, auth = true, timeoutMs = 20000, retried = false } = opts;
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    // 强制回源校验：防部署窗口的 410 等可缓存状态码被浏览器磁盘缓存命中
+    "Cache-Control": "no-cache",
+  };
   if (auth) {
     const token = getToken();
     if (token) headers.Authorization = "Bearer " + token;

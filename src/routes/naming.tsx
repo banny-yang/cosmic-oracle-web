@@ -163,6 +163,10 @@ interface NameCardData {
   classicMeaning?: string;
   charCitations?: { char: string; citation: string; source: string }[];
   sameClassicSource?: boolean;
+  /** 姓与名同出一处：姓氏字与名字用字同出一句典籍原文（后端 surnameSameSource）。 */
+  surnameSameSource?: boolean;
+  /** 姓名同句的含姓氏字原句（如「周虽旧邦，其命维新」→ 周维新）。 */
+  surnameCitation?: string;
   /** 双胞胎配对序号（twin 模式后端下发）：同对两名同出一部典籍，相邻排列。 */
   pairIndex?: number;
   originalCouplet?: boolean;
@@ -2918,7 +2922,18 @@ function NameCardView({
             </span>
           ) : null}
         </p>
-        {c.syntaxReading ? (
+          {c.surnameSameSource ? (
+            <span
+              title={
+                c.surnameCitation
+                  ? `姓氏与名字同出一句：「${c.surnameCitation}」`
+                  : "姓氏字与名字用字同出一句典籍原文"
+              }
+              className="inline-flex items-center gap-1 rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-semibold text-vermilion-deep"
+            >
+              ✧ 姓名同出一句
+            </span>
+          ) : c.syntaxReading ? (
           <span
             title="姓氏与名连读构成主谓/动宾诗意句式（如 叶知秋 · 一叶知秋）"
             className="inline-flex items-center gap-1 rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-medium text-vermilion-deep"
@@ -3081,6 +3096,13 @@ function NameCardView({
         </div>
       ) : c.classicCitation ? (
         <div className="mt-3 rounded-xl bg-paper-3 p-3">
+          {c.surnameSameSource && c.surnameCitation ? (
+            /* 姓名同出一句：含姓氏字的原句单独展示（姓+名字用字都在这一句里） */
+            <div className="mb-2 rounded-lg border border-vermilion/20 bg-vermilion-wash/60 px-2.5 py-2">
+              <p className="text-[10px] font-medium text-vermilion-deep">姓名同出一句</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-ink">「{c.surnameCitation}」</p>
+            </div>
+          ) : null}
           {c.classicVerified ? (
             <span
               title="校验规则：引文正文包含名字用字，出处核验通过"

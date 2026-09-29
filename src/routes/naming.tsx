@@ -729,6 +729,13 @@ const ELEMENT_DOT: Record<string, string> = {
   METAL: "bg-stone-500",
   WATER: "bg-sky-600",
 };
+/** 农历月份（正月…腊月）与日期（初一…三十）文案：农历输入下拉用。 */
+const CN_MONTHS = ["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "冬月", "腊月"];
+const CN_DAYS = [
+  "初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
+  "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
+  "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十",
+];
 /** 地支（四柱干支第二字）→ 五行，用于四柱标签色点。 */
 const BRANCH_ELEMENT: Record<string, string> = {
   子: "WATER",
@@ -835,8 +842,19 @@ function Naming() {
     `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
   );
   const [birthTime, setBirthTime] = useState(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
-  // 出生状态：已出生填出生日期+时间；未出生填预产期（按当日午时 12:00 推演）
-  const [born, setBorn] = useState(true);
+  // 出生信息三态：已出生（日期+时间）/ 未出生（预产期，按午时推演）/ 不透露生辰（按喜用神取名）
+  const [birthMode, setBirthMode] = useState<"born" | "unborn" | "xiyong">("born");
+  const born = birthMode === "born";
+  const unborn = birthMode === "unborn";
+  const manualMode = birthMode === "xiyong";
+  // 历法：阳历（公历 date 输入）/ 农历（年+月+闰+日，由后端转阳历后排盘）
+  const [calType, setCalType] = useState<"solar" | "lunar">("solar");
+  const [lunarYear, setLunarYear] = useState(now.getFullYear());
+  const [lunarMonth, setLunarMonth] = useState(1);
+  const [lunarLeap, setLunarLeap] = useState(false);
+  const [lunarDay, setLunarDay] = useState(1);
+  // 喜用神直填（不透露生辰）：按点击顺序=主用/辅用，1-2 个
+  const [manualElements, setManualElements] = useState<string[]>([]);
   /** 双胞胎模式：结果两两成对，同对两名同出一部典籍。 */
   const [twin, setTwin] = useState(false);
   const [lat, setLat] = useState(39.9);
@@ -971,7 +989,7 @@ function Naming() {
   const fillDemo = () => {
     setSurname("于");
     setGender("F");
-    setBorn(true);
+    setBirthMode("born");
     setBirthDate(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
     setBirthTime(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
     setLat(23.13);
@@ -1080,9 +1098,18 @@ function Naming() {
   const body = (exclude: string[]) => ({
     surname,
     gender,
-    birthTime: `${birthDate}T${born ? birthTime || "12:00" : "12:00"}:00`,
-    latitude: lat,
-    longitude: lng,
+    ...(manualMode
+      ? // 喜用神直填：不带生辰/经纬度，后端跳过排盘按指定五行建池
+        { preferredElements: manualElements }
+      : {
+          birthTime:
+            calType === "lunar"
+              ? `${lunarYear}-${pad(lunarMonth)}-${pad(lunarDay)}T${born ? birthTime || "12:00" : "12:00"}:00`
+              : `${birthDate}T${born ? birthTime || "12:00" : "12:00"}:00`,
+          ...(calType === "lunar" ? { calendarType: "LUNAR", lunarLeapMonth: lunarLeap } : {}),
+          latitude: lat,
+          longitude: lng,
+        }),
     nameLength,
     wuxingMatch,
     ...(twin ? { twin: true } : {}),
@@ -1116,7 +1143,14 @@ function Naming() {
   const start = (exclude: boolean) => {
     setFormErr("");
     if (!surname.trim()) return setFormErr("请输入宝宝姓氏");
-    if (!birthDate) return setFormErr(born ? "请选择出生日期" : "请选择预产期");
+    if (manualMode) {
+      if (manualElements.length < 1) return setFormErr("请选择喜用神五行（1-2 个）");
+    } else if (calType === "lunar") {
+      if (!lunarYear || lunarYear < 1900 || lunarYear > 2099)
+        return setFormErr("请输入合法农历年份（1900-2099）");
+    } else if (!birthDate) {
+      return setFormErr(born ? "请选择出生日期" : "请选择预产期");
+    }
     if (!getToken()) {
       location.href = "/login?redirect=" + encodeURIComponent("/naming");
       return;
@@ -1267,7 +1301,13 @@ function Naming() {
   const hasResult = cards.length > 0;
   const zodiacInfo = diagnosis?.zodiacGuide ?? null;
   const trial = !!diagnosis?.freeTrial && (diagnosis?.lockedCount ?? 0) > 0;
-  const birthLabel = born ? `${birthDate || "-"} ${birthTime || ""}` : `预产期 ${birthDate || "-"}`;
+  const birthLabel = manualMode
+    ? `按喜用神（${manualElements.map((e) => ELEMENT_ZH[e] || e).join("·") || "未选"}）`
+    : born
+      ? calType === "lunar"
+        ? `农历${lunarYear}年${lunarLeap ? "闰" : ""}${CN_MONTHS[lunarMonth - 1]}${CN_DAYS[lunarDay - 1]} ${birthTime || ""}`
+        : `${birthDate || "-"} ${birthTime || ""}`
+      : `预产期 ${birthDate || "-"}`;
   const infoLine = `${surname}家${genderSuffix(gender)} · ${birthLabel}${placeName ? ` · ${shortPlace(placeName)}` : ""}`;
   const sortedCards = useMemo(() => {
     const list = [...cards];
@@ -1406,32 +1446,32 @@ function Naming() {
                       [
                         ["born", "已出生"],
                         ["unborn", "未出生 · 预产期"],
+                        ["xiyong", "按喜用神取名"],
                       ] as const
                     ).map(([v, l]) => (
                       <button
                         key={v}
                         type="button"
                         onClick={() => {
-                          const bornNow = v === "born";
-                          setBorn(bornNow);
+                          setBirthMode(v);
                           // 切回已出生时「无法确定」不再适用，退回女
-                          if (bornNow) setGender((g) => (g === "U" ? "F" : g));
+                          if (v === "born") setGender((g) => (g === "U" ? "F" : g));
                         }}
-                        className={`${chips} flex-1 ${born === (v === "born") ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                        className={`${chips} flex-1 ${birthMode === v ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
                       >
                         {l}
                       </button>
                     ))}
                   </div>
-                  {/* 性别选择单独一行，紧跟在「已出生 / 未出生」下方（仅【未出生】才出现「无法确定」） */}
+                  {/* 性别选择单独一行（仅【未出生】才出现「无法确定」；按喜用神取名仍可选男女） */}
                   <div className="col-span-2">
                     <Field label="性别" required>
-                      <div className={`grid gap-2 ${born ? "grid-cols-2" : "grid-cols-3"}`}>
+                      <div className={`grid gap-2 ${unborn ? "grid-cols-3" : "grid-cols-2"}`}>
                         {(
                           [
                             ["F", "女"],
                             ["M", "男"],
-                            ...(born ? [] : ([["U", "无法确定"]] as const)),
+                            ...(unborn ? ([["U", "无法确定"]] as const) : []),
                           ] as const
                         ).map(([v, l]) => (
                           <button
@@ -1473,47 +1513,161 @@ function Naming() {
                       ) : null}
                     </Field>
                   </div>
-                  <Field label={born ? "出生日期" : "预产期"} required>
-                    <input
-                      className={inputCls}
-                      type="date"
-                      value={birthDate}
-                      onChange={(e) => setBirthDate(e.target.value)}
-                    />
-                  </Field>
-                  {born ? (
-                    <Field label="出生时间">
-                      <input
-                        className={inputCls}
-                        type="time"
-                        value={birthTime}
-                        onChange={(e) => setBirthTime(e.target.value)}
-                      />
-                    </Field>
-                  ) : (
-                    <div className="flex items-end pb-1">
-                      <p className="text-[11px] leading-snug text-ink-faint">
-                        预产期方案按当日午时（12:00）推演，宝宝出生后可用实际生辰重新生成精算
-                      </p>
+                  {manualMode ? (
+                    /* 喜用神直填：不透露生辰，直接选五行（按点击顺序=主用/辅用） */
+                    <div className="col-span-2">
+                      <Field label="喜用神五行（选 1-2 个，第一个为主用）" required>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(ELEMENT_ZH).map(([code, zh]) => {
+                            const order = manualElements.indexOf(code);
+                            return (
+                              <button
+                                key={code}
+                                type="button"
+                                onClick={() =>
+                                  setManualElements((p) =>
+                                    p.includes(code)
+                                      ? p.filter((x) => x !== code)
+                                      : p.length < 2
+                                        ? [...p, code]
+                                        : p,
+                                  )
+                                }
+                                className={`${chips} relative ${order >= 0 ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                              >
+                                {zh}
+                                {order === 0 ? (
+                                  <span className="ml-1 text-[10px] text-vermilion-wash">主</span>
+                                ) : order === 1 ? (
+                                  <span className="ml-1 text-[10px] text-vermilion-wash">辅</span>
+                                ) : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
+                          不透露生辰的模式：跳过八字排盘与生肖/时辰分析，按所选五行直接筛选用字取名
+                        </p>
+                      </Field>
                     </div>
+                  ) : (
+                    <>
+                      {/* 历法切换：阳历（公历）/ 农历（后端转阳历排盘） */}
+                      <div className="col-span-2 flex gap-2">
+                        {(
+                          [
+                            ["solar", "阳历"],
+                            ["lunar", "农历"],
+                          ] as const
+                        ).map(([v, l]) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setCalType(v)}
+                            className={`${chips} flex-1 ${calType === v ? "bg-vermilion text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                          >
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                      {calType === "solar" ? (
+                        <Field label={born ? "出生日期" : "预产期"} required>
+                          <input
+                            className={inputCls}
+                            type="date"
+                            value={birthDate}
+                            onChange={(e) => setBirthDate(e.target.value)}
+                          />
+                        </Field>
+                      ) : (
+                        <div className="col-span-2 grid grid-cols-3 gap-2">
+                          <Field label="农历年" required>
+                            <input
+                              className={inputCls}
+                              type="number"
+                              min={1900}
+                              max={2099}
+                              value={lunarYear}
+                              onChange={(e) => setLunarYear(Number(e.target.value))}
+                            />
+                          </Field>
+                          <Field label="农历月" required>
+                            <select
+                              className={inputCls}
+                              value={lunarMonth}
+                              onChange={(e) => {
+                                setLunarMonth(Number(e.target.value));
+                                setLunarLeap(false);
+                              }}
+                            >
+                              {CN_MONTHS.map((m, i) => (
+                                <option key={m} value={i + 1}>
+                                  {m}
+                                </option>
+                              ))}
+                            </select>
+                          </Field>
+                          <Field label="农历日" required>
+                            <select
+                              className={inputCls}
+                              value={lunarDay}
+                              onChange={(e) => setLunarDay(Number(e.target.value))}
+                            >
+                              {CN_DAYS.map((d, i) => (
+                                <option key={d} value={i + 1}>
+                                  {d}
+                                </option>
+                              ))}
+                            </select>
+                          </Field>
+                          <label className="col-span-3 flex items-center gap-2 text-xs text-ink-soft">
+                            <input
+                              type="checkbox"
+                              checked={lunarLeap}
+                              onChange={(e) => setLunarLeap(e.target.checked)}
+                              className="size-3.5"
+                            />
+                            闰{lunarMonth}月（该年确有闰月时勾选；无则按平月）
+                          </label>
+                        </div>
+                      )}
+                      {born ? (
+                        <Field label="出生时间">
+                          <input
+                            className={inputCls}
+                            type="time"
+                            value={birthTime}
+                            onChange={(e) => setBirthTime(e.target.value)}
+                          />
+                        </Field>
+                      ) : (
+                        <div className="flex items-end pb-1">
+                          <p className="text-[11px] leading-snug text-ink-faint">
+                            预产期方案按当日午时（12:00）推演，宝宝出生后可用实际生辰重新生成精算
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
-                <Field
-                  label={born ? "出生地（用于真太阳时校正）" : "计划出生地（用于真太阳时校正）"}
-                  required
-                >
-                  <BirthplaceInput
-                    lat={lat}
-                    lng={lng}
-                    place={placeName}
-                    placeholder={born ? "输入城市或地区名，如：杭州" : "计划出生地，如：杭州"}
-                    onPick={(v) => {
-                      setLat(v.lat);
-                      setLng(v.lng);
-                      setPlaceName(v.place || "");
-                    }}
-                  />
-                </Field>
+                {!manualMode ? (
+                  <Field
+                    label={born ? "出生地（用于真太阳时校正）" : "计划出生地（用于真太阳时校正）"}
+                    required
+                  >
+                    <BirthplaceInput
+                      lat={lat}
+                      lng={lng}
+                      place={placeName}
+                      placeholder={born ? "输入城市或地区名，如：杭州" : "计划出生地，如：杭州"}
+                      onPick={(v) => {
+                        setLat(v.lat);
+                        setLng(v.lng);
+                        setPlaceName(v.place || "");
+                      }}
+                    />
+                  </Field>
+                ) : null}
                 <Field label="家长期望（最多 3 个，选填）">
                   <div className="flex flex-wrap gap-2">
                     {parentExpectTags.map((s) => (
@@ -2029,17 +2183,28 @@ function Naming() {
                     <h2 className="text-lg font-semibold tracking-wide">
                       {surname}家{genderSuffix(gender)}
                     </h2>
-                    {!born ? (
+                    {!born && !manualMode ? (
                       <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800">
                         预产期推演
                       </span>
                     ) : null}
+                    {manualMode ? (
+                      <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-medium text-vermilion-deep">
+                        按喜用神取名
+                      </span>
+                    ) : null}
                   </div>
                   <p className="mt-1.5 text-xs text-ink-soft">
-                    {born ? `${birthDate} ${birthTime}` : `预产期 ${birthDate}`}
-                    {placeName ? ` · ${shortPlace(placeName)}` : ""}
+                    {manualMode
+                      ? `喜用神 ${manualElements.map((e) => ELEMENT_ZH[e] || e).join(" · ")}（未提供生辰）`
+                      : born
+                        ? calType === "lunar"
+                          ? `农历${lunarYear}年${lunarLeap ? "闰" : ""}${CN_MONTHS[lunarMonth - 1]}${CN_DAYS[lunarDay - 1]} ${birthTime || ""}`
+                          : `${birthDate} ${birthTime}`
+                        : `预产期 ${birthDate}`}
+                    {!manualMode && placeName ? ` · ${shortPlace(placeName)}` : ""}
                   </p>
-                  {!born ? (
+                  {!born && !manualMode ? (
                     <p className="mt-1 max-w-md text-[11px] leading-relaxed text-ink-faint">
                       时柱按当日午时（12:00）推演，宝宝出生后建议用实际生辰重新生成精算
                     </p>
@@ -2047,7 +2212,7 @@ function Naming() {
                 </div>
               </div>
 
-              {/* 四柱：格位化 4 列，地支五行色点呼应 */}
+              {/* 四柱：格位化 4 列，地支五行色点呼应；喜用神直填模式无四柱，给提示 */}
               {diagnosis.pillars?.length ? (
                 <div className="mt-3 grid grid-cols-4 gap-1.5">
                   {diagnosis.pillars.map((pl, i) => {
@@ -2079,6 +2244,10 @@ function Naming() {
                     );
                   })}
                 </div>
+              ) : manualMode ? (
+                <p className="mt-3 rounded-xl bg-paper-3 px-3 py-2 text-[11px] leading-relaxed text-ink-soft">
+                  按指定喜用神取名：未提供生辰，已跳过八字排盘与生肖/时辰分析——选字与数理仍按喜用五行全面校验
+                </p>
               ) : null}
 
               {/* 五行分析：核心结论胶囊 + 能量刻度 */}

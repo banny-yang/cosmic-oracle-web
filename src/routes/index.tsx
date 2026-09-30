@@ -2,11 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell, PageHeader, BrandMark } from "@/components/app-shell";
 import { HeroBanner } from "@/components/hero-banner";
+import { FestivalHero } from "@/components/festival-hero";
 import { NameGalleryCarousel } from "@/components/name-gallery-carousel";
 import { NamingDemo } from "@/components/naming-demo";
 import { useAuth } from "@/lib/auth";
 import { get } from "@/lib/api";
 import { fetchClassicBookTree, promotedCategories, type ClassicBookTree } from "@/lib/classic-books";
+import { fetchFestival, type FestivalHeroData } from "@/lib/festival";
 import { track } from "@/lib/track";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
@@ -25,13 +27,21 @@ const QR_HINT_BOTTOM: Record<QrEnv, string> = {
 export const Route = createFileRoute("/")({
   component: Index,
   // 「典藏典籍」随 SSR HTML 直出（AI/搜索引擎不执行 JS 也能读到书目与名句）；
-  // 接口慢/不可用时 4 秒兜底返回 null，板块静默隐藏，不拖累首页首字节
-  loader: async () => ({
-    classic: await Promise.race([
-      fetchClassicBookTree(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
-    ]),
-  }),
+  // 接口慢/不可用时 4 秒兜底返回 null，板块静默隐藏，不拖累首页首字节。
+  // 节日营销同理 1.5 秒兜底：窗口内且已传素材才整图替换 Hero，否则首页保持默认轮播
+  loader: async () => {
+    const [classic, festival] = await Promise.all([
+      Promise.race([
+        fetchClassicBookTree(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+      ]),
+      Promise.race([
+        fetchFestival(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
+      ]),
+    ]);
+    return { classic, festival };
+  },
   head: () => ({
     links: [{ rel: "canonical", href: "https://name.duimai.net/" }],
     meta: [
@@ -198,9 +208,42 @@ function classicSection(tree: ClassicBookTree | null) {
   };
 }
 
+/** Hero 文案块：默认轮播下可见；节日整图下转 sr-only（h1 与简介保留在 DOM，SEO/无障碍不丢） */
+function HeroCopy() {
+  return (
+    <div className="ink-in">
+      <p className="text-xs tracking-[0.35em] text-vermilion-deep uppercase">
+        新中式 · 起名文化
+      </p>
+      <h1 className="mt-4 max-w-[22ch] text-3xl leading-tight font-semibold text-balance min-[360px]:text-4xl md:text-5xl">
+        好名字，有出处、有数理、有温度
+      </h1>
+      <p className="mt-4 max-w-[52ch] text-sm leading-relaxed text-ink-soft text-pretty md:text-base">
+        从《诗经》《楚辞》到唐宋诗词，按生辰喜用与五格数理，为宝宝拟一组经得起时间考验的名字——一次生成
+        10 个方案，附推荐指数与原文出处，还能发起亲友投票一起定。
+      </p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link
+          to="/naming"
+          onClick={() => track("home_cta_click", { where: "hero" })}
+          className="rounded-2xl bg-vermilion px-7 py-3 text-base font-semibold text-paper transition-colors hover:bg-vermilion-deep"
+        >
+          开始为TA起名
+        </Link>
+        <a
+          href="#sample"
+          className="rounded-2xl bg-paper-3 px-7 py-3 text-base font-medium text-ink transition-colors hover:bg-vermilion-wash"
+        >
+          先看示例
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function Index() {
   const { loggedIn } = useAuth();
-  const { classic } = Route.useLoaderData();
+  const { classic, festival } = Route.useLoaderData();
   const qrEnv = useQrEnv();
   const [social, setSocial] = useState<SocialProof | null>(null);
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
@@ -351,36 +394,16 @@ function Index() {
     />
     <AppShell
       banner={
-        <HeroBanner>
-          {/* Hero */}
-          <div className="ink-in">
-            <p className="text-xs tracking-[0.35em] text-vermilion-deep uppercase">
-              新中式 · 起名文化
-            </p>
-            <h1 className="mt-4 max-w-[22ch] text-3xl leading-tight font-semibold text-balance min-[360px]:text-4xl md:text-5xl">
-              好名字，有出处、有数理、有温度
-            </h1>
-            <p className="mt-4 max-w-[52ch] text-sm leading-relaxed text-ink-soft text-pretty md:text-base">
-              从《诗经》《楚辞》到唐宋诗词，按生辰喜用与五格数理，为宝宝拟一组经得起时间考验的名字——一次生成
-              10 个方案，附推荐指数与原文出处，还能发起亲友投票一起定。
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                to="/naming"
-                onClick={() => track("home_cta_click", { where: "hero" })}
-                className="rounded-2xl bg-vermilion px-7 py-3 text-base font-semibold text-paper transition-colors hover:bg-vermilion-deep"
-              >
-                开始为TA起名
-              </Link>
-              <a
-                href="#sample"
-                className="rounded-2xl bg-paper-3 px-7 py-3 text-base font-medium text-ink transition-colors hover:bg-vermilion-wash"
-              >
-                先看示例
-              </a>
-            </div>
-          </div>
-        </HeroBanner>
+        /* 节日窗口内且已传素材 → 整图成品替换轮播；否则默认轮播（children 即 h1 与简介，两种形态下都保留在 DOM） */
+        festival ? (
+          <FestivalHero data={festival}>
+            <HeroCopy />
+          </FestivalHero>
+        ) : (
+          <HeroBanner>
+            <HeroCopy />
+          </HeroBanner>
+        )
       }
     >
       {/* 今日一名（典籍内容位） */}

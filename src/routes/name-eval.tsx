@@ -89,7 +89,7 @@ type NameEvalResult = {
   disclaimer: string;
 };
 
-/** 汉字输入即筛即限长：姓 1-2 字（复姓可含间隔号），名 1-3 字。 */
+/** 提交与深链解析时清洗：姓 1-2 字（复姓可含间隔号），名 1-3 字。输入期不调用（见输入框处说明）。 */
 const cleanSurname = (v: string) => v.replace(/[^\u4e00-\u9fa5·]/g, "").slice(0, 2);
 const cleanGiven = (v: string) => v.replace(/[^\u4e00-\u9fa5]/g, "").slice(0, 3);
 const hanCount = (v: string) => (v.match(/[\u4e00-\u9fa5]/g) ?? []).length;
@@ -203,10 +203,6 @@ function NameEval() {
   // 五行/三才两个分析开关：默认开（与后端缺省一致），随请求发送；关闭时后端不算不返回
   const [wuxingOn, setWuxingOn] = useState(true);
   const [sanCaiOn, setSanCaiOn] = useState(true);
-  // 输入法组合态守卫：组合期间（拼音串还没上屏）原样入 state，组合结束后再清洗。
-  // 若组合中就把非汉字字符剥离回写，React 会把缩短后的受控值写回 DOM，组合串被打断，
-  // 随后上屏的候选会「替换」掉输入框里已有的字。
-  const composingRef = useRef(false);
   // 「姓|名|开关位」最近一次已发起的评测：既防 URL 回填的重复请求，也让主动重测可以重算
   const askedRef = useRef("");
   // 开关当前值（请求与 URL 复算读取；改开关本身不重排结果，只有缺块才补算）
@@ -262,12 +258,13 @@ function NameEval() {
   const submit = () => {
     const x = cleanSurname(surname);
     const m = cleanGiven(givenName);
-    setSurname(x);
-    setGivenName(m);
     if (hanCount(x) < 1 || hanCount(m) < 1) {
       setError("请输入姓氏与名字（请使用汉字）");
       return;
     }
+    // 校验通过后再把清洗后的值回写输入框（校验失败时保留用户原输入，便于对照修改）
+    setSurname(x);
+    setGivenName(m);
     track("name_eval_submit", { len: x.length + m.length });
     askedRef.current = "";
     void evaluate(x, m);
@@ -289,26 +286,14 @@ function NameEval() {
           />
 
           <section className="ink-in d1 mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+            {/* 输入期不清洗字符：改写受控值会打断输入法组合，甚至让输入法失同步（表现为「打不进去」）。
+                非汉字与超长由 submit 统一清洗并提示，深链参数在解析时清洗 */}
             <div className="grid grid-cols-2 gap-3">
               <Field label="姓" required>
                 <input
                   className={inputCls}
                   value={surname}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (composingRef.current || (e.nativeEvent as InputEvent).isComposing) {
-                      setSurname(v); // 组合中：原样入 state，React 不回写，组合串不被打断
-                      return;
-                    }
-                    setSurname(cleanSurname(v));
-                  }}
-                  onCompositionStart={() => {
-                    composingRef.current = true;
-                  }}
-                  onCompositionEnd={(e) => {
-                    composingRef.current = false;
-                    setSurname(cleanSurname(e.currentTarget.value));
-                  }}
+                  onChange={(e) => setSurname(e.target.value)}
                   placeholder="如 傅 / 欧阳"
                   autoComplete="off"
                 />
@@ -317,21 +302,7 @@ function NameEval() {
                 <input
                   className={inputCls}
                   value={givenName}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (composingRef.current || (e.nativeEvent as InputEvent).isComposing) {
-                      setGivenName(v);
-                      return;
-                    }
-                    setGivenName(cleanGiven(v));
-                  }}
-                  onCompositionStart={() => {
-                    composingRef.current = true;
-                  }}
-                  onCompositionEnd={(e) => {
-                    composingRef.current = false;
-                    setGivenName(cleanGiven(e.currentTarget.value));
-                  }}
+                  onChange={(e) => setGivenName(e.target.value)}
                   placeholder="如 既白"
                   autoComplete="off"
                 />

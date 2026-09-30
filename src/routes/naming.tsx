@@ -862,6 +862,8 @@ function Naming() {
   const [nameLength, setNameLength] = useState<"DOUBLE" | "SINGLE">("DOUBLE");
   // 五行匹配开关：关闭后不按喜用五行筛字库，典籍出处名供给更多
   const [wuxingMatch, setWuxingMatch] = useState(true);
+  // 生肖用字宜忌开关：关闭后不做生肖忌用部首剔除、不注入宜忌偏好，选字面更宽
+  const [zodiacMatch, setZodiacMatch] = useState(true);
   const [generationChar, setGenerationChar] = useState("");
   // 环 1：灵感库带入的风格信号（偏好字 + 典籍 + 性别 + 期望），全部可在「灵感库带入」面板单独移除
   const [preferChars, setPreferChars] = useState<string[]>(() =>
@@ -1112,6 +1114,7 @@ function Naming() {
         }),
     nameLength,
     wuxingMatch,
+    zodiacMatch,
     ...(twin ? { twin: true } : {}),
     ...(generationChar.trim() ? { generationChar: generationChar.trim() } : {}),
     ...(preferChars.length ? { preferredChars: preferChars } : {}),
@@ -1866,6 +1869,29 @@ function Naming() {
                         {wuxingMatch
                           ? "用字优先补益宝宝八字喜用五行，五行维度得分更高"
                           : "不限五行取全量字库，双字名优先取典故原文中的词（如 望舒），有典籍出处的名字更多、更雅"}
+                      </p>
+                    </Field>
+                    <Field label="生肖用字宜忌">
+                      <div className="flex gap-2">
+                        {(
+                          [
+                            [true, "参考生肖宜忌"],
+                            [false, "不参考（选字更宽）"],
+                          ] as const
+                        ).map(([v, l]) => (
+                          <button
+                            key={String(v)}
+                            onClick={() => setZodiacMatch(v)}
+                            className={`${chips} ${zodiacMatch === v ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                          >
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="mt-1.5 text-[11px] text-ink-soft">
+                        {zodiacMatch
+                          ? "按出生年生肖剔除忌用部首、优先宜用部首（如马年宜艹/禾/木），选字会明显收窄"
+                          : "不按生肖筛字，可避开花草等集中用字，名字风格更分散"}
                       </p>
                     </Field>
                     <div className="grid grid-cols-2 gap-3">

@@ -54,6 +54,21 @@ type Upgrade = {
   cta: string | null;
   ctaPath: string | null;
 };
+/** 五行区块：逐字五行 + 分布 + 相邻关系（后端开关关闭时不返回）。 */
+type Wuxing = {
+  rows: { ch: string; element: string; role: string }[];
+  summary: string;
+  notes: string[];
+};
+/** 三才区块：天/人/地三格数与三才配置（后端开关关闭时不返回）。 */
+type SanCai = {
+  tianGe: number;
+  renGe: number;
+  diGe: number;
+  sanCai: string;
+  summary: string;
+  notes: string[];
+};
 type NameEvalResult = {
   surname: string;
   givenName: string;
@@ -67,6 +82,8 @@ type NameEvalResult = {
   phonetics: Phonetics;
   dialects: DialectRow[];
   chars: CharRow[];
+  wuxing?: Wuxing | null;
+  sanCai?: SanCai | null;
   share: Share;
   upgrade: Upgrade;
   disclaimer: string;
@@ -96,7 +113,7 @@ export const Route = createFileRoute("/name-eval")({
       {
         name: "description",
         content:
-          "免费名字评测：从典籍文化度、音律平仄度、意象寓意度、避俗辨识度、字形书写美五个维度评分，附判词、典籍出处原句、声调与方言结论。无需登录。",
+          "免费名字评测：从典籍文化度、音律平仄度、意象寓意度、避俗辨识度、字形书写美五个维度评分，附判词、典籍出处原句、声调与方言结论，可选看用字五行与三才构成。无需登录。",
       },
       { property: "og:url", content: "https://name.duimai.net/name-eval" },
       { property: "og:title", content: "名字评测 · 对脉名鉴" },
@@ -183,11 +200,21 @@ function NameEval() {
   const [result, setResult] = useState<NameEvalResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  // 「姓|名」最近一次已发起的评测：既防 URL 回填的重复请求，也让主动重测可以重算
+  // 五行/三才两个分析开关：默认开（与后端缺省一致），随请求发送；关闭时后端不算不返回
+  const [wuxingOn, setWuxingOn] = useState(true);
+  const [sanCaiOn, setSanCaiOn] = useState(true);
+  // 输入法组合态守卫：组合期间（拼音串还没上屏）原样入 state，组合结束后再清洗。
+  // 若组合中就把非汉字字符剥离回写，React 会把缩短后的受控值写回 DOM，组合串被打断，
+  // 随后上屏的候选会「替换」掉输入框里已有的字。
+  const composingRef = useRef(false);
+  // 「姓|名|开关位」最近一次已发起的评测：既防 URL 回填的重复请求，也让主动重测可以重算
   const askedRef = useRef("");
+  // 开关当前值（请求与 URL 复算读取；改开关本身不重排结果，只有缺块才补算）
+  const optsRef = useRef({ w: true, s: true });
 
   const evaluate = useCallback(async (x: string, m: string) => {
-    const key = `${x}|${m}`;
+    const { w, s } = optsRef.current;
+    const key = `${x}|${m}|${w ? 1 : 0}${s ? 1 : 0}`;
     if (askedRef.current === key) return;
     askedRef.current = key;
     setLoading(true);
@@ -197,7 +224,7 @@ function NameEval() {
       // 否则服务端仍在计算时就被中断，用户看到的是「网络连接失败」而不是回落判词
       const r = await post<NameEvalResult>(
         "/api/v1/name-eval/analyze",
-        { surname: x, givenName: m },
+        { surname: x, givenName: m, wuxingAnalysis: w, sanCaiAnalysis: s },
         { auth: false, timeoutMs: 30000 },
       );
       setResult(r);
@@ -209,6 +236,18 @@ function NameEval() {
       setLoading(false);
     }
   }, []);
+
+  /** 切分析开关：已出结果时只切显隐；打开而结果里缺这块（提交时是关的）才自动补算一次。 */
+  const toggleBlock = (which: "w" | "s") => {
+    const next = { ...optsRef.current, [which]: !optsRef.current[which] };
+    optsRef.current = next;
+    if (which === "w") setWuxingOn(next.w);
+    else setSanCaiOn(next.s);
+    if (!result) return;
+    if ((next.w && !result.wuxing) || (next.s && !result.sanCai)) {
+      void evaluate(result.surname, result.givenName);
+    }
+  };
 
   // 分享链接 / 刷新：URL 带姓与名就直接复算（引擎确定性，同 URL 同结果）
   const sx = search["x"];
@@ -246,7 +285,7 @@ function NameEval() {
           <PageHeader
             eyebrow="免费 · 无需登录"
             title="名字评测"
-            desc="基于语言学、声律学与典籍文本的汉字美学评测：五维评分、判词、出处原句与声调方言结论。不测吉凶、不算八字、不评五格。"
+            desc="基于语言学、声律学与典籍文本的汉字美学评测：五维评分、判词、出处原句与声调方言结论。不测吉凶、不算八字；五行与三才为可选的传统构成说明。"
           />
 
           <section className="ink-in d1 mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
@@ -255,9 +294,22 @@ function NameEval() {
                 <input
                   className={inputCls}
                   value={surname}
-                  onChange={(e) => setSurname(cleanSurname(e.target.value))}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (composingRef.current || (e.nativeEvent as InputEvent).isComposing) {
+                      setSurname(v); // 组合中：原样入 state，React 不回写，组合串不被打断
+                      return;
+                    }
+                    setSurname(cleanSurname(v));
+                  }}
+                  onCompositionStart={() => {
+                    composingRef.current = true;
+                  }}
+                  onCompositionEnd={(e) => {
+                    composingRef.current = false;
+                    setSurname(cleanSurname(e.currentTarget.value));
+                  }}
                   placeholder="如 傅 / 欧阳"
-                  maxLength={2}
                   autoComplete="off"
                 />
               </Field>
@@ -265,13 +317,46 @@ function NameEval() {
                 <input
                   className={inputCls}
                   value={givenName}
-                  onChange={(e) => setGivenName(cleanGiven(e.target.value))}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (composingRef.current || (e.nativeEvent as InputEvent).isComposing) {
+                      setGivenName(v);
+                      return;
+                    }
+                    setGivenName(cleanGiven(v));
+                  }}
+                  onCompositionStart={() => {
+                    composingRef.current = true;
+                  }}
+                  onCompositionEnd={(e) => {
+                    composingRef.current = false;
+                    setGivenName(cleanGiven(e.currentTarget.value));
+                  }}
                   placeholder="如 既白"
-                  maxLength={3}
                   autoComplete="off"
                 />
               </Field>
             </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-medium text-ink-soft">看哪些分析</span>
+              <button
+                type="button"
+                onClick={() => toggleBlock("w")}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${wuxingOn ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+              >
+                五行分析
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleBlock("s")}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${sanCaiOn ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+              >
+                三才分析
+              </button>
+            </div>
+            <p className="mt-1.5 text-[11px] text-ink-soft">
+              五行与三才为传统姓名文化的构成说明，不含吉凶测算与命理推断
+            </p>
             <button
               onClick={submit}
               disabled={loading}
@@ -285,14 +370,24 @@ function NameEval() {
             </p>
           </section>
 
-          {result && !loading ? <ResultBlocks r={result} /> : null}
+          {result && !loading ? (
+            <ResultBlocks r={result} showWuxing={wuxingOn} showSanCai={sanCaiOn} />
+          ) : null}
         </>
       )}
     </AppShell>
   );
 }
 
-function ResultBlocks({ r }: { r: NameEvalResult }) {
+function ResultBlocks({
+  r,
+  showWuxing,
+  showSanCai,
+}: {
+  r: NameEvalResult;
+  showWuxing: boolean;
+  showSanCai: boolean;
+}) {
   const toneBits = [
     r.phonetics.pattern ? `平仄 ${r.phonetics.pattern}` : "",
     r.phonetics.tier ?? "",
@@ -515,6 +610,83 @@ function ResultBlocks({ r }: { r: NameEvalResult }) {
           ))}
         </ul>
       </section>
+
+      {showWuxing && r.wuxing ? (
+        <section className="ink-in d2 mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+          <h2 className="text-sm font-semibold text-ink">五行分析</h2>
+          <p className="mt-1 text-[11px] text-ink-soft">
+            用字五行与姓氏搭配的构成说明（不含吉凶测算与命理推断）
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {r.wuxing.rows.map((row, i) => (
+              <li
+                key={`${row.role}-${row.ch}-${i}`}
+                className="rounded-xl bg-paper-3 px-3 py-2"
+              >
+                <span className="font-seal text-xl leading-none text-ink">{row.ch}</span>
+                <span className="ml-2 text-xs font-semibold text-vermilion-deep">
+                  {row.element}
+                </span>
+                <span className="ml-1 text-[10px] text-ink-soft">
+                  {row.role === "surname" ? "姓" : "名"}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm leading-relaxed text-ink">{r.wuxing.summary}</p>
+          {r.wuxing.notes.length ? (
+            <ul className="mt-2 space-y-0.5">
+              {r.wuxing.notes.map((n) => (
+                <li key={n} className="text-[11px] leading-relaxed text-ink-soft">
+                  · {n}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
+
+      {showSanCai && r.sanCai ? (
+        <section className="ink-in d2 mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+          <h2 className="text-sm font-semibold text-ink">三才分析</h2>
+          <p className="mt-1 text-[11px] text-ink-soft">
+            按康熙笔画取天/人/地三格与三才配置的构成说明（不含吉凶测算与命理推断）
+          </p>
+          <ul className="mt-3 grid grid-cols-3 gap-2">
+            {[
+              { label: "天格", ge: r.sanCai.tianGe },
+              { label: "人格", ge: r.sanCai.renGe },
+              { label: "地格", ge: r.sanCai.diGe },
+            ].map((g) => (
+              <li key={g.label} className="rounded-xl bg-paper-3 p-2.5 text-center">
+                <p className="text-[11px] text-ink-soft">{g.label}</p>
+                <p className="mt-1 text-lg font-semibold leading-none text-ink">{g.ge}</p>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 flex items-center gap-2 text-sm text-ink">
+            三才配置
+            {r.sanCai.sanCai.split("").map((element, i) => (
+              <span
+                key={`${element}-${i}`}
+                className="rounded-full bg-vermilion-wash px-2.5 py-1 text-xs font-semibold text-vermilion-deep"
+              >
+                {element}
+              </span>
+            ))}
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-ink">{r.sanCai.summary}</p>
+          {r.sanCai.notes.length ? (
+            <ul className="mt-2 space-y-0.5">
+              {r.sanCai.notes.map((n) => (
+                <li key={n} className="text-[11px] leading-relaxed text-ink-soft">
+                  · {n}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
 
       <p className="mt-5 text-center text-[11px] leading-relaxed text-ink-soft">{r.disclaimer}</p>
     </>

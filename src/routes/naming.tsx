@@ -1112,7 +1112,8 @@ function Naming() {
           latitude: lat,
           longitude: lng,
         }),
-    nameLength,
+    // 指定字辈时后端会把名字固定为「字辈+单字」，这里显式送双字名（双保险）
+    nameLength: generationChar.trim() ? "DOUBLE" : nameLength,
     wuxingMatch,
     zodiacMatch,
     ...(twin ? { twin: true } : {}),
@@ -1836,16 +1837,20 @@ function Naming() {
                           <button
                             key={v}
                             onClick={() => setNameLength(v)}
-                            className={`${chips} ${nameLength === v ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                            disabled={!!generationChar.trim()}
+                            title={generationChar.trim() ? "指定字辈后名字固定为「字辈+单字」" : undefined}
+                            className={`${chips} ${nameLength === v ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"} disabled:opacity-40`}
                           >
                             {l}
                           </button>
                         ))}
                       </div>
                       <p className="mt-1.5 text-[11px] text-ink-soft">
-                        {nameLength === "DOUBLE"
-                          ? "双字名重名率更低、更显雅致"
-                          : "单字名更响亮利落"}
+                        {generationChar.trim()
+                          ? "已按字辈固定为双字名（字辈+单字，三字名）"
+                          : nameLength === "DOUBLE"
+                            ? "双字名重名率更低、更显雅致"
+                            : "单字名更响亮利落"}
                       </p>
                     </Field>
                     <Field label="五行匹配">
@@ -1899,17 +1904,15 @@ function Naming() {
                         <Field label="指定用字（字辈）">
                           <input
                             className={inputCls}
-                            maxLength={4}
+                            maxLength={1}
                             placeholder="名字首字固定为该字"
                             value={generationChar}
-                            onChange={(e) => setGenerationChar(e.target.value)}
+                            onChange={(e) => setGenerationChar(e.target.value.slice(0, 1))}
                           />
                         </Field>
                         {generationChar.trim() ? (
                           <p className="mt-1 text-[11px] text-vermilion-deep">
-                            {nameLength === "SINGLE"
-                              ? `名字将为 ${surname.trim() || "□"}${generationChar.trim()}（单字即字辈）`
-                              : `名字将为 ${surname.trim() || "□"}${generationChar.trim()}□（字辈居首）`}
+                            {`名字将为 ${surname.trim() || "□"}${generationChar.trim()}□（三字名 · 字辈居首，辈分字与名字同典故优先）`}
                           </p>
                         ) : null}
                       </div>

@@ -38,7 +38,7 @@ import {
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { track } from "@/lib/track";
-import { post, get } from "@/lib/api";
+import { post, get, api } from "@/lib/api";
 import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
 import { ScanBuyPanel } from "@/components/scan-buy";
@@ -68,6 +68,7 @@ import {
   TriangleAlert,
   Scale,
   PenLine,
+  ClipboardCheck,
   Clock3,
   ShieldCheck,
   SlidersHorizontal,
@@ -158,6 +159,14 @@ interface NameCardData {
   dialectCheckPassed?: boolean;
   phoneticNotes?: string[];
   classicVerified?: boolean;
+  /** 双胞胎性别标注（M/F/U）：龙凤胎按性别侧配对后回填，显示「男宝/女宝」。 */
+  twinGender?: string;
+  /** 名中多音字标注（后端 polyphones.json 命中，读音以拼音与试听为准）。 */
+  polyphoneNotes?: string[];
+  /** 名中近年高频用字（与评测页同源字表命中）。 */
+  clicheChars?: string[];
+  /** 名中低频（生僻倾向）用字。 */
+  rareChars?: string[];
   /** 姓名语法连读（自然具象姓+动宾名，如 叶知秋）——后端 V155 下发。 */
   syntaxReading?: boolean;
   classicMeaning?: string;
@@ -857,6 +866,8 @@ function Naming() {
   const [manualElements, setManualElements] = useState<string[]>([]);
   /** 双胞胎模式：结果两两成对，同对两名同出一部典籍。 */
   const [twin, setTwin] = useState(false);
+  /** 龙凤胎/双性别：二宝性别（大宝用 gender）；仅在 twin 模式随请求上报。 */
+  const [twinGenderB, setTwinGenderB] = useState("F");
   const [lat, setLat] = useState(39.9);
   const [lng, setLng] = useState(116.4);
   const [nameLength, setNameLength] = useState<"DOUBLE" | "SINGLE">("DOUBLE");
@@ -1062,6 +1073,8 @@ function Naming() {
 
   // 生成状态
   const [loading, setLoading] = useState(false);
+  // 等待期阶段文案：后端各阶段（排盘/典籍/五行/校验）耗时不定，前端按经验节奏轮换提示
+  const [stageLabel, setStageLabel] = useState("");
   const [stageIdx, setStageIdx] = useState(-1);
   const [aiDelta, setAiDelta] = useState("");
   const [error, setError] = useState("");
@@ -1073,6 +1086,8 @@ function Naming() {
     "recommend",
   );
   const [onlyCited, setOnlyCited] = useState(false);
+  const [onlyVerified, setOnlyVerified] = useState(false);
+  const [hideHotRare, setHideHotRare] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [compareSel, setCompareSel] = useState<string[]>([]);
   const [slowHint, setSlowHint] = useState(false);
@@ -1132,6 +1147,7 @@ function Naming() {
     ...(sourcesSel.length ? { classicSources: sourcesSel } : {}),
     ...(booksSel.length ? { classicBooks: booksSel } : {}),
     classicStyle,
+    ...(twin ? { twinGenderB } : {}),
     ...(avoidText.trim()
       ? {
           avoidNames: avoidText
@@ -1174,6 +1190,7 @@ function Naming() {
     setPicking(false);
     setPicked([]);
     setLoading(true);
+    setStageLabel("正在排盘定喜用神…");
     setSlowHint(false);
     track("naming_generate_start", { regen: exclude });
     streamRef.current = streamPost({
@@ -1273,25 +1290,68 @@ function Naming() {
     return () => clearTimeout(t);
   }, [loading]);
 
-  // 短名单（localStorage 持久，跨会话保留）
+  // 短名单：登录态落库（V188，跨设备）；未登录回落 localStorage
+  const shortlistServer = !!getAuthUser();
   useEffect(() => {
-    try {
-      setShortlist(JSON.parse(localStorage.getItem("naming_shortlist") || "[]"));
-    } catch {
-      /* 忽略 */
-    }
-  }, []);
-  const toggleShortlist = (name: string) => {
-    setShortlist((p) => {
-      const next = p.includes(name) ? p.filter((x) => x !== name) : [...p, name].slice(-12);
+    if (shortlistServer) {
+      get("/api/v1/naming/shortlist")
+        .then((r) => setShortlist(((r as { names?: string[] }).names ?? []).slice(-12)))
+        .catch(() => {
+          try {
+            setShortlist(JSON.parse(localStorage.getItem("naming_shortlist") || "[]"));
+          } catch {
+            /* 忽略 */
+          }
+        });
+    } else {
       try {
-        localStorage.setItem("naming_shortlist", JSON.stringify(next));
+        setShortlist(JSON.parse(localStorage.getItem("naming_shortlist") || "[]"));
       } catch {
         /* 忽略 */
       }
-      track("shortlist_toggle", { name, add: !p.includes(name) });
+    }
+  }, [shortlistServer]);
+  // 等待期阶段轮换：总耗时约 90 秒，按 15 秒一档推进提示；生成结束即停
+  useEffect(() => {
+    if (!loading) return;
+    const stages = [
+      "正在排盘定喜用神…",
+      "正在检索典籍原文…",
+      "正在匹配五行与生肖宜忌…",
+      "正在校验谐音与方言…",
+      "正在复核引文出处，即将完成…",
+    ];
+    let i = 0;
+    const setStage = (idx: number) => setStageLabel(stages[idx] ?? "");
+    setStage(0);
+    const timer = setInterval(() => {
+      i = Math.min(i + 1, stages.length - 1);
+      setStage(i);
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [loading]);
+  const toggleShortlist = (name: string) => {
+    const adding = !shortlist.includes(name);
+    setShortlist((p) => {
+      const next = p.includes(name) ? p.filter((x) => x !== name) : [...p, name].slice(-12);
+      if (!shortlistServer) {
+        try {
+          localStorage.setItem("naming_shortlist", JSON.stringify(next));
+        } catch {
+          /* 忽略 */
+        }
+      }
       return next;
     });
+    track("shortlist_toggle", { name, add: adding });
+    if (shortlistServer) {
+      const call = adding
+        ? post("/api/v1/naming/shortlist", { name })
+        : api("/api/v1/naming/shortlist/" + encodeURIComponent(name), { method: "DELETE" });
+      call
+        .then((r) => setShortlist(((r as { names?: string[] }).names ?? []).slice(-12)))
+        .catch(() => undefined);
+    }
   };
 
   // 微信内分享卡片
@@ -1314,15 +1374,17 @@ function Naming() {
       : `预产期 ${birthDate || "-"}`;
   const infoLine = `${surname}家${genderSuffix(gender)} · ${birthLabel}${placeName ? ` · ${shortPlace(placeName)}` : ""}`;
   const sortedCards = useMemo(() => {
-    const list = [...cards];
-    if (onlyCited) return list.filter((c) => !!c.classicCitation);
+    let list = [...cards];
+    if (onlyCited) list = list.filter((c) => !!c.classicCitation);
+    if (onlyVerified) list = list.filter((c) => c.classicVerified === true);
+    if (hideHotRare) list = list.filter((c) => !c.clicheChars?.length && !c.rareChars?.length);
     if (sortKey !== "recommend") {
       list.sort(
         (a, b) => (b.dimensionScores?.[sortKey] ?? 0) - (a.dimensionScores?.[sortKey] ?? 0),
       );
     }
     return list;
-  }, [cards, sortKey, onlyCited]);
+  }, [cards, sortKey, onlyCited, onlyVerified, hideHotRare]);
   /** 双胞胎分组：按 pairIndex 聚对（同对同典），未配对的孤卡单独渲染。 */
   const twinPairs = useMemo(() => {
     if (!twin) return null;
@@ -1503,7 +1565,13 @@ function Naming() {
                           <button
                             key={l}
                             type="button"
-                            onClick={() => setTwin(v)}
+                            onClick={() => {
+                              setTwin(v);
+                              // 开启双胞胎时二宝性别预选为大宝的相反值（龙凤胎最常用组合）
+                              if (v) {
+                                setTwinGenderB(gender === "M" ? "F" : gender === "F" ? "M" : "U");
+                              }
+                            }}
                             className={`rounded-xl py-2.5 text-sm font-medium transition-colors ${twin === v ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
                           >
                             {l}
@@ -1512,10 +1580,51 @@ function Naming() {
                       </div>
                       {twin ? (
                         <p className="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
-                          双胞胎模式：名字两两成对推荐，同对两名取自同一部典籍（如上下句），供两个孩子分别使用
+                          双胞胎模式：名字两两成对推荐，同对两名取自同一部典籍（如上下句），供两个孩子分别使用；大宝二宝性别可不同（龙凤胎）
                         </p>
                       ) : null}
                     </Field>
+                    {twin ? (
+                      <div className="col-span-2">
+                        <Field label="大宝 / 二宝性别" required>
+                          <div className="grid grid-cols-2 gap-2">
+                            {([
+                              ["F", "女"],
+                              ["M", "男"],
+                              ...(unborn ? ([["U", "无法确定"]] as const) : []),
+                            ] as const).map(([v, l]) => (
+                              <button
+                                key={`a-${v}`}
+                                type="button"
+                                onClick={() => setGender(v)}
+                                className={`rounded-xl py-2.5 text-sm font-medium transition-colors ${gender === v ? "bg-vermilion text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                              >
+                                大宝 · {l}
+                              </button>
+                            ))}
+                            {([
+                              ["F", "女"],
+                              ["M", "男"],
+                              ...(unborn ? ([["U", "无法确定"]] as const) : []),
+                            ] as const).map(([v, l]) => (
+                              <button
+                                key={`b-${v}`}
+                                type="button"
+                                onClick={() => setTwinGenderB(v)}
+                                className={`rounded-xl py-2.5 text-sm font-medium transition-colors ${twinGenderB === v ? "bg-vermilion text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                              >
+                                二宝 · {l}
+                              </button>
+                            ))}
+                          </div>
+                          {gender !== twinGenderB ? (
+                            <p className="mt-1.5 text-[11px] text-amber-700">
+                              龙凤胎模式：男宝名与女宝名按性别画像分别取名，成对同典
+                            </p>
+                          ) : null}
+                        </Field>
+                      </div>
+                    ) : null}
                   </div>
                   {manualMode ? (
                     /* 喜用神直填：不透露生辰，直接选五行（按点击顺序=主用/辅用） */
@@ -1953,6 +2062,20 @@ function Naming() {
                         ))}
                       </div>
                     </Field>
+                    <Field label="典籍风格">
+                      <div className="flex gap-2">
+                        {(["大众", "小众"] as const).map((s) => (
+                          <button
+                            key={s}
+                            title={s === "小众" ? "近年高频字降权，更不易撞名" : "不额外偏好，随五行与典籍自然分布"}
+                            onClick={() => setClassicStyle(s)}
+                            className={`${chips} ${classicStyle === s ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                          >
+                            {s === "小众" ? "小众（避高频）" : "大众（不偏好）"}
+                          </button>
+                        ))}
+                      </div>
+                    </Field>
                     <Field label="典籍偏好（限选一组）">
                       <div className="flex gap-2">
                         {classicGroups.map((g, gi) => {
@@ -2074,7 +2197,9 @@ function Naming() {
                     {surname.trim() || "＿"}家{genderSuffix(gender)} · {birthLabel}
                     {placeName ? ` · ${shortPlace(placeName)}` : ""}
                   </span>
-                  <span className="shrink-0 text-ink-faint">约 90 秒出 10 个方案</span>
+                  <span className="shrink-0 text-ink-faint">
+                    {loading ? stageLabel : "约 90 秒出 10 个方案"}
+                  </span>
                 </div>
 
                 {formErr ? <p className="text-xs text-vermilion-deep">{formErr}</p> : null}
@@ -2429,6 +2554,22 @@ function Naming() {
                       onChange={(e) => setOnlyCited(e.target.checked)}
                     />
                     只看有出处
+                  </label>
+                  <label className="flex items-center gap-1 text-ink-soft">
+                    <input
+                      type="checkbox"
+                      checked={onlyVerified}
+                      onChange={(e) => setOnlyVerified(e.target.checked)}
+                    />
+                    只看真典籍
+                  </label>
+                  <label className="flex items-center gap-1 text-ink-soft">
+                    <input
+                      type="checkbox"
+                      checked={hideHotRare}
+                      onChange={(e) => setHideHotRare(e.target.checked)}
+                    />
+                    避开高频/生僻字
                   </label>
                   <button
                     onClick={() => {
@@ -3120,6 +3261,38 @@ function NameCardView({
             </span>
           ) : null}
         </p>
+        {c.twinGender ? (
+          <span
+            className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${c.twinGender === "M" ? "bg-sky-50 text-sky-700" : c.twinGender === "F" ? "bg-rose-50 text-rose-700" : "bg-paper-3 text-ink-soft"}`}
+          >
+            {c.twinGender === "M" ? "男宝" : c.twinGender === "F" ? "女宝" : "宝宝"}
+          </span>
+        ) : null}
+        {(c.clicheChars?.length || c.rareChars?.length) ? (
+          <span className="flex flex-wrap items-center gap-1">
+            {c.clicheChars?.length ? (
+              <span
+                title={`近年高频用字：${c.clicheChars.join("、")}（撞名率偏高，可斟酌）`}
+                className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-800"
+              >
+                高频字 {c.clicheChars.join("、")}
+              </span>
+            ) : null}
+            {c.rareChars?.length ? (
+              <span
+                title={`低频（生僻倾向）用字：${c.rareChars.join("、")}（可能常被念错、打不出）`}
+                className="rounded bg-paper-3 px-1.5 py-0.5 text-[10px] text-ink-soft"
+              >
+                生僻倾向 {c.rareChars.join("、")}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+        {c.polyphoneNotes?.length ? (
+          <p className="w-full text-[10px] leading-relaxed text-ink-faint">
+            {c.polyphoneNotes.join("；")}
+          </p>
+        ) : null}
           {c.surnameSameSource ? (
             <span
               title={
@@ -3141,14 +3314,19 @@ function NameCardView({
         ) : null}
       </div>
 
-      {c.recommended ? (
+      {c.recommended || c.recommendReason ? (
         <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-          <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-semibold text-vermilion-deep">
-            <span className="size-1.5 rounded-full bg-vermilion" />
-            推荐{typeof c.recommendScore === "number" ? ` ${c.recommendScore}` : ""}
-          </span>
+          {c.recommended ? (
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-semibold text-vermilion-deep">
+              <span className="size-1.5 rounded-full bg-vermilion" />
+              推荐{typeof c.recommendScore === "number" ? ` ${c.recommendScore}` : ""}
+            </span>
+          ) : null}
           {c.recommendReason ? (
-            <span className="whitespace-nowrap text-ink-faint">· {c.recommendReason}</span>
+            <span className="whitespace-nowrap text-ink-faint">
+              {c.recommended ? "· " : ""}
+              {c.recommendReason}
+            </span>
           ) : null}
         </div>
       ) : null}
@@ -3418,7 +3596,24 @@ function NameCardView({
           {(() => {
             if (c.dialectCheckPassed === undefined) return null;
             if (!c.dialectCheckPassed) {
-              return <p className="text-[11px] text-vermilion-deep">方言谐音检测存在风险提示</p>;
+              // 明细内联：哪种方言、什么谐音，不再只给一句话
+              const blocked = (c.dialectChecks ?? []).filter(
+                (d) => d.status === "blocked" || d.status === "skipped",
+              );
+              return (
+                <div className="text-[11px] leading-relaxed text-vermilion-deep">
+                  <p>方言谐音检测存在风险提示</p>
+                  {blocked.length ? (
+                    <ul className="mt-0.5 list-none space-y-0.5 text-ink-soft">
+                      {blocked.map((d) => (
+                        <li key={d.dialect}>
+                          {d.dialect}：{d.status === "blocked" ? d.note || "存在风险谐音" : "数据建设中，未覆盖"}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              );
             }
             const passedCount = (c.dialectChecks ?? []).filter((d) => d.status === "passed").length;
             // 无方言数据通过（0 条）时不显示，避免「+ 0 方言」的空洞表述
@@ -3450,6 +3645,16 @@ function NameCardView({
           <span className="text-[11px] text-ink-faint">✓ 谐音安全</span>
         )}
         <div className="ml-auto flex items-center gap-1.5">
+          <a
+            href={`/name-eval?x=${encodeURIComponent(c.name.slice(0, givenStart))}&m=${encodeURIComponent(c.name.slice(givenStart))}`}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            title="用「名字评测」独立复核（免登录，可分享）"
+            className="grid size-8 place-items-center rounded-full bg-paper-3 text-ink-soft transition-colors hover:bg-vermilion-wash hover:text-vermilion-deep"
+          >
+            <ClipboardCheck aria-hidden className="size-4" />
+          </a>
           {onListen ? (
             <button
               onClick={(e) => {

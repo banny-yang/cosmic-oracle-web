@@ -1529,30 +1529,7 @@ function Naming() {
                       </button>
                     ))}
                   </div>
-                  {/* 性别选择单独一行（仅【未出生】才出现「无法确定」；按喜用神取名仍可选男女） */}
-                  <div className="col-span-2">
-                    <Field label="性别" required>
-                      <div className={`grid gap-2 ${unborn ? "grid-cols-3" : "grid-cols-2"}`}>
-                        {(
-                          [
-                            ["F", "女"],
-                            ["M", "男"],
-                            ...(unborn ? ([["U", "无法确定"]] as const) : []),
-                          ] as const
-                        ).map(([v, l]) => (
-                          <button
-                            key={v}
-                            type="button"
-                            onClick={() => setGender(v)}
-                            className={`rounded-xl py-2.5 text-sm font-medium transition-colors ${gender === v ? "bg-vermilion text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
-                          >
-                            {l}
-                          </button>
-                        ))}
-                      </div>
-                    </Field>
-                  </div>
-                  {/* 双胞胎：两名成对推荐、同出一典 */}
+                  {/* 宝宝数量在前；性别区与双胞胎性别合并——单胎显示单项性别，双胞胎显示大宝/二宝（不再出现两处性别选择） */}
                   <div className="col-span-2">
                     <Field label="宝宝数量">
                       <div className="grid grid-cols-2 gap-2">
@@ -1580,52 +1557,75 @@ function Naming() {
                       </div>
                       {twin ? (
                         <p className="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
-                          双胞胎模式：名字两两成对推荐，同对两名取自同一部典籍（如上下句），供两个孩子分别使用；大宝二宝性别可不同（龙凤胎）
+                          双胞胎模式：名字两两成对推荐（共 10 个名字、5 组），同对两名取自同一部典籍（如上下句），供两个孩子分别使用；大宝二宝性别可不同（龙凤胎）
                         </p>
                       ) : null}
                     </Field>
-                    {twin ? (
-                      <div className="col-span-2">
-                        <Field label="大宝 / 二宝性别" required>
-                          <div className="grid grid-cols-2 gap-2">
-                            {([
-                              ["F", "女"],
-                              ["M", "男"],
-                              ...(unborn ? ([["U", "无法确定"]] as const) : []),
-                            ] as const).map(([v, l]) => (
-                              <button
-                                key={`a-${v}`}
-                                type="button"
-                                onClick={() => setGender(v)}
-                                className={`rounded-xl py-2.5 text-sm font-medium transition-colors ${gender === v ? "bg-vermilion text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
-                              >
-                                大宝 · {l}
-                              </button>
-                            ))}
-                            {([
-                              ["F", "女"],
-                              ["M", "男"],
-                              ...(unborn ? ([["U", "无法确定"]] as const) : []),
-                            ] as const).map(([v, l]) => (
-                              <button
-                                key={`b-${v}`}
-                                type="button"
-                                onClick={() => setTwinGenderB(v)}
-                                className={`rounded-xl py-2.5 text-sm font-medium transition-colors ${twinGenderB === v ? "bg-vermilion text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
-                              >
-                                二宝 · {l}
-                              </button>
-                            ))}
-                          </div>
-                          {gender !== twinGenderB ? (
-                            <p className="mt-1.5 text-[11px] text-amber-700">
-                              龙凤胎模式：男宝名与女宝名按性别画像分别取名，成对同典
-                            </p>
-                          ) : null}
-                        </Field>
-                      </div>
-                    ) : null}
                   </div>
+                  {!twin ? (
+                    <div className="col-span-2">
+                      <Field label="性别" required>
+                        <div className={`grid gap-2 ${unborn ? "grid-cols-3" : "grid-cols-2"}`}>
+                          {(
+                            [
+                              ["F", "女"],
+                              ["M", "男"],
+                              ...(unborn ? ([["U", "无法确定"]] as const) : []),
+                            ] as const
+                          ).map(([v, l]) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => setGender(v)}
+                              className={`rounded-xl py-2.5 text-sm font-medium transition-colors ${gender === v ? "bg-vermilion text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                            >
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                      </Field>
+                    </div>
+                  ) : (
+                    <div className="col-span-2">
+                      <Field label="大宝 / 二宝性别" required>
+                        <div className="grid grid-cols-2 gap-2">
+                          {([
+                            ["F", "女"],
+                            ["M", "男"],
+                            ...(unborn ? ([["U", "无法确定"]] as const) : []),
+                          ] as const).map(([v, l]) => (
+                            <button
+                              key={`a-${v}`}
+                              type="button"
+                              onClick={() => setGender(v)}
+                              className={`rounded-xl py-2.5 text-sm font-medium transition-colors ${gender === v ? "bg-vermilion text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                            >
+                              大宝 · {l}
+                            </button>
+                          ))}
+                          {([
+                            ["F", "女"],
+                            ["M", "男"],
+                            ...(unborn ? ([["U", "无法确定"]] as const) : []),
+                          ] as const).map(([v, l]) => (
+                            <button
+                              key={`b-${v}`}
+                              type="button"
+                              onClick={() => setTwinGenderB(v)}
+                              className={`rounded-xl py-2.5 text-sm font-medium transition-colors ${twinGenderB === v ? "bg-vermilion text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                            >
+                              二宝 · {l}
+                            </button>
+                          ))}
+                        </div>
+                        {gender !== twinGenderB ? (
+                          <p className="mt-1.5 text-[11px] text-amber-700">
+                            龙凤胎模式：男宝名与女宝名按性别画像分别取名，成对同典
+                          </p>
+                        ) : null}
+                      </Field>
+                    </div>
+                  )}
                   {manualMode ? (
                     /* 喜用神直填：不透露生辰，直接选五行（按点击顺序=主用/辅用） */
                     <div className="col-span-2">

@@ -2335,7 +2335,10 @@ function Naming() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Baby aria-hidden className="size-5 text-ink-soft" />
                     <h2 className="text-lg font-semibold tracking-wide">
-                      {surname}家{genderSuffix(gender)}
+                      {surname}家
+                      {twin
+                        ? `双胞胎 · ${genderSuffix(gender)} + ${genderSuffix(twinGenderB as "M" | "F" | "U")}`
+                        : genderSuffix(gender)}
                     </h2>
                     {!born && !manualMode ? (
                       <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800">
@@ -2678,6 +2681,12 @@ function Naming() {
               ) : null}
               {twinPairs ? (
                 <div className="mt-3 space-y-5">
+                  {twinPairs.pairs.length === 0 && twinPairs.singles.length > 0 ? (
+                    <p className="rounded-xl bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-800">
+                      本轮同典配对供给不足（近期生成较多，可选名字受限），以下为独立推荐、未按对分组；
+                      点「换一批」可再次尝试成对推荐。
+                    </p>
+                  ) : null}
                   {twinPairs.pairs.map(([idx, pair]) => (
                     <div key={`pair-${idx}`} className="rounded-2xl bg-vermilion-wash/50 p-3.5">
                       <p className="flex flex-wrap items-center gap-2 text-xs font-semibold text-vermilion-deep">
@@ -2789,9 +2798,17 @@ function Naming() {
                   <div className="mt-1 flex flex-wrap items-center justify-center gap-4">
                     <button
                       onClick={() => {
-                        document
-                          .getElementById("naming-form")
-                          ?.scrollIntoView({ behavior: "smooth" });
+                        // 结果态下表单已卸载（!hasResult 才渲染），须先清结果重挂表单再滚动
+                        setCards([]);
+                        setDiagnosis(null);
+                        setError("");
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById("naming-form")
+                              ?.scrollIntoView({ behavior: "smooth" }),
+                          60,
+                        );
                       }}
                       className="text-xs font-medium text-vermilion-deep underline underline-offset-2"
                     >

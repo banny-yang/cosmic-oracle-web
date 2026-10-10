@@ -41,7 +41,7 @@ export const Route = createFileRoute("/articles/$slug")({
       meta: [
         { title },
         { name: "description", content: desc },
-        { name: "keywords", content: a ? `${a.title},取名文章,宝宝取名` : "取名文章" },
+        { name: "keywords", content: a ? `${a.title},深度洞察,宝宝取名` : "深度洞察" },
         { property: "og:type", content: "article" },
         { property: "og:url", content: canonical },
         { property: "og:title", content: title },

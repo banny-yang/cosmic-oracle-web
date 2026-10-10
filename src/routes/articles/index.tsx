@@ -34,19 +34,19 @@ export const Route = createFileRoute("/articles/")({
     const cat = loaderData?.cat ?? "";
     const catLabel = cat ? articleCategoryLabel(cat) : "";
     const title = catLabel
-      ? `${catLabel}文章 · 宝宝起名知识 · 对脉名鉴`
-      : "取名文章：生肖、字辈、诗词与用字知识 · 对脉名鉴";
+      ? `${catLabel} · 深度洞察 · 对脉名鉴`
+      : "深度洞察：生肖、字辈、诗词与用字知识 · 对脉名鉴";
     // 第 1 页 canonical 指栏目根；后续页自指（分页内容互不重复收录）
     const canonical = `https://name.duimai.net/articles${page > 0 ? `?page=${page}` : ""}`;
     const desc = catLabel
-      ? `${catLabel}相关的取名文章：从传统宜忌到现代审读，帮你把名字取得有出处、有呼应。`
+      ? `${catLabel}相关的深度洞察：从传统宜忌到现代审读，帮你把名字取得有出处、有呼应。`
       : "管理员精选的取名知识文章：生肖宜忌、字辈传承、诗词典籍出处、五行用字与双胞胎成对思路，每篇附可用的起名入口。";
     return {
       links: [{ rel: "canonical", href: canonical }],
       meta: [
         { title },
         { name: "description", content: desc },
-        { name: "keywords", content: "取名文章,宝宝取名知识,生肖取名,字辈取名,诗词取名" },
+        { name: "keywords", content: "深度洞察,宝宝取名知识,生肖取名,字辈取名,诗词取名" },
         { property: "og:url", content: canonical },
         { property: "og:title", content: title },
         { property: "og:description", content: desc },
@@ -74,7 +74,7 @@ function ArticleListPage() {
 
   return (
     <AppShell>
-      <BreadcrumbJsonLd name="取名文章" path="/articles" />
+      <BreadcrumbJsonLd name="深度洞察" path="/articles" />
       {result && result.items.length > 0 ? (
         <script
           type="application/ld+json"
@@ -82,7 +82,7 @@ function ArticleListPage() {
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "ItemList",
-              name: "对脉名鉴 · 取名文章",
+              name: "对脉名鉴 · 深度洞察",
               numberOfItems: result.items.length,
               itemListElement: result.items.map((a, i) => ({
                 "@type": "ListItem",
@@ -96,8 +96,8 @@ function ArticleListPage() {
       ) : null}
 
       <PageHeader
-        eyebrow="取名知识 · 文章"
-        title="取名文章"
+        eyebrow="取名知识 · 深度洞察"
+        title="深度洞察"
         desc="生肖宜忌、字辈传承、诗词典籍出处、五行用字与双胞胎成对思路——把名字取得有出处、有呼应。"
       />
 

@@ -21,22 +21,20 @@ import {
   Menu,
   PawPrint,
   ScanSearch,
+  Telescope,
   Waves,
   type LucideIcon,
 } from "lucide-react";
 
 /**
- * 全站顶栏功能菜单（8 项）：管理端关闭的功能（t_feature.enabled=false）自动隐藏。
+ * 全站顶栏功能菜单：管理端关闭的功能（t_feature.enabled=false）自动隐藏。
  * 价格在各功能页内动态展示，菜单只放入口；lucide 线性图标与右侧胶囊图标风格统一。
+ * 顺序口径：取名/姓名文化在前，命理向功能（缘分匹配/八字合婚/六爻/奇门）统一排在末尾。
  */
 const FEATURE_MENU = [
   { to: "/naming", code: "BABY_NAMING", icon: Baby, title: "宝宝起名" },
   { to: "/name-eval", code: "NAME_EVAL", icon: ScanSearch, title: "名字评测" },
   { to: "/analysis", code: "INSIGHT_NAME", icon: Waves, title: "姓名共振" },
-  { to: "/personality", code: "INSIGHT_PAIR", icon: HeartHandshake, title: "缘分匹配" },
-  { to: "/marriage", code: "MARRIAGE_FIT", icon: Heart, title: "八字合婚" },
-  { to: "/liuyao", code: "DIVINATION", icon: Coins, title: "六爻占卜" },
-  { to: "/qimen", code: "QIMEN_JUDGE", icon: Grid3x3, title: "奇门断局" },
   { to: "/names", code: "NAME_GALLERY", icon: BookOpen, title: "名字灵感库" },
 ] as const satisfies ReadonlyArray<{
   to: string;
@@ -45,10 +43,24 @@ const FEATURE_MENU = [
   title: string;
 }>;
 
-/** 常显入口（不挂功能开关）：典籍馆/生肖取名是内容/文化页，与业务开关无关。 */
+/** 命理向功能（同样受管理端开关控制）：按产品口径排在导航最末 */
+const FEATURE_MENU_TAIL = [
+  { to: "/personality", code: "INSIGHT_PAIR", icon: HeartHandshake, title: "缘分匹配" },
+  { to: "/marriage", code: "MARRIAGE_FIT", icon: Heart, title: "八字合婚" },
+  { to: "/liuyao", code: "DIVINATION", icon: Coins, title: "六爻占卜" },
+  { to: "/qimen", code: "QIMEN_JUDGE", icon: Grid3x3, title: "奇门断局" },
+] as const satisfies ReadonlyArray<{
+  to: string;
+  code: string;
+  icon: LucideIcon;
+  title: string;
+}>;
+
+/** 常显入口（不挂功能开关）：典籍馆/生肖取名/深度洞察是内容/文化页，与业务开关无关。 */
 const STATIC_MENU = [
   { to: "/dianji", icon: Library, title: "典籍馆" },
   { to: "/zodiac", icon: PawPrint, title: "生肖取名" },
+  { to: "/articles", icon: Telescope, title: "深度洞察" },
 ] as const satisfies ReadonlyArray<{
   to: string;
   icon: LucideIcon;
@@ -70,6 +82,7 @@ function FeatureNav({ vertical = false }: { vertical?: boolean }) {
   const items: ReadonlyArray<{ to: string; icon: LucideIcon; title: string }> = [
     ...FEATURE_MENU.filter((f) => enabled[f.code] !== false),
     ...STATIC_MENU,
+    ...FEATURE_MENU_TAIL.filter((f) => enabled[f.code] !== false),
   ];
   return (
     <nav
@@ -103,7 +116,7 @@ function FeatureNav({ vertical = false }: { vertical?: boolean }) {
               ].join(" "),
             }}
           >
-            {/* 横排不排图标：顶栏容器在 xl+ 恒为 max-w-7xl，10 项带图标必挤出 logo；图标留给汉堡纵排 */}
+            {/* 横排不排图标：顶栏容器在 xl+ 恒为 max-w-7xl，条目带图标必挤出 logo；图标留给汉堡纵排 */}
             {vertical ? <Icon aria-hidden className="size-[18px]" strokeWidth={1.75} /> : null}
             {f.title}
           </Link>

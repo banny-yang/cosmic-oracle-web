@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { pushUrlToBaidu } from "./lib/baidu-push";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { sitemapXml } from "./lib/sitemap-xml";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -105,6 +106,17 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // sitemap 动态输出（静态条目 + 已发布文章）先于 SSR 拦截；public/sitemap.xml 已移除
+      if (new URL(request.url).pathname === "/sitemap.xml") {
+        return new Response(await sitemapXml(), {
+          status: 200,
+          headers: {
+            "content-type": "application/xml; charset=utf-8",
+            "cache-control": "public, max-age=3600",
+          },
+        });
+      }
+
       if (new URL(request.url).pathname.startsWith("/assets/")) return assetNotFound();
 
       const handler = await getServerEntry();

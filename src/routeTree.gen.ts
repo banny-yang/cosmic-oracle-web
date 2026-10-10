@@ -28,6 +28,8 @@ import { Route as PersonalityRouteImport } from './routes/personality'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as QimenRouteImport } from './routes/qimen'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ArticlesIndexRouteImport } from './routes/articles/index'
+import { Route as ArticlesSlugRouteImport } from './routes/articles/$slug'
 import { Route as RecordsIndexRouteImport } from './routes/records.index'
 import { Route as RecordsIdRouteImport } from './routes/records.$id'
 import { Route as VoteTokenRouteImport } from './routes/vote.$token'
@@ -130,6 +132,16 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArticlesIndexRoute = ArticlesIndexRouteImport.update({
+  id: '/articles/',
+  path: '/articles/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArticlesSlugRoute = ArticlesSlugRouteImport.update({
+  id: '/articles/$slug',
+  path: '/articles/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecordsIndexRoute = RecordsIndexRouteImport.update({
   id: '/records/',
   path: '/records/',
@@ -181,8 +193,10 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/qimen': typeof QimenRoute
   '/terms': typeof TermsRoute
+  '/articles/$slug': typeof ArticlesSlugRoute
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
+  '/articles/': typeof ArticlesIndexRoute
   '/records/': typeof RecordsIndexRoute
   '/zodiac/': typeof ZodiacIndexRoute
   '/zodiac/$animal/$year': typeof ZodiacAnimalYearRoute
@@ -208,8 +222,10 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/qimen': typeof QimenRoute
   '/terms': typeof TermsRoute
+  '/articles/$slug': typeof ArticlesSlugRoute
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
+  '/articles': typeof ArticlesIndexRoute
   '/records': typeof RecordsIndexRoute
   '/zodiac': typeof ZodiacIndexRoute
   '/zodiac/$animal/$year': typeof ZodiacAnimalYearRoute
@@ -236,8 +252,10 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/qimen': typeof QimenRoute
   '/terms': typeof TermsRoute
+  '/articles/$slug': typeof ArticlesSlugRoute
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
+  '/articles/': typeof ArticlesIndexRoute
   '/records/': typeof RecordsIndexRoute
   '/zodiac/': typeof ZodiacIndexRoute
   '/zodiac/$animal/$year': typeof ZodiacAnimalYearRoute
@@ -265,8 +283,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/qimen'
     | '/terms'
+    | '/articles/$slug'
     | '/records/$id'
     | '/vote/$token'
+    | '/articles/'
     | '/records/'
     | '/zodiac/'
     | '/zodiac/$animal/$year'
@@ -292,8 +312,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/qimen'
     | '/terms'
+    | '/articles/$slug'
     | '/records/$id'
     | '/vote/$token'
+    | '/articles'
     | '/records'
     | '/zodiac'
     | '/zodiac/$animal/$year'
@@ -319,8 +341,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/qimen'
     | '/terms'
+    | '/articles/$slug'
     | '/records/$id'
     | '/vote/$token'
+    | '/articles/'
     | '/records/'
     | '/zodiac/'
     | '/zodiac/$animal/$year'
@@ -347,8 +371,10 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   QimenRoute: typeof QimenRoute
   TermsRoute: typeof TermsRoute
+  ArticlesSlugRoute: typeof ArticlesSlugRoute
   RecordsIdRoute: typeof RecordsIdRoute
   VoteTokenRoute: typeof VoteTokenRoute
+  ArticlesIndexRoute: typeof ArticlesIndexRoute
   RecordsIndexRoute: typeof RecordsIndexRoute
   ZodiacIndexRoute: typeof ZodiacIndexRoute
   ZodiacAnimalYearRoute: typeof ZodiacAnimalYearRoute
@@ -490,6 +516,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/articles/': {
+      id: '/articles/'
+      path: '/articles'
+      fullPath: '/articles/'
+      preLoaderRoute: typeof ArticlesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/articles/$slug': {
+      id: '/articles/$slug'
+      path: '/articles/$slug'
+      fullPath: '/articles/$slug'
+      preLoaderRoute: typeof ArticlesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/records/': {
       id: '/records/'
       path: '/records'
@@ -555,8 +595,10 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   QimenRoute: QimenRoute,
   TermsRoute: TermsRoute,
+  ArticlesSlugRoute: ArticlesSlugRoute,
   RecordsIdRoute: RecordsIdRoute,
   VoteTokenRoute: VoteTokenRoute,
+  ArticlesIndexRoute: ArticlesIndexRoute,
   RecordsIndexRoute: RecordsIndexRoute,
   ZodiacIndexRoute: ZodiacIndexRoute,
   ZodiacAnimalYearRoute: ZodiacAnimalYearRoute,

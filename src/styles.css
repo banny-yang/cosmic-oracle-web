@@ -317,3 +317,69 @@
   transform-origin: left;
   animation: line-grow 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
+
+/* 文章正文排版（/articles/$slug，服务端白名单标签：h2/h3/p/ul/ol/li/blockquote/hr/a/strong/em） */
+.article-prose {
+  font-size: 0.95rem;
+  line-height: 1.9;
+  color: var(--ink-soft);
+}
+.article-prose h2 {
+  margin: 1.6em 0 0.6em;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.article-prose h3 {
+  margin: 1.4em 0 0.5em;
+  font-size: 1.03rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.article-prose h4 {
+  margin: 1.2em 0 0.4em;
+  font-size: 0.97rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.article-prose p {
+  margin: 0.9em 0;
+  text-align: justify;
+}
+.article-prose ul,
+.article-prose ol {
+  margin: 0.9em 0;
+  padding-left: 1.4em;
+}
+.article-prose ul {
+  list-style: disc;
+}
+.article-prose ol {
+  list-style: decimal;
+}
+.article-prose li {
+  margin: 0.35em 0;
+}
+.article-prose blockquote {
+  margin: 1.1em 0;
+  padding: 0.6em 1em;
+  border-left: 3px solid var(--vermilion);
+  background: rgba(176, 58, 46, 0.05);
+  border-radius: 0.5rem;
+}
+.article-prose blockquote p {
+  margin: 0.2em 0;
+}
+.article-prose hr {
+  margin: 1.6em 0;
+  border: none;
+  border-top: 1px solid rgba(43, 38, 32, 0.12);
+}
+.article-prose a {
+  color: var(--vermilion-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.article-prose strong {
+  color: var(--ink);
+}

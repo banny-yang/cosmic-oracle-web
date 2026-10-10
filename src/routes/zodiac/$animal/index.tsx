@@ -11,7 +11,12 @@ import {
   ZodiacYearHeadline,
   ZodiacYearNav,
 } from "@/components/zodiac-blocks";
-import { animalPath, lookupZodiacGuide, type ZodiacGuideView } from "@/lib/zodiac-guide";
+import {
+  animalPath,
+  inZodiacYearWindow,
+  lookupZodiacGuide,
+  type ZodiacGuideView,
+} from "@/lib/zodiac-guide";
 
 /** 生肖常青页：/zodiac/{slug}（slug 为服务端下发的拼音，如 ma）。 */
 export const Route = createFileRoute("/zodiac/$animal/")({
@@ -90,8 +95,13 @@ function ZodiacAnimalPage() {
   }
 
   const { info, copy, names, preferredChars, years, nextRound, current } = view;
-  const latestRound = years[0] ?? null;
-  const oldestRound = years.length > 1 ? (years[years.length - 1] ?? null) : null;
+  // 收录窗口内的同生肖轮次（窗口外年份页 301 回本页，不外链自指重定向）
+  const windowRounds = years.filter((r) => inZodiacYearWindow(r.year));
+  const windowNext = nextRound && inZodiacYearWindow(nextRound) ? nextRound : null;
+  const showRoundsNav = windowRounds.length + (windowNext ? 1 : 0) >= 2;
+  const latestRound = windowRounds[0] ?? null;
+  const oldestRound =
+    windowRounds.length > 1 ? (windowRounds[windowRounds.length - 1] ?? null) : null;
 
   return (
     <AppShell>
@@ -179,20 +189,22 @@ function ZodiacAnimalPage() {
         />
       </section>
 
-      <section className="mt-11">
-        <h2 className={sectionTitle}>同一生肖的年份（每 12 年一轮）</h2>
-        <p className="mt-1.5 text-xs text-ink-faint">
-          生肖年以立春为界，每年立春自动流转；点年份看那一年的干支、立春起止与可用名字。
-        </p>
-        <ZodiacYearNav rounds={years} slug={info.slug} nextRound={nextRound} />
-        {oldestRound && latestRound ? (
-          <p className="mt-3 text-xs text-ink-faint">
-            每 12 年一轮、干支各不相同：{oldestRound.year} 年为{oldestRound.ganzhi}
-            {info.animal}年，{latestRound.year} 年为{latestRound.ganzhi}
-            {info.animal}年。
+      {showRoundsNav ? (
+        <section className="mt-11">
+          <h2 className={sectionTitle}>同一生肖的年份（每 12 年一轮）</h2>
+          <p className="mt-1.5 text-xs text-ink-faint">
+            生肖年以立春为界，每年立春自动流转；点年份看那一年的干支、立春起止与可用名字。
           </p>
-        ) : null}
-      </section>
+          <ZodiacYearNav rounds={windowRounds} slug={info.slug} nextRound={windowNext} />
+          {oldestRound && latestRound ? (
+            <p className="mt-3 text-xs text-ink-faint">
+              每 12 年一轮、干支各不相同：{oldestRound.year} 年为{oldestRound.ganzhi}
+              {info.animal}年，{latestRound.year} 年为{latestRound.ganzhi}
+              {info.animal}年。
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="mt-11">
         <h2 className={sectionTitle}>常见问题</h2>

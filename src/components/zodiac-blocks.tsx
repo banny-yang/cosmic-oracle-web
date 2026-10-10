@@ -254,7 +254,7 @@ export function ZodiacAnimalGrid({ animals }: { animals: ZodiacAnimalEntry[] }) 
   );
 }
 
-/** 同一生肖的年份列表（近 6 轮 + 下一轮，每年立春自动流转）。 */
+/** 同一生肖的年份列表（调用方按收录窗口过滤轮次；nextRound 可空 = 窗口外不展示）。 */
 export function ZodiacYearNav({
   rounds,
   slug,
@@ -262,7 +262,7 @@ export function ZodiacYearNav({
 }: {
   rounds: ZodiacRound[];
   slug: string;
-  nextRound: number;
+  nextRound: number | null;
 }) {
   return (
     <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -277,13 +277,15 @@ export function ZodiacYearNav({
           {r.current ? " · 当年" : ""}
         </Link>
       ))}
-      <Link
-        to="/zodiac/$animal/$year"
-        params={{ animal: slug, year: String(nextRound) }}
-        className={chipOff}
-      >
-        下一轮 {nextRound}
-      </Link>
+      {nextRound ? (
+        <Link
+          to="/zodiac/$animal/$year"
+          params={{ animal: slug, year: String(nextRound) }}
+          className={chipOff}
+        >
+          下一轮 {nextRound}
+        </Link>
+      ) : null}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { AppShell, PageHeader, BreadcrumbJsonLd } from "@/components/app-shell";
 import {
   ZodiacCharChips,
@@ -14,28 +14,48 @@ import {
   animalPath,
   animalYearPath,
   fetchZodiacGuide,
+  inZodiacYearWindow,
   lookupZodiacGuide,
+  zodiacYearWindow,
   type ZodiacGuideView,
   type ZodiacInfo,
 } from "@/lib/zodiac-guide";
 
 /**
  * 生肖年份页：/zodiac/{slug}/{year}。年份唯一确定生肖年（干支/立春起止由服务端现算），
- * slug 只作 URL 归属：与年份生肖不一致时按年份展示，并把 canonical 指回正确地址。
+ * slug 只作 URL 归属。收录窗口（过去十年+当前年+次年）外的年份 301 到生肖常青页——
+ * 窗口外地址永远不会有内容，301 比长期 404 对收录友好（旧链接权重归并到常青页）。
  */
 export const Route = createFileRoute("/zodiac/$animal/$year")({
   component: ZodiacYearPage,
   loader: async ({ params }) => {
     const year = /^\d{4}$/.test(params.year) ? Number(params.year) : null;
     if (year === null) throw notFound();
-    // 前后年只取元信息（limit=1）：用于跨生肖的年份导航，越界年份由接口拒绝（返回 400 → null）
+    // 窗口外年份：301 到生肖常青页（内容常年有效，随当年流转）
+    if (!inZodiacYearWindow(year)) {
+      throw redirect({ href: animalPath(params.animal), statusCode: 301 });
+    }
+    // 前后年只取元信息（limit=1）：用于跨生肖的年份导航；窗口外不取（会被重定向，不外链）
+    const win = zodiacYearWindow();
     const [main, prev, next] = await Promise.all([
       lookupZodiacGuide({ year, limit: 18 }),
-      fetchZodiacGuide({ year: year - 1, limit: 1 }),
-      fetchZodiacGuide({ year: year + 1, limit: 1 }),
+      year - 1 >= win.start
+        ? fetchZodiacGuide({ year: year - 1, limit: 1 })
+        : Promise.resolve(null),
+      year + 1 <= win.end
+        ? fetchZodiacGuide({ year: year + 1, limit: 1 })
+        : Promise.resolve(null),
     ]);
     // 服务端判定年份超范围（400）→ 404：这种地址永远不会有内容，兜底空页不该被收录
     if (main.invalid) throw notFound();
+    // 窗口内但 slug 与该年生肖不符（如 /zodiac/she/2026，2026 为马年）：301 到正确地址
+    //（比渲染+canonical 纠偏更彻底，消灭重复内容变体）
+    if (main.view && main.view.info.slug !== params.animal) {
+      throw redirect({
+        href: animalYearPath(main.view.info.slug, year),
+        statusCode: 301,
+      });
+    }
     return {
       view: main.view,
       prev: prev?.info ?? null,
@@ -84,11 +104,10 @@ const ghostCls =
   "rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash";
 
 function ZodiacYearPage() {
-  const { view, prev, next, slug, raw } = Route.useLoaderData() as {
+  const { view, prev, next, raw } = Route.useLoaderData() as {
     view: ZodiacGuideView | null;
     prev: ZodiacInfo | null;
     next: ZodiacInfo | null;
-    slug: string;
     raw: string;
   };
 
@@ -115,8 +134,10 @@ function ZodiacYearPage() {
   }
 
   const { info, copy, names, preferredChars, years, nextRound, current } = view;
-  // 地址里的生肖与年份生肖不一致（如从属马页跳到羊年）：按年份展示，并给出正确入口
-  const mismatched = info.slug !== slug;
+  // 收录窗口内的同生肖轮次（窗口外年份页会 301 到常青页，不外链）；不足 2 项时隐藏区块
+  const windowRounds = years.filter((r) => inZodiacYearWindow(r.year));
+  const windowNext = nextRound && inZodiacYearWindow(nextRound) ? nextRound : null;
+  const showRoundsNav = windowRounds.length + (windowNext ? 1 : 0) >= 2;
 
   return (
     <AppShell>
@@ -149,24 +170,6 @@ function ZodiacYearPage() {
         title={`${info.year} ${info.ganzhi}${info.animal}年宝宝取名`}
         desc={`${info.year} 年的生肖年自 ${info.termStart} 立春起算、到 ${info.termEnd} 止，这一年的宝宝生肖属${info.animal}。${copy.intro || info.note}`}
       />
-
-      {mismatched ? (
-        <div className="mt-6 rounded-2xl bg-vermilion-wash p-4">
-          <p className="text-xs leading-relaxed text-vermilion-deep text-pretty">
-            这里是按年份打开的第 {info.year} 年生肖页：该年的生肖是{info.ganzhi}
-            {info.animal}年（属{info.animal}），与地址里的属{slug}页不是同一年。属{info.animal}
-            的常青页见
-            <Link
-              to="/zodiac/$animal"
-              params={{ animal: info.slug }}
-              className="mx-1 font-medium underline underline-offset-2"
-            >
-              属{info.animal}取名
-            </Link>
-            。
-          </p>
-        </div>
-      ) : null}
 
       <div className="mt-7 rounded-2xl bg-white p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -239,11 +242,17 @@ function ZodiacYearPage() {
         />
       </section>
 
-      <section className="mt-11">
-        <h2 className={sectionTitle}>同一生肖的其它年份（每 12 年一轮）</h2>
-        <ZodiacYearNav rounds={years} slug={info.slug} nextRound={nextRound} />
-        <ZodiacNotice />
-      </section>
+      {showRoundsNav ? (
+        <section className="mt-11">
+          <h2 className={sectionTitle}>同一生肖的其它年份（每 12 年一轮）</h2>
+          <ZodiacYearNav rounds={windowRounds} slug={info.slug} nextRound={windowNext} />
+          <ZodiacNotice />
+        </section>
+      ) : (
+        <section className="mt-11">
+          <ZodiacNotice />
+        </section>
+      )}
     </AppShell>
   );
 }

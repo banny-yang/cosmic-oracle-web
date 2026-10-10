@@ -208,16 +208,7 @@ function ZodiacHub() {
                   看 {overview.next.info.year} {overview.next.info.ganzhi}
                   {overview.next.info.animal}年页 →
                 </Link>
-                <Link
-                  to="/zodiac/$animal/$year"
-                  params={{
-                    animal: overview.next.info.slug,
-                    year: String(overview.next.nextRound),
-                  }}
-                  className={ghostCls}
-                >
-                  下一轮 {overview.next.nextRound} 年 →
-                </Link>
+                {/* 下一轮（次年+12）在收录窗口外（其年份页 301 回常青页），不再外链 */}
               </div>
             </div>
           </section>

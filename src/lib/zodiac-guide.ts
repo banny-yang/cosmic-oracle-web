@@ -180,6 +180,23 @@ export function animalPath(slug: string): string {
   return `/zodiac/${slug}`;
 }
 
+/**
+ * 生肖年份页收录窗口：过去十年 + 当前年 + 次年（共 12 年，十二生肖各一轮）。
+ * 覆盖已出生 0-10 岁孩子、当年新生儿与备孕次年；窗口随日历年自动流转
+ * （每年 1 月–立春前仍在值的上一年生肖年也天然在窗内）。窗口外年份页
+ * 301 到生肖常青页（见 /zodiac/$animal/$year loader），不再 404。
+ */
+export function zodiacYearWindow(now: Date = new Date()): { start: number; end: number } {
+  const y = now.getFullYear();
+  return { start: y - 10, end: y + 1 };
+}
+
+/** 年份是否在生肖年份页收录窗口内。 */
+export function inZodiacYearWindow(year: number, now: Date = new Date()): boolean {
+  const win = zodiacYearWindow(now);
+  return year >= win.start && year <= win.end;
+}
+
 /** 生肖年份页路径（年份唯一确定生肖，故 slug 取该年的生肖）。 */
 export function animalYearPath(slug: string, year: number): string {
   return `/zodiac/${slug}/${year}`;

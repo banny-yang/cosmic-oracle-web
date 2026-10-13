@@ -3,6 +3,8 @@ import "./lib/error-capture";
 import { pushUrlToBaidu } from "./lib/baidu-push";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { feedXml } from "./lib/feed-xml";
+import { llmsFullTxt, llmsTxt } from "./lib/llms-content";
 import { sitemapXml } from "./lib/sitemap-xml";
 
 type ServerEntry = {
@@ -112,6 +114,38 @@ export default {
           status: 200,
           headers: {
             "content-type": "application/xml; charset=utf-8",
+            "cache-control": "public, max-age=3600",
+          },
+        });
+      }
+
+      // llms 动态输出（站点说明 + 已发布文章逐篇清单）；public/llms*.txt 已移除，
+      // 接口失败时渲染器内部回落纯静态内容
+      if (new URL(request.url).pathname === "/llms.txt") {
+        return new Response(await llmsTxt(), {
+          status: 200,
+          headers: {
+            "content-type": "text/plain; charset=utf-8",
+            "cache-control": "public, max-age=3600",
+          },
+        });
+      }
+      if (new URL(request.url).pathname === "/llms-full.txt") {
+        return new Response(await llmsFullTxt(), {
+          status: 200,
+          headers: {
+            "content-type": "text/plain; charset=utf-8",
+            "cache-control": "public, max-age=3600",
+          },
+        });
+      }
+
+      // RSS feed（深度洞察最新 20 篇），聚合器与 AI 管道的发现入口之一
+      if (new URL(request.url).pathname === "/feed.xml") {
+        return new Response(await feedXml(), {
+          status: 200,
+          headers: {
+            "content-type": "application/rss+xml; charset=utf-8",
             "cache-control": "public, max-age=3600",
           },
         });

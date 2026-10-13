@@ -45,6 +45,7 @@ export const STATIC_SITEMAP: SitemapEntry[] = [
   { loc: "https://name.duimai.net/liuyao", lastmod: "2026-09-20", changefreq: "weekly" },
   { loc: "https://name.duimai.net/qimen", lastmod: "2026-09-20", changefreq: "weekly" },
   { loc: "https://name.duimai.net/names", lastmod: "2026-09-25", changefreq: "daily" },
+  { loc: "https://name.duimai.net/articles", lastmod: "2026-10-13", changefreq: "daily" },
   { loc: "https://name.duimai.net/privacy", lastmod: "2026-09-20", changefreq: "weekly" },
   { loc: "https://name.duimai.net/terms", lastmod: "2026-09-20", changefreq: "weekly" },
   { loc: "https://name.duimai.net/help", lastmod: "2026-09-20", changefreq: "weekly" },

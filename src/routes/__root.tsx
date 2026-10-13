@@ -120,6 +120,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      /* RSS 自动发现：聚合器与 AI 内容管道经此找到深度洞察 feed */
+      {
+        rel: "alternate",
+        type: "application/rss+xml",
+        title: "对脉名鉴 · 深度洞察",
+        href: `${SITE_URL}/feed.xml`,
+      },
       /* 毛笔字体预载：首屏印章字与标题直接渲染，Core Web Vitals */
       {
         rel: "preload",

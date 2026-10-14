@@ -6,6 +6,7 @@ import { buildNameEvalPoster } from "@/components/name-eval-poster";
 import { ReportPosterButtons } from "@/components/report-poster";
 import { FeatureClosed } from "@/components/feature-closed";
 import { post } from "@/lib/api";
+import { getAuthUser } from "@/lib/auth";
 import { track } from "@/lib/track";
 import { useFeatureEnabled } from "@/lib/use-feature-price";
 
@@ -113,7 +114,7 @@ export const Route = createFileRoute("/name-eval")({
       {
         name: "description",
         content:
-          "免费名字评测：从典籍文化度、音律平仄度、意象寓意度、避俗辨识度、字形书写美五个维度评分，附判词、典籍出处原句、声调与方言结论，可选看用字五行与三才构成。无需登录。",
+          "免费名字评测：从典籍文化度、音律平仄度、意象寓意度、避俗辨识度、字形书写美五个维度评分，附判词、典籍出处原句、声调与方言结论，可选看用字五行与三才构成。登录后免费使用。",
       },
       { property: "og:url", content: "https://name.duimai.net/name-eval" },
       { property: "og:title", content: "名字评测 · 对脉名鉴" },
@@ -209,6 +210,11 @@ function NameEval() {
   const optsRef = useRef({ w: true, s: true });
 
   const evaluate = useCallback(async (x: string, m: string) => {
+    // 评测需登录（2026-10-14 口径调整）：未登录跳登录页，回跳地址带当前参数（深链不丢）
+    if (!getAuthUser()?.userId) {
+      window.location.href = "/login?redirect=" + encodeURIComponent(location.pathname + location.search);
+      return;
+    }
     const { w, s } = optsRef.current;
     const key = `${x}|${m}|${w ? 1 : 0}${s ? 1 : 0}`;
     if (askedRef.current === key) return;
@@ -221,7 +227,7 @@ function NameEval() {
       const r = await post<NameEvalResult>(
         "/api/v1/name-eval/analyze",
         { surname: x, givenName: m, wuxingAnalysis: w, sanCaiAnalysis: s },
-        { auth: false, timeoutMs: 30000 },
+        { auth: true, timeoutMs: 30000 },
       );
       setResult(r);
       track("name_eval_done", { grade: r.grade, score: Math.round(r.score) });
@@ -280,7 +286,7 @@ function NameEval() {
       ) : (
         <>
           <PageHeader
-            eyebrow="免费 · 无需登录"
+            eyebrow="免费 · 登录后使用"
             title="名字评测"
             desc="基于语言学、声律学与典籍文本的汉字美学评测：五维评分、判词、出处原句与声调方言结论。不测吉凶、不算八字；五行与三才为可选的传统构成说明。"
           />

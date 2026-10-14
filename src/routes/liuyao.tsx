@@ -168,7 +168,9 @@ function CoinArena({
             className="absolute"
             style={{ left: s.left, top: s.top, ["--sx" as string]: s.sx }}
           >
-            {/* 币体：飞行层（coin-fly）+ 双面（coin-face） */}
+            {/* 币体：飞行层（coin-fly）+ 双面（coin-face）。
+                落定态必须保留 preserve-3d：扁平父级下背面按自身变换被判「背对观众」剔除，
+                阴面币会只剩镜像的阳面（表现为三枚币落定后全是一面） */}
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <span
                 key={`${generation}-${i}`}
@@ -176,7 +178,7 @@ function CoinArena({
                   "relative block size-16",
                   rolling
                     ? ["coin-fly", face === 1 ? "coin-fly-yang" : "coin-fly-yin"].join(" ")
-                    : "block",
+                    : "block [transform-style:preserve-3d]",
                 ].join(" ")}
                 style={
                   rolling
@@ -184,7 +186,9 @@ function CoinArena({
                     : { transform: face === 1 ? undefined : "rotateY(180deg)" }
                 }
               >
-                <CoinFace yang />
+                <span className="coin-face absolute inset-0">
+                  <CoinFace yang />
+                </span>
                 <span className="coin-face absolute inset-0 [transform:rotateY(180deg)]">
                   <CoinFace yang={false} />
                 </span>

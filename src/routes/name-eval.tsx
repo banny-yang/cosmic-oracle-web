@@ -55,14 +55,16 @@ type Upgrade = {
   cta: string | null;
   ctaPath: string | null;
 };
-/** 五行区块：逐字五行 + 分布 + 相邻关系（后端开关关闭时不返回）。 */
+/** 五行区块：逐字五行 + 分布 + 相邻关系；score 为搭配计分（开启时按规则权重并入总分）。 */
 type Wuxing = {
+  score: number;
   rows: { ch: string; element: string; role: string }[];
   summary: string;
   notes: string[];
 };
-/** 三才区块：天/人/地三格数与三才配置（后端开关关闭时不返回）。 */
+/** 三才区块：天/人/地三格数与三才配置；score 为配置计分（并入规则同 Wuxing）。 */
 type SanCai = {
+  score: number;
   tianGe: number;
   renGe: number;
   diGe: number;
@@ -239,16 +241,15 @@ function NameEval() {
     }
   }, []);
 
-  /** 切分析开关：已出结果时只切显隐；打开而结果里缺这块（提交时是关的）才自动补算一次。 */
+  /** 切分析开关：五行/三才计分随开关并入总分，所以已出结果时任何开关变化都重新评测
+      （askedRef 的 key 含开关位，回切同组合不会重复请求）。 */
   const toggleBlock = (which: "w" | "s") => {
     const next = { ...optsRef.current, [which]: !optsRef.current[which] };
     optsRef.current = next;
     if (which === "w") setWuxingOn(next.w);
     else setSanCaiOn(next.s);
     if (!result) return;
-    if ((next.w && !result.wuxing) || (next.s && !result.sanCai)) {
-      void evaluate(result.surname, result.givenName);
-    }
+    void evaluate(result.surname, result.givenName);
   };
 
   // 分享链接 / 刷新：URL 带姓与名就直接复算（引擎确定性，同 URL 同结果）
@@ -443,7 +444,7 @@ function ResultBlocks({
         <h2 className="text-sm font-semibold text-ink">五维拆解</h2>
         <p className="mt-1 text-[11px] text-ink-soft">
           权重合计 100：典籍文化度 30 · 音律平仄度 25 · 意象寓意度 20 · 避俗辨识度 15 · 字形书写美
-          10
+          10；开启五行/三才分析时，其搭配计分另按规则权重并入总分（见各区块）
         </p>
         <div className="mt-3 text-vermilion-deep">
           <DimRadar
@@ -590,9 +591,14 @@ function ResultBlocks({
 
       {showWuxing && r.wuxing ? (
         <section className="ink-in d2 mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
-          <h2 className="text-sm font-semibold text-ink">五行分析</h2>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+            五行分析
+            <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-semibold text-vermilion-deep">
+              搭配计分 {r.wuxing.score}
+            </span>
+          </h2>
           <p className="mt-1 text-[11px] text-ink-soft">
-            用字五行与姓氏搭配的构成说明（不含吉凶测算与命理推断）
+            用字五行与姓氏搭配的关系说明；搭配计分随本分析开启计入总分（不含吉凶测算与命理推断）
           </p>
           <ul className="mt-3 flex flex-wrap gap-2">
             {r.wuxing.rows.map((row, i) => (
@@ -625,9 +631,14 @@ function ResultBlocks({
 
       {showSanCai && r.sanCai ? (
         <section className="ink-in d2 mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
-          <h2 className="text-sm font-semibold text-ink">三才分析</h2>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+            三才分析
+            <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-semibold text-vermilion-deep">
+              配置计分 {r.sanCai.score}
+            </span>
+          </h2>
           <p className="mt-1 text-[11px] text-ink-soft">
-            按康熙笔画取天/人/地三格与三才配置的构成说明（不含吉凶测算与命理推断）
+            按康熙笔画取天/人/地三格与三才配置的关系说明；配置计分随本分析开启计入总分（不含吉凶测算与命理推断）
           </p>
           <ul className="mt-3 grid grid-cols-3 gap-2">
             {[

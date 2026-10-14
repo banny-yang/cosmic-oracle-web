@@ -1,3 +1,5 @@
+# AI 摘要 / 全文（llms.txt 约定）：https://name.duimai.net/llms.txt · 完整版 https://name.duimai.net/llms-full.txt
+# 深度洞察文章订阅（RSS）：https://name.duimai.net/feed.xml
 # 欢迎搜索引擎与 AI 爬虫（GEO 策略：允许被 AI 答案引擎引用）
 User-agent: *
 Allow: /

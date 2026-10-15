@@ -12,14 +12,16 @@ import { fetchFestival, type FestivalHeroData } from "@/lib/festival";
 import { track } from "@/lib/track";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
-/** 小程序码旁的操作提示：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+/** 小程序码旁的操作提示：按打开环境分档（小程序内长按 / 微信内长按 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT_TIER: Record<QrEnv, string> = {
   mp: "长按二维码充值",
+  "wechat-h5": "长按二维码充值",
   mobile: "扫一扫二维码充值",
   desktop: "手机微信扫码充值",
 };
 const QR_HINT_BOTTOM: Record<QrEnv, string> = {
   mp: "长按二维码 · 进入小程序",
+  "wechat-h5": "长按二维码 · 进入小程序",
   mobile: "微信扫码 · 进入小程序",
   desktop: "手机微信扫码 · 进入小程序",
 };

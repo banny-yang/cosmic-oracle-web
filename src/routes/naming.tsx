@@ -47,14 +47,16 @@ import { refreshBalance } from "@/lib/balance";
 import { setupWxShare } from "@/lib/wx-share";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
-/** 小程序码旁的提示：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+/** 小程序码旁的提示：按打开环境分档（小程序内长按 / 微信内直付或长按 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT_LOCK: Record<QrEnv, string> = {
   mp: "长按二维码进入「对脉名鉴」小程序充值",
+  "wechat-h5": "长按二维码前往小程序充值，或下拉使用「微信内直接支付」",
   mobile: "微信扫码进入「对脉名鉴」小程序充值",
   desktop: "请用手机微信扫码进入「对脉名鉴」小程序充值",
 };
 const QR_HINT_BUY: Record<QrEnv, string> = {
   mp: "或长按二维码直购（点数充入当前账号，到账自动提示）",
+  "wechat-h5": "微信内可直接支付（点数充入当前账号）；也可长按二维码前往小程序直购",
   mobile: "或微信扫码直购（点数充入当前账号，到账自动提示）",
   desktop: "或手机微信扫码直购（点数充入当前账号，到账自动提示）",
 };

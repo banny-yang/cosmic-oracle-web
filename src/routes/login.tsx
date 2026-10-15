@@ -4,12 +4,14 @@ import { AppShell, PageHeader, Field, inputCls, BreadcrumbJsonLd } from "@/compo
 import { get, post, apiBase } from "@/lib/api";
 import { saveAuth } from "@/lib/auth";
 import { loginAttribution } from "@/lib/attribution";
+import { startOfficialOAuth } from "@/lib/official-oauth";
 import { track } from "@/lib/track";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
-/** 扫码登录引导语：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+/** 扫码登录引导语：按打开环境分档（小程序内长按 / 微信内一键登录 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT: Record<QrEnv, string> = {
   mp: "长按二维码 → 前往小程序确认登录，确认后自动返回本页。",
+  "wechat-h5": "点击下方按钮即可微信一键登录（无需扫码）；也可长按下方二维码前往小程序确认。",
   mobile: "使用微信扫描二维码，在「对脉名鉴」小程序里确认后自动返回。",
   desktop: "请用手机微信扫一扫二维码，在「对脉名鉴」小程序里确认后自动返回。",
 };
@@ -54,6 +56,9 @@ function LoginPage() {
   const [ticket, setTicket] = useState("");
   const [qrErr, setQrErr] = useState("");
   const [qrWaiting, setQrWaiting] = useState(false);
+  // 微信内一键登录（服务号 OAuth 静默授权）
+  const [oauthBusy, setOauthBusy] = useState(false);
+  const [oauthErr, setOauthErr] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadCaptcha = useCallback(() => {
@@ -71,6 +76,11 @@ function LoginPage() {
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [loadCaptcha]);
+
+  /* 微信浏览器内默认落在「微信登录」页签：一键登录比扫码顺手（小程序/其它环境不变） */
+  useEffect(() => {
+    if (qrEnv === "wechat-h5") setTab("wechat");
+  }, [qrEnv]);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -133,6 +143,17 @@ function LoginPage() {
       startPoll(r.ticket);
     } catch (e) {
       setQrErr(e instanceof Error ? e.message : "二维码生成失败，请重试");
+    }
+  };
+
+  const wechatOneClickLogin = async () => {
+    setOauthErr("");
+    setOauthBusy(true);
+    track("login_oauth_start", {});
+    const ok = await startOfficialOAuth(redirect);
+    if (!ok) {
+      setOauthBusy(false);
+      setOauthErr("未能发起微信授权（公众号未配置或不在微信内），请改用二维码登录");
     }
   };
 
@@ -262,6 +283,19 @@ function LoginPage() {
       ) : (
         <section className="ink-in d2 mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
           <p className="text-sm leading-relaxed text-ink-soft">{QR_HINT[qrEnv]}</p>
+          {qrEnv === "wechat-h5" ? (
+            <div className="mt-4">
+              <button
+                disabled={oauthBusy}
+                onClick={wechatOneClickLogin}
+                className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] disabled:opacity-60"
+              >
+                {oauthBusy ? "跳转微信授权中…" : "微信一键登录"}
+              </button>
+              {oauthErr ? <p className="mt-2 text-xs text-vermilion-deep">{oauthErr}</p> : null}
+              <p className="mt-3 text-center text-[11px] text-ink-faint">或长按下方二维码，在小程序内确认登录</p>
+            </div>
+          ) : null}
           <div className="mt-4 flex flex-col items-center gap-3">
             {qr ? (
               <img src={qr} alt="微信登录二维码" className="w-48 rounded-xl" />

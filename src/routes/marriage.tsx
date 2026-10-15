@@ -19,9 +19,10 @@ import { post } from "@/lib/api";
 import { refreshBalance } from "@/lib/balance";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
-/** 解锁遮罩里二维码旁的提示：按打开环境分档（小程序内长按 / 手机浏览器扫码 / 电脑用手机扫） */
+/** 解锁遮罩里二维码旁的提示：按打开环境分档（小程序内长按 / 微信内长按 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT: Record<QrEnv, string> = {
   mp: "长按二维码充值，到账后回到本页解锁",
+  "wechat-h5": "长按二维码前往小程序充值，到账后回到本页解锁",
   mobile: "微信扫码充值，到账后回到本页解锁",
   desktop: "手机微信扫码充值，到账后回到本页解锁",
 };

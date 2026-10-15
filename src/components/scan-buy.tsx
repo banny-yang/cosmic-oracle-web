@@ -1,6 +1,7 @@
 /**
  * 扫码直购面板：选点数档 → 微信扫该档位专属码（bindUserId+productId 随票据携带）→
  * 小程序内支付入账当前登录账号 → 本面板轮询余额，到账自动提示。
+ * 微信浏览器内（wechat-h5）优先走服务号 JSAPI 直付，无需跳小程序。
  *
  * 套餐（畅享卡）不在小程序售卖，故本面板只列点数档：小程序端不再出现套餐类文案。
  */
@@ -8,13 +9,17 @@ import { useEffect, useRef, useState } from "react";
 import { post, get } from "@/lib/api";
 import { getAuthUser } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
+import { startOfficialOAuth } from "@/lib/official-oauth";
 import { track } from "@/lib/track";
+import { invokeWxJsapiPay } from "@/lib/wx-pay";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 import { openMpRechargePage } from "@/lib/mp-bridge";
 
-/** 二维码旁的操作提示：按打开环境分档（小程序内点按钮 / 手机浏览器扫码 / 电脑用手机扫） */
+/** 二维码旁的操作提示：按打开环境分档（小程序内点按钮 / 微信内直付 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT: Record<QrEnv, string> = {
   mp: "点击下方按钮 → 在小程序内完成支付（也可长按左侧二维码），点数直接充入当前账号，到账后这里会自动提示。",
+  "wechat-h5":
+    "可直接用上方按钮微信支付，点数充入当前账号；也可长按左侧二维码前往小程序支付，到账后这里会自动提示。",
   mobile:
     "微信扫一扫左侧二维码支付所选点数（也可在微信里点下方链接），点数直接充入当前账号，到账后这里会自动提示。",
   desktop:
@@ -50,10 +55,61 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
   const [mpHint, setMpHint] = useState("");
   // 到账提示：点数增加（只提示一次，随后停止轮询）
   const [arrived, setArrived] = useState<number | null>(null);
+  // 微信内直付（服务号 JSAPI）状态
+  const [payBusy, setPayBusy] = useState(false);
+  const [payHint, setPayHint] = useState("");
   const baseBalanceRef = useRef<number | null>(null);
 
   const list = skus ?? [];
   const pointTiers = list.filter((s) => !s.kind || s.kind === "POINTS");
+  const selectedSku = pointTiers.find((s) => s.productId === selected);
+
+  /**
+   * 微信内直付：未登录先静默 OAuth 取 openid（回本页），已登录则下单 → WeixinJSBridge 拉起收银台。
+   * 成功后余额轮询兜底确认到账（与扫码购买同一套感知逻辑）。
+   */
+  const wechatH5Pay = async () => {
+    setPayHint("");
+    if (!selected) return;
+    if (!getAuthUser()?.userId) {
+      const ok = await startOfficialOAuth(window.location.pathname + window.location.search);
+      if (!ok) setPayHint("请先在微信内打开本页并允许授权，或使用下方二维码支付");
+      return;
+    }
+    setPayBusy(true);
+    track("h5_pay_start", { productId: selected, where: trackWhere });
+    try {
+      const res = await post<{ orderId?: string; payParams?: Record<string, string> }>(
+        "/api/v1/payments/client/wechat/h5-order",
+        { productId: selected },
+      );
+      if (!res?.payParams) throw new Error("下单失败，请稍后重试");
+      const result = await invokeWxJsapiPay(res.payParams as never);
+      if (result === "ok") {
+        setPayHint("支付成功，点数到账确认中…");
+        track("h5_pay_success", { productId: selected, orderId: res.orderId });
+        const b = await refreshBalance();
+        if (b != null && baseBalanceRef.current != null && b > baseBalanceRef.current) {
+          setArrived(b - baseBalanceRef.current);
+        }
+        if (b != null) baseBalanceRef.current = b;
+      } else if (result === "cancel") {
+        setPayHint("已取消支付，可重新发起");
+      } else {
+        setPayHint("未能唤起微信支付，请长按下方二维码在小程序内支付");
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "下单失败，请稍后重试";
+      setPayHint(msg);
+      track("h5_pay_fail", { productId: selected });
+      // 老账号可能从未走过公众号授权（无 official_open_id）：静默补一次授权回来即可支付
+      if (msg.includes("公众号支付身份")) {
+        await startOfficialOAuth(window.location.pathname + window.location.search);
+      }
+    } finally {
+      setPayBusy(false);
+    }
+  };
 
   useEffect(() => {
     get<Sku[]>("/api/v1/payments/client/virtual/products", {}, { auth: false, timeoutMs: 6000 })
@@ -140,6 +196,26 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
               </button>
             ))}
           </div>
+        </div>
+      ) : null}
+
+      {qrEnv === "wechat-h5" ? (
+        <div className="rounded-xl bg-paper-3 p-3">
+          <button
+            type="button"
+            disabled={payBusy || !selected}
+            onClick={wechatH5Pay}
+            className="w-full rounded-lg bg-vermilion py-2.5 text-sm font-semibold text-paper transition-transform active:scale-[0.99] disabled:opacity-60"
+          >
+            {payBusy
+              ? "发起支付中…"
+              : selectedSku
+                ? `微信内直接支付 ¥${yuan(selectedSku.priceFen)}`
+                : "微信内直接支付"}
+          </button>
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
+            {payHint || "无需跳转小程序：一路微信支付，点数直接充入当前账号。"}
+          </p>
         </div>
       ) : null}
 

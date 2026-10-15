@@ -1,17 +1,18 @@
 /**
- * 二维码提示文案的「打开环境」判定：小程序 web-view / 手机浏览器 / 电脑浏览器。
- * 同一张小程序码在三种环境里的正确操作不同（长按识别 / 微信扫一扫 / 手机微信扫一扫），
- * 由调用方按环境取对应文案。
+ * 二维码提示文案的「打开环境」判定：小程序 web-view / 微信浏览器 H5 / 手机浏览器 / 电脑浏览器。
+ * 同一张小程序码在几种环境里的正确操作不同（长按识别 / 微信扫一扫 / 手机微信扫一扫），
+ * 由调用方按环境取对应文案；微信浏览器 H5 可走服务号 OAuth + JSAPI 直付，不必扫码。
  */
 import { useEffect, useState } from "react";
 import { detectMiniProgramEnv, isMiniProgramEnv } from "@/lib/mp-bridge";
 
-export type QrEnv = "mp" | "mobile" | "desktop";
+export type QrEnv = "mp" | "wechat-h5" | "mobile" | "desktop";
 
-/** 同步判定：小程序标识 → 手机 UA → 电脑 */
+/** 同步判定：小程序标识 → 微信浏览器 → 手机 UA → 电脑 */
 export function detectQrEnv(): QrEnv {
   if (typeof navigator === "undefined") return "desktop";
   if (isMiniProgramEnv()) return "mp";
+  if (/MicroMessenger/i.test(navigator.userAgent)) return "wechat-h5";
   return /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop";
 }
 

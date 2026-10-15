@@ -10,9 +10,10 @@ import { getUnreadCount } from "@/lib/ops";
 import { detectMiniProgramEnv, openMpProfilePage } from "@/lib/mp-bridge";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
-/** 充值与解锁的引导语：按打开环境分档（小程序内点按钮 / 手机浏览器扫码 / 电脑用手机扫） */
+/** 充值与解锁的引导语：按打开环境分档（小程序内点按钮 / 微信内直付 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT: Record<QrEnv, string> = {
   mp: "选择点数后点「去小程序支付」在小程序内完成（也可长按二维码），点数直接充入当前账号，到账后自动提示。",
+  "wechat-h5": "选择点数后可微信内直接支付，点数直接充入当前账号，到账后自动提示；也可长按二维码前往小程序支付。",
   mobile: "选择点数后微信扫码支付，点数直接充入当前账号，到账后自动提示。",
   desktop: "选择点数后用手机微信扫一扫二维码支付，点数直接充入当前账号，到账后自动提示。",
 };

@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { redeemMpHandoffTicket } from "../lib/mp-handoff";
+import { redeemOfficialOAuthLogin } from "../lib/official-oauth";
 import { runtimeApiBaseUrl } from "../lib/runtime-env";
 import { syncToutiaoPush } from "../lib/toutiao-push";
 
@@ -192,6 +193,11 @@ function RootComponent() {
   /* 小程序 web-view 带来的 mp_ticket（若有）：换本站登录态，免二次登录（见 lib/mp-handoff） */
   useEffect(() => {
     void redeemMpHandoffTicket();
+  }, []);
+
+  /* 微信内网页授权的 code（若有）：静默换本站登录态（见 lib/official-oauth） */
+  useEffect(() => {
+    void redeemOfficialOAuthLogin();
   }, []);
 
   return (

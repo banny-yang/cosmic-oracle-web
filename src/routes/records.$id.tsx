@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { get } from "@/lib/api";
 import { getToken, getAuthUser } from "@/lib/auth";
+import { setupWxShare } from "@/lib/wx-share";
 import { TriangleAlert } from "lucide-react";
 
 export const Route = createFileRoute("/records/$id")({
@@ -79,6 +80,15 @@ function RecordDetail() {
         setLoaded(true);
       });
   }, [id]);
+
+  /* 微信内分享卡片：本页是私密页（noindex），卡片链接改指公开起名页，把好友引到可体验的入口 */
+  useEffect(() => {
+    setupWxShare({
+      title: `${surname || "宝宝"}的起名方案 · 对脉名鉴`,
+      desc: "AI 六道工序为宝宝取一个好名字：字义出处、五格数理、五行补缺逐一把关。",
+      link: "https://name.duimai.net/naming",
+    });
+  }, [surname]);
 
   return (
     <AppShell>

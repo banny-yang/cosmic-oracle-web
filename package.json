@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "build:prod": "vite build",
+    "build:deploy": "node scripts/build-deploy.mjs",
     "start": "node .output/server/index.mjs"
   },
   "overrides": {

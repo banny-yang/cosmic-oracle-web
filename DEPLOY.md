@@ -54,8 +54,11 @@ CORS_ALLOWED_ORIGIN_PATTERNS=http://name.duimai.net,http://localhost:*
   —— `/count.js`、`/count` → 3002（同域埋点），其余 → 3003。当前仅 80；
   **DNS 解析生效后在宝塔为该站点申请 SSL 并强制 https**。
 - **后端 CORS**：服务器 `.env` 的 `CORS_ALLOWED_ORIGIN_PATTERNS` 已追加 `http(s)://name.duimai.net`。
-- **构建命令**：`VITE_API_BASE_URL=https://server.oracle.duimai.net VITE_TRACKING=1 npm run build`
-  （漏掉 env 会回落 127.0.0.1；`VITE_TRACKING=1` 启用统计脚本注入）。
+- **构建命令**：`VITE_API_BASE_URL=https://server.oracle.duimai.net VITE_TRACKING=1 npm run build:deploy`
+  （漏掉 env 会回落 127.0.0.1；`VITE_TRACKING=1` 启用统计脚本注入。
+  `build:deploy` 比 `npm run build` 多做一步：保留上一版 `.output/public/assets`——
+  客户端/微信 WebView 缓存的旧 HTML 引用的旧哈希资源在部署后仍可命中，不再 404；
+  carryover 只保留一版，存于 `.assets-carryover/`，下次构建自动淘汰更早的）。
 - **发布流程**：`docker build -t cosmic-oracle/web:1.0.0 . && docker save | gzip` → scp → 服务器 `docker load`
   → `docker compose up -d web`。
 - **待办**：`www` 子域名 A 记录 → 8.140.52.138（域名商）；宝塔签 SSL；

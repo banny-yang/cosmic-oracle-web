@@ -79,6 +79,24 @@ function assetNotFound(): Response {
   });
 }
 
+// robots.txt 里 Disallow 的私有路径（与 public/robots.txt 清单一致）：这些页面是站内工具页，
+// 对用户返回 200 属正常（直接访问/回跳需要），但响应头补 X-Robots-Tag: noindex——
+// 忽略 robots 的爬虫（AI 答案引擎常如此）抓到也不进索引。
+const PRIVATE_PATH = /^\/(login|me|records|vote)(\/|$)/;
+
+function withNoindexHeader(response: Response, request: Request): Response {
+  if (!PRIVATE_PATH.test(new URL(request.url).pathname)) return response;
+  if (response.headers.has("x-robots-tag")) return response;
+
+  const headers = new Headers(response.headers);
+  headers.set("x-robots-tag", "noindex, nofollow");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
@@ -157,7 +175,7 @@ export default {
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response);
       notifyBaiduOfPage(normalized, request);
-      return withDocumentCacheHeaders(normalized, request);
+      return withDocumentCacheHeaders(withNoindexHeader(normalized, request), request);
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

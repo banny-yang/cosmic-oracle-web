@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-route
 import { AppShell, PageHeader, BreadcrumbJsonLd } from "@/components/app-shell";
 import {
   ZodiacCharChips,
+  ZodiacFaqList,
   ZodiacNameGrid,
   ZodiacNamingCta,
   ZodiacNotice,
@@ -139,6 +140,26 @@ function ZodiacYearPage() {
   const windowNext = nextRound && inZodiacYearWindow(nextRound) ? nextRound : null;
   const showRoundsNav = windowRounds.length + (windowNext ? 1 : 0) >= 2;
 
+  // 年份速览：从 info 计算的结论型 Q&A（随年份自动流转），可见列表与 FAQPage 结构化数据共用
+  const yearFaq = [
+    {
+      q: `${info.year} 年是生肖属什么年？`,
+      a: `${info.year} 年的生肖年为${info.ganzhi}${info.animal}年：自 ${info.termStart}（立春）起算、到 ${info.termEnd} 止，这段时间出生的宝宝生肖属${info.animal}。`,
+    },
+    {
+      q: `${info.year} 年立春前出生的宝宝属什么？`,
+      a: `生肖年以立春为界：${info.year} 年立春交节在 ${info.termStartAt}，此前出生仍属上一生肖年，此后才进入${info.ganzhi}${info.animal}年；立春当天出生的宝宝建议以排盘得到的实际年柱为准。`,
+    },
+    {
+      q: `${info.year} 年宝宝取名宜用哪些部首？`,
+      a: `按传统取名习俗，属${info.animal}宜用 ${info.preferredRadicals.join("、")} 等部首，忌用 ${info.forbiddenRadicals.join("、")} 等部首；本页推荐的名字均命中宜用部首、且未用忌用部首。`,
+    },
+    {
+      q: `${info.year} 年的干支与五行是什么？`,
+      a: `${info.year} 年为${info.ganzhi}年：年干${info.stemCn}属${info.stemElement}，年支${info.branchCn}属${info.branchElement}。干支每 60 年一个循环，同一个生肖每 12 年轮一回。`,
+    },
+  ];
+
   return (
     <AppShell>
       <BreadcrumbJsonLd
@@ -164,6 +185,20 @@ function ZodiacYearPage() {
           }}
         />
       ) : null}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: yearFaq.map((f) => ({
+              "@type": "Question",
+              name: f.q,
+              acceptedAnswer: { "@type": "Answer", text: f.a },
+            })),
+          }).replace(/</g, "\\u003c"),
+        }}
+      />
 
       <PageHeader
         eyebrow={`生肖取名 · ${info.branchCn}${info.animal}`}
@@ -238,8 +273,19 @@ function ZodiacYearPage() {
         </p>
         <ZodiacNameGrid
           names={names}
-          empty="这个名字列表暂时为空：可先到名字灵感库按生肖筛，或直接起名。"
+          empty="这个名字列表暂时为空：可先到灵感库按生肖筛，或直接起名。"
         />
+      </section>
+
+      <section className="mt-11">
+        <h2 className={sectionTitle}>
+          {info.year} {info.ganzhi}
+          {info.animal}年速览
+        </h2>
+        <p className="mt-1.5 text-xs text-ink-faint">
+          这一年的生肖与立春口径、干支五行与宜忌部首的常见问答。
+        </p>
+        <ZodiacFaqList items={yearFaq} />
       </section>
 
       {showRoundsNav ? (

@@ -834,6 +834,30 @@ function genderSuffix(g: "M" | "F" | "U"): string {
   return g === "M" ? "男宝宝" : g === "F" ? "女宝宝" : "宝宝";
 }
 
+/** 常见问题：页面可见列表与 FAQPage 结构化数据共用（GEO：AI 答案引擎可直接引用）。 */
+const NAMING_FAQ = [
+  {
+    q: "对脉名鉴的宝宝起名是怎么起的？",
+    a: "填写姓氏、生辰与用字偏好后，引擎按生辰喜用与五格数理，从 118 万句典籍语料中为宝宝拟名：一次生成 10 个带推荐指数与出处原句的候选名，并给出逐字详解、五维评分与方言谐音检测结果，供全家挑选用。",
+  },
+  {
+    q: "起名会考虑宝宝的生辰八字吗？",
+    a: "会。以出生时间排出四柱、取五行喜用作为优选依据；结果作为起名参考与文化审美说明，不构成任何预测性建议。",
+  },
+  {
+    q: "名字的出处来自哪里？",
+    a: "站内典藏 118 万句典籍语料，覆盖诗经、楚辞、唐诗宋词、论语、史记等；每个名字标注出处原句与释义，还可以筛选只看有典籍出处或已核验的名字。",
+  },
+  {
+    q: "起名收费吗？不充值能用吗？",
+    a: "每份起名按点位计费；未充值新用户首次免费体验，可先看到 3 个精选名字与它们的评分，充值后解锁全部候选名与完整报告。",
+  },
+  {
+    q: "能和家人朋友一起挑名字吗？",
+    a: "可以。收藏 3～5 个候选名后即可发起亲友投票并生成投票页，亲友无需注册就能参与，结果实时汇总，方便全家一起定名。",
+  },
+];
+
 function Naming() {
   // 环 1：灵感库跳转带入的四信号（prefer/src/g/cat）
   const preferSearch = Route.useSearch();
@@ -1452,6 +1476,21 @@ function Naming() {
         <FeatureClosed title="宝宝起名" />
       ) : (
         <>
+          {/* 常见问题：FAQPage 结构化（与页末可见列表同一份数据，GEO 可引用） */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: NAMING_FAQ.map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+              }).replace(/</g, "\\u003c"),
+            }}
+          />
           <PageHeader
             eyebrow={`功能一 · 消耗 ${namingPrice} 点`}
             title="宝宝起名"
@@ -3099,6 +3138,19 @@ function Naming() {
               <p className="rounded-xl bg-paper px-5 py-3 text-sm text-ink">海报生成中…</p>
             </div>
           ) : null}
+
+          {/* 常见问题（与 head 的 FAQPage 结构化数据同一份，GEO 可引用） */}
+          <section className="ink-in mt-11">
+            <h2 className="text-lg font-semibold tracking-wide">常见问题</h2>
+            <div className="mt-4 space-y-3">
+              {NAMING_FAQ.map((f) => (
+                <div key={f.q} className="rounded-2xl bg-white p-5">
+                  <p className="text-sm font-semibold">{f.q}</p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink-soft text-pretty">{f.a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         </>
       )}
     </AppShell>

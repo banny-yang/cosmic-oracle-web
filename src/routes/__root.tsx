@@ -128,6 +128,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         title: "对脉名鉴 · 深度洞察",
         href: `${SITE_URL}/feed.xml`,
       },
+      /* llms.txt 自动发现：AI 摘要引擎按 llms.txt 约定经此找到站点说明与文章清单 */
+      {
+        rel: "alternate",
+        type: "text/plain",
+        title: "对脉名鉴 · AI 摘要（llms.txt）",
+        href: `${SITE_URL}/llms.txt`,
+      },
       /* 毛笔字体预载：首屏印章字与标题直接渲染，Core Web Vitals */
       {
         rel: "preload",

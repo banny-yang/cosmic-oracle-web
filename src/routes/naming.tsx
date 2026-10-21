@@ -66,6 +66,7 @@ import {
   Volume2,
   Image as ImageIcon,
   Heart,
+  ThumbsDown,
   X,
   TriangleAlert,
   Scale,
@@ -193,6 +194,12 @@ interface NameCardData {
     forbidden?: string[];
     note?: string;
   } | null;
+  /** 出处形态（后端 traceKind）：word/comma/line/couplet，AI 卡由服务端按名反查候选集回填。 */
+  traceKind?: string;
+  /** 高频重名指数（后端 commonNameIndex：95/85/70 三档估算榜单；缺省=不在榜单）。 */
+  commonNameIndex?: number | null;
+  /** 越出服务端候选字池（candidate_set=soft 时的放行标记，排序已降权）。 */
+  outOfPool?: boolean;
 }
 
 /** 起名畅享权益状态（GET /api/v1/naming/pass/status）。 */
@@ -218,8 +225,16 @@ function pingzeOf(tones?: number[]): string {
   return (tones || []).map((t) => (t === 1 || t === 2 ? "平" : "仄")).join("");
 }
 
+/** 出处形态四型：word 原词 / comma 跨逗号 / line 同句 / couplet 上下句（与后端 traceKind 同值域）。 */
+const CITE_FORMS = ["word", "comma", "line", "couplet"] as const;
+type CiteForm = (typeof CITE_FORMS)[number];
+
+function isCiteForm(value?: string): value is CiteForm {
+  return !!value && (CITE_FORMS as readonly string[]).includes(value);
+}
+
 /** 三型典源启发式：名字两字在引文中相邻=典故原词 / 同句=同句取字 / 分居句读两侧=上下句取字；无法判定返回 null。 */
-function citationFormOf(citation: string, chars: string[]): "word" | "line" | "couplet" | null {
+function citationFormOf(citation: string, chars: string[]): CiteForm | null {
   const [c1, c2] = chars;
   if (!citation || !c1 || !c2) return null;
   const i1 = citation.indexOf(c1);
@@ -232,8 +247,14 @@ function citationFormOf(citation: string, chars: string[]): "word" | "line" | "c
   return samePart ? "line" : "couplet";
 }
 
-const FORM_BADGE: Record<"word" | "line" | "couplet", { text: string; hint: string }> = {
+/** 后端 traceKind 精确优先，老卡（无该字段）回落启发式。 */
+function resolveCitationForm(traceKind: string | undefined, citation: string, chars: string[]) {
+  return isCiteForm(traceKind) ? traceKind : citationFormOf(citation, chars);
+}
+
+const FORM_BADGE: Record<CiteForm, { text: string; hint: string }> = {
   word: { text: "典故原词 · 连续成词", hint: "名字两字为典籍原文中的连续词（如 望舒）" },
+  comma: { text: "同句取字 · 跨逗号", hint: "名字两字同出一句原文的相邻分句（跨逗号处取字）" },
   line: { text: "同句取字 · 一句成典", hint: "一字上半句、一字下半句，同出一句原文" },
   couplet: { text: "上下句取字 · 集联成典", hint: "一字取上句、一字取下句，同出一联" },
 };
@@ -1380,6 +1401,19 @@ function Naming() {
     }
   };
 
+  // 「不感兴趣」（V191）：本地移除该卡并并入排除名单；登录态同步落库，之后所有设备生成都排除
+  const dislikeName = (name: string) => {
+    setCards((prev) => prev.filter((c) => c.name !== name));
+    if (!excludeRef.current.includes(name)) {
+      excludeRef.current = [...excludeRef.current, name];
+      setExcludedCount(excludeRef.current.length);
+    }
+    track("name_dislike", { name });
+    if (shortlistServer) {
+      post("/api/v1/naming/dislike", { name }).catch(() => undefined);
+    }
+  };
+
   // 微信内分享卡片
   useEffect(() => {
     setupWxShare({
@@ -1450,6 +1484,7 @@ function Naming() {
       }}
       onShortlist={() => toggleShortlist(c.name)}
       shortlisted={shortlist.includes(c.name)}
+      onDislike={() => dislikeName(c.name)}
       onPoster={async () => {
         setPosterBusy(true);
         try {
@@ -3170,6 +3205,7 @@ function NameCardView({
   onPoster,
   onShortlist,
   shortlisted = false,
+  onDislike,
   xiPrimary,
 }: {
   c: NameCardData;
@@ -3184,6 +3220,7 @@ function NameCardView({
   onPoster?: () => void;
   onShortlist?: () => void;
   shortlisted?: boolean;
+  onDislike?: () => void;
   xiPrimary?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -3339,6 +3376,14 @@ function NameCardView({
             {c.twinGender === "M" ? "男宝" : c.twinGender === "F" ? "女宝" : "宝宝"}
           </span>
         ) : null}
+        {c.commonNameIndex ? (
+          <span
+            title={`该名在近年常见名榜单中的估算档位（${c.commonNameIndex}）：同班同学撞名概率偏高。基于公开榜单估算，非户籍重名实数`}
+            className="rounded bg-paper-3 px-1.5 py-0.5 text-[10px] text-ink-soft"
+          >
+            高频重名 · 估算
+          </span>
+        ) : null}
         {(c.clicheChars?.length || c.rareChars?.length) ? (
           <span className="flex flex-wrap items-center gap-1">
             {c.clicheChars?.length ? (
@@ -3456,7 +3501,8 @@ function NameCardView({
               const citeText = Array.from(new Set(c.charCitations!.map((cc) => cc.citation))).join(
                 "",
               );
-              const form = citationFormOf(
+              const form = resolveCitationForm(
+                c.traceKind,
                 citeText,
                 c.charCitations!.map((cc) => cc.char),
               );
@@ -3771,6 +3817,18 @@ function NameCardView({
           >
             {open ? "收起详情 ▴" : "评分 · 数理 · 字义 ▾"}
           </button>
+          {onDislike ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDislike();
+              }}
+              title="不感兴趣：从本批移除，之后生成也不再推荐这个名"
+              className="grid size-8 place-items-center rounded-full bg-paper-3 text-ink-faint transition-colors hover:bg-paper-3 hover:text-ink-soft"
+            >
+              <ThumbsDown aria-hidden className="size-4" />
+            </button>
+          ) : null}
         </div>
       </div>
 

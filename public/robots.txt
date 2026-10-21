@@ -1,81 +1,14 @@
 # AI 摘要 / 全文（llms.txt 约定）：https://name.duimai.net/llms.txt · 完整版 https://name.duimai.net/llms-full.txt
 # 深度洞察文章订阅（RSS）：https://name.duimai.net/feed.xml
-# 欢迎搜索引擎与 AI 爬虫（GEO 策略：允许被 AI 答案引擎引用）
+# 欢迎搜索引擎与 AI 爬虫（GEO 策略：允许被 AI 答案引擎引用）。
+# 所有引擎共用一条 User-agent: * 规则：Allow: / 即全部欢迎；私有工具页不进索引，
+# /api/ 接口路径一并排除（抓取预算应花在内容页，不花在埋点接口上）。
 User-agent: *
 Allow: /
+Disallow: /api/
 Disallow: /me
 Disallow: /records
 Disallow: /vote/
 Disallow: /login
-
-# 通用搜索
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-# 国内搜索与 AI（豆包/文心/夸克/搜狗/360/华为花瓣）
-User-agent: Bytespider
-Allow: /
-
-User-agent: Baiduspider
-Allow: /
-
-User-agent: YisouSpider
-Allow: /
-
-User-agent: Sogou spider
-Allow: /
-
-User-agent: 360Spider
-Allow: /
-
-User-agent: PetalBot
-Allow: /
-
-# 国际 AI 答案引擎
-User-agent: GPTBot
-Allow: /
-
-User-agent: OAI-SearchBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
-
-User-agent: Applebot
-Allow: /
-
-User-agent: Applebot-Extended
-Allow: /
-
-User-agent: Amazonbot
-Allow: /
-
-User-agent: CCBot
-Allow: /
-
-User-agent: meta-externalagent
-Allow: /
-
-User-agent: DuckAssistBot
-Allow: /
-
-# 社交预览
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
 
 Sitemap: https://name.duimai.net/sitemap.xml

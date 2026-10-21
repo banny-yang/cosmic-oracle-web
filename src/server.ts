@@ -79,7 +79,8 @@ function assetNotFound(): Response {
   });
 }
 
-// robots.txt 里 Disallow 的私有路径（与 public/robots.txt 清单一致）：这些页面是站内工具页，
+// robots.txt 里 Disallow 的私有页面路径（与 public/robots.txt 清单一致；/api/ 由 robots 单独排除）：
+// 这些页面是站内工具页，
 // 对用户返回 200 属正常（直接访问/回跳需要），但响应头补 X-Robots-Tag: noindex——
 // 忽略 robots 的爬虫（AI 答案引擎常如此）抓到也不进索引。
 const PRIVATE_PATH = /^\/(login|me|records|vote)(\/|$)/;

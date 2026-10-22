@@ -72,7 +72,27 @@ type SanCai = {
   summary: string;
   notes: string[];
 };
-type NameEvalResult = {
+/**
+ * 接口响应（与后端 NameEvalResponse 一致）。2026-10-22 双态口径：未登录返回精简预览
+ * （preview=true，判词/五维/出处等明细字段后端不下发），登录返回完整结果。
+ * 以 preview 字面量做可辨识联合，完整态的明细字段保持必填，渲染处无需判空。
+ */
+type EvalPreview = {
+  preview: true;
+  surname: string;
+  givenName: string;
+  fullName: string;
+  score: number;
+  grade: string;
+  gradeLabel: string;
+  disclaimer: string;
+  /** 高频重名估算档位（95/85/70，null/缺省=不在榜单。公开榜单估算，非户籍重名实数）。 */
+  commonNameIndex?: number | null;
+  /** 一句亮点（五维最高维度摘要，服务端现算）。 */
+  highlight?: string | null;
+};
+type EvalFull = {
+  preview?: false;
   surname: string;
   givenName: string;
   fullName: string;
@@ -90,7 +110,10 @@ type NameEvalResult = {
   share: Share;
   upgrade: Upgrade;
   disclaimer: string;
+  /** 高频重名估算档位（95/85/70，null/缺省=不在榜单。公开榜单估算，非户籍重名实数）。 */
+  commonNameIndex?: number | null;
 };
+type NameEvalResult = EvalPreview | EvalFull;
 
 /** 提交与深链解析时清洗：姓 1-2 字（复姓可含间隔号），名 1-3 字。输入期不调用（见输入框处说明）。 */
 const cleanSurname = (v: string) => v.replace(/[^\u4e00-\u9fa5·]/g, "").slice(0, 2);
@@ -116,7 +139,7 @@ export const Route = createFileRoute("/name-eval")({
       {
         name: "description",
         content:
-          "免费名字评测：从典籍文化度、音律平仄度、意象寓意度、避俗辨识度、字形书写美五个维度评分，附判词、典籍出处原句、声调与方言结论，可选看用字五行与三才构成。登录后免费使用。",
+          "免费名字评测：从典籍文化度、音律平仄度、意象寓意度、避俗辨识度、字形书写美五个维度评分，附判词、典籍出处原句、声调与方言结论，可选看用字五行与三才构成。免登录即可试评，登录查看完整五维报告。",
       },
       { property: "og:url", content: "https://name.duimai.net/name-eval" },
       { property: "og:title", content: "名字评测 · 对脉名鉴" },
@@ -212,27 +235,26 @@ function NameEval() {
   const optsRef = useRef({ w: true, s: true });
 
   const evaluate = useCallback(async (x: string, m: string) => {
-    // 评测需登录（2026-10-14 口径调整）：未登录跳登录页，回跳地址带当前参数（深链不丢）
-    if (!getAuthUser()?.userId) {
-      window.location.href = "/login?redirect=" + encodeURIComponent(location.pathname + location.search);
-      return;
-    }
     const { w, s } = optsRef.current;
-    const key = `${x}|${m}|${w ? 1 : 0}${s ? 1 : 0}`;
+    // 匿名试评（2026-10-22 口径）：未登录不拦，后端返回精简预览（总分/等级/亮点/重名估算）；
+    // 登录态并入 key，登录后同名字能从预览升级为完整结果
+    const logged = !!getAuthUser()?.userId;
+    const key = `${x}|${m}|${w ? 1 : 0}${s ? 1 : 0}|${logged ? 1 : 0}`;
     if (askedRef.current === key) return;
     askedRef.current = key;
     setLoading(true);
     setError("");
     try {
-      // 判词润色最坏 20 秒（Dify 超时后回落到本地模板）：客户端预算必须大于该上限，
-      // 否则服务端仍在计算时就被中断，用户看到的是「网络连接失败」而不是回落判词
+      // 登录态判词润色最坏 20 秒（Dify 超时后回落到本地模板）：客户端预算必须大于该上限，
+      // 否则服务端仍在计算时就被中断，用户看到的是「网络连接失败」而不是回落判词；
+      // 匿名预览服务端跳过润色（纯规则引擎，毫秒级），预算收紧到 8 秒
       const r = await post<NameEvalResult>(
         "/api/v1/name-eval/analyze",
         { surname: x, givenName: m, wuxingAnalysis: w, sanCaiAnalysis: s },
-        { auth: true, timeoutMs: 30000 },
+        { auth: logged, timeoutMs: logged ? 30000 : 8000 },
       );
       setResult(r);
-      track("name_eval_done", { grade: r.grade, score: Math.round(r.score) });
+      track("name_eval_done", { grade: r.grade, score: Math.round(r.score), preview: !!r.preview });
     } catch (e) {
       askedRef.current = "";
       setError((e as Error).message || "评测失败，请稍后再试");
@@ -287,9 +309,9 @@ function NameEval() {
       ) : (
         <>
           <PageHeader
-            eyebrow="免费 · 登录后使用"
+            eyebrow="免费 · 免登录可试评，登录看完整报告"
             title="名字评测"
-            desc="基于语言学、声律学与典籍文本的汉字美学评测：五维评分、判词、出处原句与声调方言结论。不测吉凶、不算八字；五行与三才为可选的传统构成说明。"
+            desc="基于语言学、声律学与典籍文本的汉字美学评测：五维评分、判词、出处原句与声调方言结论。不测吉凶、不算八字；五行与三才为可选的传统构成说明。未登录可先看总分与亮点，登录后免费查看完整五维报告。"
           />
 
           <section className="ink-in d1 mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
@@ -357,6 +379,21 @@ function NameEval() {
   );
 }
 
+/** 高频重名估算 chip：与取名结果（naming.tsx）同款口径——后端公开榜单三档估算，非户籍重名实数。 */
+function CommonNameChip({ idx }: { idx: number }) {
+  return (
+    <span
+      title={`该名在近年常见名榜单中的估算档位（${idx}）：同班同学撞名概率偏高。基于公开榜单估算，非户籍重名实数`}
+      className="rounded bg-paper-3 px-1.5 py-0.5 text-[10px] text-ink-soft"
+    >
+      高频重名 · 估算
+    </span>
+  );
+}
+
+/** 五维名（预览态锁定条用：明细不下发，名字是固定口径）。 */
+const DIMENSION_NAMES = ["典籍文化度", "音律平仄度", "意象寓意度", "避俗辨识度", "字形书写美"];
+
 function ResultBlocks({
   r,
   showWuxing,
@@ -366,6 +403,72 @@ function ResultBlocks({
   showWuxing: boolean;
   showSanCai: boolean;
 }) {
+  // 匿名试评的精简卡：总分/等级/一句亮点/重名估算可见，五维与全部明细登录后解锁
+  // （明细在后端已裁掉，这里没有任何可解锁渲染的数据）
+  if (r.preview) {
+    return (
+      <>
+        <section className="ink-in d1 mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+          <div className="flex items-center gap-5">
+            <div className="shrink-0 text-vermilion-deep">
+              <ScoreRing score={r.score} />
+            </div>
+            <div className="min-w-0">
+              <p className="font-seal text-3xl leading-none text-ink">{r.fullName}</p>
+              <p className="mt-2 inline-flex items-center rounded-full bg-vermilion px-2.5 py-1 text-[11px] font-semibold text-paper">
+                {r.grade} 级 · {r.gradeLabel}
+              </p>
+              {r.commonNameIndex ? (
+                <p className="mt-2">
+                  <CommonNameChip idx={r.commonNameIndex} />
+                </p>
+              ) : null}
+            </div>
+          </div>
+          {r.highlight ? (
+            <p className="mt-4 rounded-xl bg-paper-3 p-3.5 text-sm leading-relaxed text-ink">
+              {r.highlight}
+            </p>
+          ) : null}
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {DIMENSION_NAMES.map((name) => (
+              <li
+                key={name}
+                className="rounded-full bg-paper-3 px-2.5 py-1 text-[11px] text-ink-faint"
+              >
+                🔒 {name}
+              </li>
+            ))}
+          </ul>
+          <a
+            href={
+              "/login?redirect=" + encodeURIComponent(`/name-eval?x=${r.surname}&m=${r.givenName}`)
+            }
+            onClick={() => track("name_eval_login_cta")}
+            className="mt-4 block w-full rounded-xl bg-vermilion py-3 text-center text-sm font-semibold text-paper transition-transform active:scale-[0.99]"
+          >
+            登录看完整五维报告 · 免费
+          </a>
+          <Link
+            to="/naming"
+            search={{
+              x: r.surname,
+              prefer: undefined,
+              src: undefined,
+              g: undefined,
+              cat: undefined,
+              book: undefined,
+            }}
+            className="mt-2 block w-full rounded-xl bg-paper-3 py-2.5 text-center text-xs font-medium text-ink transition-transform active:scale-[0.99]"
+          >
+            用「{r.surname}」姓 AI 取名，首次免费看 3 个精选名 →
+          </Link>
+        </section>
+        <p className="mt-5 text-center text-[11px] leading-relaxed text-ink-soft">{r.disclaimer}</p>
+      </>
+    );
+  }
+
   const toneBits = [
     r.phonetics.pattern ? `平仄 ${r.phonetics.pattern}` : "",
     r.phonetics.tier ?? "",
@@ -383,6 +486,11 @@ function ResultBlocks({
             <p className="mt-2 inline-flex items-center rounded-full bg-vermilion px-2.5 py-1 text-[11px] font-semibold text-paper">
               {r.grade} 级 · {r.gradeLabel}
             </p>
+            {r.commonNameIndex ? (
+              <p className="mt-2">
+                <CommonNameChip idx={r.commonNameIndex} />
+              </p>
+            ) : null}
             {toneBits.length ? (
               <p className="mt-2 text-xs text-ink-soft">{toneBits.join(" · ")}</p>
             ) : null}
@@ -581,7 +689,9 @@ function ResultBlocks({
                   <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">{c.meaning}</p>
                 ) : null}
                 {c.source ? (
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-ink-soft">出处：{c.source}</p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-ink-soft">
+                    出处：{c.source}
+                  </p>
                 ) : null}
               </div>
             </li>
@@ -602,10 +712,7 @@ function ResultBlocks({
           </p>
           <ul className="mt-3 flex flex-wrap gap-2">
             {r.wuxing.rows.map((row, i) => (
-              <li
-                key={`${row.role}-${row.ch}-${i}`}
-                className="rounded-xl bg-paper-3 px-3 py-2"
-              >
+              <li key={`${row.role}-${row.ch}-${i}`} className="rounded-xl bg-paper-3 px-3 py-2">
                 <span className="font-seal text-xl leading-none text-ink">{row.ch}</span>
                 <span className="ml-2 text-xs font-semibold text-vermilion-deep">
                   {row.element}

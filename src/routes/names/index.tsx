@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { AppShell, PageHeader, BreadcrumbJsonLd, inputCls } from "@/components/app-shell";
 import { get } from "@/lib/api";
 import { sourceToCategory, categoryToExpectation } from "@/lib/gallery-signals";
+import { TOP_SURNAMES, ZODIAC_SLUGS } from "@/lib/surnames";
 
-export const Route = createFileRoute("/names")({
+export const Route = createFileRoute("/names/")({
   component: NameGallery,
   // 环 1 回流深链：起名结果「灵感库同款」徽章带 ?keyword=名字 直达搜索；生肖页深链带 ?zodiac=ma
   validateSearch: (
@@ -111,6 +112,24 @@ const ELEMENT_ZH: Record<string, string> = {
 const chips = "rounded-full px-3 py-1.5 text-xs font-medium transition-colors";
 const chipOn = "bg-ink text-paper";
 const chipOff = "bg-paper-3 text-ink-soft hover:bg-vermilion-wash";
+
+/** 当前生肖年（按公历年粗算，仅用于导航入口；各页面口径仍以立春为准，见 /zodiac）。 */
+const ZODIAC_BY_YEAR = [
+  "shu",
+  "niu",
+  "hu",
+  "tu",
+  "long",
+  "she",
+  "ma",
+  "yang",
+  "hou",
+  "ji",
+  "gou",
+  "zhu",
+];
+const currentZodiacSlug = ZODIAC_BY_YEAR[(new Date().getFullYear() - 4) % 12] ?? "ma";
+const currentZodiacAnimal = ZODIAC_SLUGS.find((z) => z.slug === currentZodiacSlug)?.animal ?? "";
 
 function NameGallery() {
   const keywordSearch = Route.useSearch();
@@ -288,6 +307,46 @@ function NameGallery() {
         ) : null}
       </section>
 
+      {/* 姓氏×生肖取名入口：长尾页（/names/{姓氏拼音}/{生肖slug}）的站内发现路径之一 */}
+      <section className="mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-sm font-semibold">姓氏 × 生肖取名</p>
+          <Link
+            to="/zodiac"
+            className="text-xs text-vermilion-deep transition-colors hover:text-vermilion"
+          >
+            生肖取名总览 →
+          </Link>
+        </div>
+        <p className="mt-1 text-xs text-ink-faint">
+          按姓氏与宝宝生肖查宜用部首、男宝女宝名字推荐与常见问答（当前生肖年：
+          {currentZodiacAnimal}
+          年）。
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {TOP_SURNAMES.slice(0, 6).map((s) => (
+            <Link
+              key={s.pinyin}
+              to="/names/$surname/$animal"
+              params={{ surname: s.pinyin, animal: currentZodiacSlug }}
+              className={[chips, chipOff].join(" ")}
+            >
+              {s.han}姓{currentZodiacAnimal}年
+            </Link>
+          ))}
+          {ZODIAC_SLUGS.map((z) => (
+            <Link
+              key={z.slug}
+              to="/names/$surname/$animal"
+              params={{ surname: TOP_SURNAMES[0]!.pinyin, animal: z.slug }}
+              className={[chips, chipOff].join(" ")}
+            >
+              {TOP_SURNAMES[0]!.han}姓{z.animal}年
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* 名字卡网格 */}
       {loading ? (
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -309,7 +368,10 @@ function NameGallery() {
                   ? n.elements.split(",")
                   : [];
               return (
-                <div key={n.word} className="rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+                <div
+                  key={n.word}
+                  className="rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-seal text-3xl leading-none text-ink">{n.word}</p>

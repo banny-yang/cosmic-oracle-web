@@ -17,6 +17,7 @@ import {
   lookupZodiacGuide,
   type ZodiacGuideView,
 } from "@/lib/zodiac-guide";
+import { TOP_SURNAMES } from "@/lib/surnames";
 
 /** 生肖常青页：/zodiac/{slug}（slug 为服务端下发的拼音，如 ma）。 */
 export const Route = createFileRoute("/zodiac/$animal/")({
@@ -187,6 +188,29 @@ function ZodiacAnimalPage() {
           names={names}
           empty="这个名字列表暂时为空：可先到名字灵感库按生肖筛，或直接起名。"
         />
+      </section>
+
+      {/* 姓氏×生肖长尾页入口：热门姓氏的属{info.animal}取名（/names/{拼音}/{生肖}） */}
+      <section className="mt-11">
+        <h2 className={sectionTitle}>热门姓氏的属{info.animal}取名</h2>
+        <p className="mt-1.5 text-xs text-ink-faint">
+          按姓氏看宜用部首与男宝女宝名字推荐，共 50 个大姓均有属{info.animal}专页。
+        </p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          {TOP_SURNAMES.slice(0, 5).map((s) => (
+            <Link
+              key={s.pinyin}
+              to="/names/$surname/$animal"
+              params={{ surname: s.pinyin, animal: info.slug }}
+              className={ghostCls}
+            >
+              {s.han}姓{info.animal}年取名
+            </Link>
+          ))}
+          <Link to="/names" search={{ zodiac: info.slug }} className={ghostCls}>
+            更多姓氏 →
+          </Link>
+        </div>
       </section>
 
       {showRoundsNav ? (

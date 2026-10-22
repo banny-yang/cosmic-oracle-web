@@ -39,6 +39,7 @@ export const LLMS_TXT = `# 对脉名鉴（name.duimai.net）
 - [名字灵感库](https://name.duimai.net/names): 2900 多个典籍好名字，按风格/性别/五行/关键词筛选，每个名字附拼音、出处原句与意蕴
 - [典籍馆](https://name.duimai.net/dianji): 系统收录的典籍书目，逐部列出简介、原文句数与代表名句，可指定其中一部为宝宝取名
 - [生肖取名](https://name.duimai.net/zodiac): 十二生肖的传统用字宜忌与逐年流转（生肖年以立春为界），可看当年与次年、以及任意年份的干支与宜用部首；每个生肖另有常青页（/zodiac/ma、/zodiac/she 等）与年份页（/zodiac/ma/2026）；年份页覆盖过去十年、当前年与次年（十二生肖各一轮），更远年份会转到对应生肖常青页
+- [姓氏×生肖取名](https://name.duimai.net/names/wang/ma): 50 个大姓 × 十二生肖的取名专页（如「王姓马年」「陈姓蛇年」），每页含该生肖宜用部首、男宝女宝名字推荐（附拼音、典籍出处原句与意蕴）与常见问答
 - [深度洞察](https://name.duimai.net/articles): 编辑组中长文栏目——生肖宜忌、字辈传承、诗词典籍出处、五行用字、双胞胎取名思路等，逐篇清单见下
 ${ARTICLES_PLACEHOLDER}
 ## 常见引用问题
@@ -95,6 +96,7 @@ export const LLMS_FULL_TXT = `# 对脉名鉴 · 完整信息（llms-full.txt）
 - 典籍馆 https://name.duimai.net/dianji ：系统收录的典籍书目，逐部列出简介、原文句数与代表名句，可指定其中一部为宝宝取名
 - 深度洞察 https://name.duimai.net/articles ：编辑组文章栏目（生肖宜忌/字辈/诗词典籍/五行/双胞胎等长文），文章页 /articles/{slug} 全文直出，相关工具入口见文内链接
 - 生肖取名 https://name.duimai.net/zodiac ：十二生肖用字宜忌总览（含当年与次年）；每个生肖有常青页（/zodiac/ma、/zodiac/she 等）与年份页（/zodiac/ma/2026）；年份页覆盖过去十年、当前年与次年（十二生肖各一轮），更远年份会转到对应生肖常青页
+- 姓氏×生肖取名 https://name.duimai.net/names/wang/ma ：50 个大姓 × 十二生肖（共 600 页）的取名专页，路径 /names/{姓氏拼音}/{生肖slug}（如 /names/wang/ma 为「王姓马年」）；每页含该生肖宜用部首、男宝女宝名字推荐（拼音、出处原句、意蕴）与常见问答
 - 姓名共振 https://name.duimai.net/analysis ：姓名数理与五行分析
 - 缘分伴侣匹配 https://name.duimai.net/personality ：两人缘分与性格契合度
 - 八字合婚 https://name.duimai.net/marriage ：两人八字契合度分析

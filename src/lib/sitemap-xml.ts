@@ -7,6 +7,16 @@
  */
 import { runtimeApiBaseUrl } from "./runtime-env";
 import { STATIC_SITEMAP, type SitemapEntry } from "./sitemap-static";
+import { TOP_SURNAMES, ZODIAC_SLUGS } from "./surnames";
+
+/** 姓氏×生肖取名长尾页（50 姓 × 12 生肖 = 600 条，SSR 动态渲染，路由校验同源常量）。 */
+const SURNAME_ZODIAC_SITEMAP: SitemapEntry[] = TOP_SURNAMES.flatMap((s) =>
+  ZODIAC_SLUGS.map((z) => ({
+    loc: `https://name.duimai.net/names/${s.pinyin}/${z.slug}`,
+    lastmod: "2026-10-22",
+    changefreq: "monthly",
+  })),
+);
 
 interface ArticleSitemapRow {
   slug: string;
@@ -34,7 +44,7 @@ async function fetchArticleEntries(): Promise<SitemapEntry[]> {
       };
     });
   } catch {
-    return [];   // 接口不可用：回落静态清单
+    return []; // 接口不可用：回落静态清单
   } finally {
     clearTimeout(timer);
   }
@@ -48,7 +58,7 @@ function entryXml(e: SitemapEntry): string {
 
 export async function sitemapXml(): Promise<string> {
   const articles = await fetchArticleEntries();
-  const entries = [...STATIC_SITEMAP, ...articles];
+  const entries = [...STATIC_SITEMAP, ...SURNAME_ZODIAC_SITEMAP, ...articles];
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',

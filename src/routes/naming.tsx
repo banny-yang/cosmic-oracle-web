@@ -38,6 +38,7 @@ import {
 import { BirthplaceInput } from "@/components/birthplace-input";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { track } from "@/lib/track";
+import { isSrcTag, shareSrcTag, withSrc } from "@/lib/src-tag";
 import { post, get, api } from "@/lib/api";
 import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
@@ -96,7 +97,10 @@ export const Route = createFileRoute("/naming")({
         ? search["x"].replace(/[^\u4e00-\u9fa5·]/g, "").slice(0, 2)
         : undefined,
     src:
-      typeof search["src"] === "string" && CATEGORY_LABELS[search["src"]]
+      // 典籍类目码（深链预选）与外链渠道标记（wx/baidu/…）共用 src，
+      // 两者都要原样留在 search 里：返回 undefined 会让路由把整条 ?src= 规范化掉（307）
+      typeof search["src"] === "string" &&
+      (CATEGORY_LABELS[search["src"]] || isSrcTag(search["src"]))
         ? search["src"]
         : undefined,
     g: search["g"] === "M" || search["g"] === "F" ? search["g"] : undefined,
@@ -369,6 +373,8 @@ interface Diagnosis {
   lockedCount?: number;
   climateElement?: string;
   unlockTip?: string;
+  /** 免登录预览（后端 /naming/preview）：true 时 cards 仅 3 张方向卡，完整报告需登录生成。 */
+  preview?: boolean;
   pillars?: string[];
   poolSize?: number;
   wuxingMatch?: boolean;
@@ -1072,6 +1078,7 @@ function Naming() {
       .catch(() => {});
   };
   useEffect(() => {
+    setLoggedIn(!!getToken());
     refreshPass();
     refreshBalance();
   }, []);
@@ -1120,6 +1127,8 @@ function Naming() {
 
   // 生成状态
   const [loading, setLoading] = useState(false);
+  /** 登录态（仅客户端判定，避免 SSR 首屏与客户端不一致）：匿名提交走 /preview 免登录预览 */
+  const [loggedIn, setLoggedIn] = useState(false);
   // 等待期阶段文案：后端各阶段（排盘/典籍/五行/校验）耗时不定，前端按经验节奏轮换提示
   const [stageLabel, setStageLabel] = useState("");
   const [stageIdx, setStageIdx] = useState(-1);
@@ -1207,6 +1216,51 @@ function Naming() {
     ...(exclude.length ? { excludeNames: exclude } : {}),
   });
 
+  /** 登录墙 CTA：带上当前地址（含偏好信号）回跳，登录后不用重填表单。 */
+  const goLogin = () => {
+    track("login_cta_click", { surface: "naming_preview" });
+    const back = location.pathname + location.search;
+    location.href = "/login?redirect=" + encodeURIComponent(back);
+  };
+
+  /** 免登录预览：只跑确定性路径（不调 AI、不扣点、不写历史），给 3 张方向卡 + 登录 CTA。
+   *  文案与后端 PREVIEW_UNLOCK_TIP 一致，避免两端口径漂移。 */
+  const startPreview = async (exclude: boolean) => {
+    setFormErr("");
+    excludeRef.current = exclude ? [...excludeRef.current, ...cards.map((c) => c.name)] : [];
+    setExcludedCount(excludeRef.current.length);
+    setCards([]);
+    setDiagnosis(null);
+    setError("");
+    setAiDelta("");
+    setStageIdx(-1);
+    setVoteLink("");
+    setPicking(false);
+    setPicked([]);
+    setLoading(true);
+    setStageLabel("正在核对喜用神与典籍方向…");
+    setSlowHint(false);
+    track("naming_preview_start", { regen: exclude });
+    try {
+      const r = await post<Diagnosis>(
+        "/api/v1/naming/preview",
+        body(exclude ? excludeRef.current : []),
+        { auth: false, timeoutMs: 60_000 },
+      );
+      const list = r?.cards || [];
+      setCards(list);
+      setDiagnosis({ ...r, aiGenerated: false, preview: true });
+      track("naming_preview_done", { cards: list.length });
+      // 登录墙曝光：预览已渲染、CTA 已可见（用于评估「免登录预览 → 注册」转化）
+      track("login_wall_view", { surface: "naming_preview", cards: list.length });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "预览生成失败，请重试");
+      track("naming_preview_error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const start = (exclude: boolean) => {
     setFormErr("");
     if (!surname.trim()) return setFormErr("请输入宝宝姓氏");
@@ -1219,7 +1273,7 @@ function Naming() {
       return setFormErr(born ? "请选择出生日期" : "请选择预产期");
     }
     if (!getToken()) {
-      location.href = "/login?redirect=" + encodeURIComponent("/naming");
+      void startPreview(exclude);
       return;
     }
     if (exclude) {
@@ -1322,7 +1376,7 @@ function Naming() {
         candidateNames: picked,
       });
       if (res?.sessionToken) {
-        setVoteLink(`${location.origin}/vote/${res.sessionToken}`);
+        setVoteLink(withSrc(`${location.origin}/vote/${res.sessionToken}`, "vote"));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "投票创建失败");
@@ -1425,6 +1479,7 @@ function Naming() {
   const hasResult = cards.length > 0;
   const zodiacInfo = diagnosis?.zodiacGuide ?? null;
   const trial = !!diagnosis?.freeTrial && (diagnosis?.lockedCount ?? 0) > 0;
+  const preview = !!diagnosis?.preview;
   const birthLabel = manualMode
     ? `按喜用神（${manualElements.map((e) => ELEMENT_ZH[e] || e).join("·") || "未选"}）`
     : born
@@ -1435,16 +1490,19 @@ function Naming() {
   const infoLine = `${surname}家${genderSuffix(gender)} · ${birthLabel}${placeName ? ` · ${shortPlace(placeName)}` : ""}`;
   const sortedCards = useMemo(() => {
     let list = [...cards];
-    if (onlyCited) list = list.filter((c) => !!c.classicCitation);
-    if (onlyVerified) list = list.filter((c) => c.classicVerified === true);
-    if (hideHotRare) list = list.filter((c) => !c.clicheChars?.length && !c.rareChars?.length);
+    // 预览卡的典籍/解读字段被后端裁剪，筛选项在预览态一律不生效（否则会把 3 张全筛掉）
+    if (!preview) {
+      if (onlyCited) list = list.filter((c) => !!c.classicCitation);
+      if (onlyVerified) list = list.filter((c) => c.classicVerified === true);
+      if (hideHotRare) list = list.filter((c) => !c.clicheChars?.length && !c.rareChars?.length);
+    }
     if (sortKey !== "recommend") {
       list.sort(
         (a, b) => (b.dimensionScores?.[sortKey] ?? 0) - (a.dimensionScores?.[sortKey] ?? 0),
       );
     }
     return list;
-  }, [cards, sortKey, onlyCited, onlyVerified, hideHotRare]);
+  }, [cards, sortKey, onlyCited, onlyVerified, hideHotRare, preview]);
   /** 双胞胎分组：按 pairIndex 聚对（同对同典），未配对的孤卡单独渲染。 */
   const twinPairs = useMemo(() => {
     if (!twin) return null;
@@ -1501,6 +1559,7 @@ function Naming() {
       onPick={() => togglePick(c.name)}
       wuge={wugeCells(c)}
       xiPrimary={diagnosis?.primaryElement}
+      preview={preview}
     />
   );
 
@@ -2283,10 +2342,14 @@ function Naming() {
                   onClick={handleStartClick}
                   className="hidden w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] md:block"
                 >
-                  开始推演 · 消耗 {namingPrice} 点 · 单次 10 个名字
+                  {loggedIn
+                    ? `开始推演 · 消耗 ${namingPrice} 点 · 单次 10 个名字`
+                    : "免费预览 3 个方向 · 登录看完整方案"}
                 </button>
                 <p className="hidden text-center text-[11px] text-ink-soft md:block">
-                  未充值新用户首次免费体验（展示 3 个精选名字，充值解锁全部）
+                  {loggedIn
+                    ? "未充值新用户首次免费体验（展示 3 个精选名字，充值解锁全部）"
+                    : "免登录先看 3 个方向预览，不扣点；登录后出完整 10 个方案（新用户首次体验仍免费展示 3 张）"}
                 </p>
               </section>
 
@@ -2296,10 +2359,12 @@ function Naming() {
                   onClick={handleStartClick}
                   className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]"
                 >
-                  开始推演 · 消耗 {namingPrice} 点 · 单次 10 个名字
+                  {loggedIn
+                    ? `开始推演 · 消耗 ${namingPrice} 点 · 单次 10 个名字`
+                    : "免费预览 3 个方向 · 登录看完整方案"}
                 </button>
                 <p className="mt-1 text-center text-[10px] text-ink-soft">
-                  未充值新用户首次免费（展示 3 个精选名字）
+                  {loggedIn ? "未充值新用户首次免费（展示 3 个精选名字）" : "免登录可先预览 3 个方向，不扣点"}
                 </p>
               </div>
               <div className="h-24 md:hidden" />
@@ -2609,59 +2674,69 @@ function Naming() {
                   ) : null}
                 </h2>
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {trial ? (
+                  {preview ? (
+                    <span className="rounded-full bg-vermilion-wash px-2.5 py-1 font-medium text-vermilion-deep">
+                      免登录预览 · {cards.length} 个方向
+                    </span>
+                  ) : trial ? (
                     <span className="rounded-full bg-vermilion-wash px-2.5 py-1 font-medium text-vermilion-deep">
                       {cards.length}/{cards.length + (diagnosis?.lockedCount ?? 0)} 已解锁
                     </span>
                   ) : (
                     <span className="text-ink-faint">{cards.length} 个</span>
                   )}
-                  <select
-                    value={sortKey}
-                    onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
-                    className="rounded-lg bg-paper-3 px-2 py-1 text-base md:text-xs"
-                  >
-                    <option value="recommend">按推荐指数</option>
-                    <option value="phonetics">按音律韵味</option>
-                    <option value="culture">按文化底蕴</option>
-                    <option value="zodiac">按生肖契合</option>
-                  </select>
-                  <label className="flex items-center gap-1 text-ink-soft">
-                    <input
-                      type="checkbox"
-                      checked={onlyCited}
-                      onChange={(e) => setOnlyCited(e.target.checked)}
-                    />
-                    只看有出处
-                  </label>
-                  <label className="flex items-center gap-1 text-ink-soft">
-                    <input
-                      type="checkbox"
-                      checked={onlyVerified}
-                      onChange={(e) => setOnlyVerified(e.target.checked)}
-                    />
-                    只看真典籍
-                  </label>
-                  <label className="flex items-center gap-1 text-ink-soft">
-                    <input
-                      type="checkbox"
-                      checked={hideHotRare}
-                      onChange={(e) => setHideHotRare(e.target.checked)}
-                    />
-                    避开高频/生僻字
-                  </label>
-                  <button
-                    onClick={() => {
-                      track("compare_toggle", { on: !compareMode });
-                      setCompareMode(!compareMode);
-                      setCompareSel([]);
-                    }}
-                    className={`rounded-full px-2.5 py-1 font-medium ${compareMode ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
-                  >
-                    {compareMode
-                      ? "退出对比"
-                      : `对比${compareSel.length ? `(${compareSel.length})` : ""}`}
-                  </button>
+                  {preview ? (
+                    <span className="text-ink-faint">登录后可筛选、对比、看逐字解读</span>
+                  ) : (
+                    <>
+                      <select
+                        value={sortKey}
+                        onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+                        className="rounded-lg bg-paper-3 px-2 py-1 text-base md:text-xs"
+                      >
+                        <option value="recommend">按推荐指数</option>
+                        <option value="phonetics">按音律韵味</option>
+                        <option value="culture">按文化底蕴</option>
+                        <option value="zodiac">按生肖契合</option>
+                      </select>
+                      <label className="flex items-center gap-1 text-ink-soft">
+                        <input
+                          type="checkbox"
+                          checked={onlyCited}
+                          onChange={(e) => setOnlyCited(e.target.checked)}
+                        />
+                        只看有出处
+                      </label>
+                      <label className="flex items-center gap-1 text-ink-soft">
+                        <input
+                          type="checkbox"
+                          checked={onlyVerified}
+                          onChange={(e) => setOnlyVerified(e.target.checked)}
+                        />
+                        只看真典籍
+                      </label>
+                      <label className="flex items-center gap-1 text-ink-soft">
+                        <input
+                          type="checkbox"
+                          checked={hideHotRare}
+                          onChange={(e) => setHideHotRare(e.target.checked)}
+                        />
+                        避开高频/生僻字
+                      </label>
+                      <button
+                        onClick={() => {
+                          track("compare_toggle", { on: !compareMode });
+                          setCompareMode(!compareMode);
+                          setCompareSel([]);
+                        }}
+                        className={`rounded-full px-2.5 py-1 font-medium ${compareMode ? "bg-ink text-paper" : "bg-paper-3 text-ink hover:bg-vermilion-wash"}`}
+                      >
+                        {compareMode
+                          ? "退出对比"
+                          : `对比${compareSel.length ? `(${compareSel.length})` : ""}`}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               {shortlist.length ? (
@@ -2785,7 +2860,7 @@ function Naming() {
                 </div>
               )}
 
-              {trial
+              {trial || preview
                 ? Array.from({ length: Math.min(diagnosis?.lockedCount ?? 0, 10) }).map((_, i) => (
                     <div
                       key={"lock" + i}
@@ -2798,19 +2873,39 @@ function Naming() {
                         <div className="h-16 rounded-xl bg-paper-3" />
                       </div>
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-paper-2">
-                        <img
-                          src="/mp-qrcode.jpg"
-                          alt="对脉名鉴小程序码"
-                          className="size-24 rounded-lg bg-paper p-1"
-                        />
-                        <p className="text-sm font-semibold text-vermilion-deep">
-                          充值解锁全部 {diagnosis?.lockedCount} 个名字
-                        </p>
-                        <p className="px-6 text-center text-[11px] leading-relaxed text-ink-soft">
-                          {QR_HINT_LOCK[qrEnv]}
-                          <br />
-                          点数网页端与小程序通用，登录同一账号即可
-                        </p>
+                        {preview ? (
+                          <>
+                            <ShieldCheck aria-hidden className="size-6 text-ink-soft" />
+                            <p className="text-sm font-semibold text-vermilion-deep">
+                              登录后生成完整 {cards.length + (diagnosis?.lockedCount ?? 0)} 个方案
+                            </p>
+                            <p className="px-6 text-center text-[11px] leading-relaxed text-ink-soft">
+                              免登录仅展示 3 个方向预览；登录后逐字解读、五格音律、生肖契合与亲友投票全部解锁
+                            </p>
+                            <button
+                              onClick={goLogin}
+                              className="mt-1 rounded-xl bg-vermilion px-5 py-2.5 text-xs font-semibold text-paper"
+                            >
+                              登录看完整方案
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <img
+                              src="/mp-qrcode.jpg"
+                              alt="对脉名鉴小程序码"
+                              className="size-24 rounded-lg bg-paper p-1"
+                            />
+                            <p className="text-sm font-semibold text-vermilion-deep">
+                              充值解锁全部 {diagnosis?.lockedCount} 个名字
+                            </p>
+                            <p className="px-6 text-center text-[11px] leading-relaxed text-ink-soft">
+                              {QR_HINT_LOCK[qrEnv]}
+                              <br />
+                              点数网页端与小程序通用，登录同一账号即可
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))
@@ -2842,28 +2937,47 @@ function Naming() {
                 ) : (
                   <>
                     <button
-                      onClick={() => start(true)}
+                      onClick={() => (preview ? goLogin() : start(true))}
                       disabled={trial}
                       title={trial ? "充值解锁后可换一批（小程序充值点数）" : undefined}
                       className="flex-1 rounded-xl bg-ink py-3 text-sm font-semibold text-paper disabled:opacity-40"
                     >
-                      {trial
-                        ? "充值解锁后可换一批"
-                        : passInfo?.active
-                          ? `换一批${excludedCount ? `（已排除 ${excludedCount} 个）` : ""}`
-                          : `换一批 · 再付 ${namingPrice} 点${excludedCount ? `（已排除 ${excludedCount} 个）` : ""}`}
+                      {preview
+                        ? "登录后可换一批"
+                        : trial
+                          ? "充值解锁后可换一批"
+                          : passInfo?.active
+                            ? `换一批${excludedCount ? `（已排除 ${excludedCount} 个）` : ""}`
+                            : `换一批 · 再付 ${namingPrice} 点${excludedCount ? `（已排除 ${excludedCount} 个）` : ""}`}
                     </button>
                     <button
-                      onClick={() => setPicking(true)}
+                      onClick={() => (preview ? goLogin() : setPicking(true))}
                       className="flex-1 rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper"
                     >
-                      发起亲友投票
+                      {preview ? "登录后发起亲友投票" : "发起亲友投票"}
                     </button>
                   </>
                 )}
               </div>
 
-              {!trial ? (
+              {preview ? (
+                <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl bg-vermilion-wash p-5 text-center">
+                  <p className="text-sm font-semibold text-vermilion-deep">
+                    登录后生成完整 {cards.length + (diagnosis?.lockedCount ?? 0)} 个方案
+                  </p>
+                  <p className="text-xs leading-relaxed text-ink-soft">
+                    免登录预览只有 3 个方向、且不含逐字解读与五格音律；
+                    登录后完整生成，新用户首次体验仍免费展示 3 张、充值解锁全部。
+                  </p>
+                  <button
+                    onClick={goLogin}
+                    className="mt-1 rounded-xl bg-vermilion px-6 py-2.5 text-sm font-semibold text-paper"
+                  >
+                    登录看完整方案
+                  </button>
+                  <p className="text-[11px] text-ink-faint">手机号或微信登录 · 网页与小程序同账号互通</p>
+                </div>
+              ) : !trial ? (
                 <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl bg-white p-5 text-center transition-colors hover:bg-vermilion-wash">
                   <p className="text-sm font-medium">对这批名字不满意？</p>
                   <p className="text-xs text-ink-soft">
@@ -2903,7 +3017,9 @@ function Naming() {
                     ) : null}
                     <button
                       onClick={() => {
-                        navigator.clipboard?.writeText(`https://name.duimai.net/naming`);
+                        navigator.clipboard?.writeText(
+                          withSrc("https://name.duimai.net/naming", shareSrcTag()),
+                        );
                         track("invite_copy", {});
                       }}
                       className="text-xs font-medium text-ink-soft underline underline-offset-2"
@@ -3149,7 +3265,7 @@ function Naming() {
                             await navigator.share({
                               title: `起名海报 ${poster.name}`,
                               text: `为「${poster.name}」生成的起名海报`,
-                              url: "https://name.duimai.net/naming",
+                              url: withSrc("https://name.duimai.net/naming", shareSrcTag()),
                             });
                           }
                         } catch {
@@ -3207,6 +3323,7 @@ function NameCardView({
   shortlisted = false,
   onDislike,
   xiPrimary,
+  preview = false,
 }: {
   c: NameCardData;
   picking: boolean;
@@ -3222,6 +3339,8 @@ function NameCardView({
   shortlisted?: boolean;
   onDislike?: () => void;
   xiPrimary?: string;
+  /** 免登录预览卡：五维结论与详情未下发，隐藏亮点条避免显示成「数理顺畅 -」这类空结论 */
+  preview?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [ctxData, setCtxData] = useState<CitationContext | null>(null);
@@ -3447,24 +3566,26 @@ function NameCardView({
         </div>
       ) : null}
 
-      {/* P1 亮点条：一词结论，点击展开详情；移动端横向滚动 */}
-      <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 text-[11px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {highlights.map((h) => (
-          <button
-            key={h.label}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!open) toggleDetails();
-            }}
-            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-paper-3 px-2.5 py-1 transition-colors hover:bg-vermilion-wash ${h.cls}`}
-          >
-            <span className={`size-1.5 rounded-full ${h.dot}`} />
-            {h.label}
-            <span className="font-semibold tabular-nums">{h.value}</span>
-          </button>
-        ))}
-      </div>
+      {/* P1 亮点条：一词结论，点击展开详情；移动端横向滚动（预览卡无评分数据，不渲染空结论） */}
+      {!preview ? (
+        <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 text-[11px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {highlights.map((h) => (
+            <button
+              key={h.label}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!open) toggleDetails();
+              }}
+              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-paper-3 px-2.5 py-1 transition-colors hover:bg-vermilion-wash ${h.cls}`}
+            >
+              <span className={`size-1.5 rounded-full ${h.dot}`} />
+              {h.label}
+              <span className="font-semibold tabular-nums">{h.value}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {/* 环 1 回流：名字命中灵感库 → 徽章链回 /names（深链该名字搜索） */}
       {c.goodNameHit ? (
@@ -3808,15 +3929,17 @@ function NameCardView({
               <Heart aria-hidden className={`size-4 ${shortlisted ? "fill-current" : ""}`} />
             </button>
           ) : null}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleDetails();
-            }}
-            className="inline-flex h-8 items-center gap-1 rounded-full bg-paper-3 px-3 text-[11px] text-ink hover:bg-vermilion-wash transition-colors hover:text-vermilion-deep"
-          >
-            {open ? "收起详情 ▴" : "评分 · 数理 · 字义 ▾"}
-          </button>
+          {!preview ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleDetails();
+              }}
+              className="inline-flex h-8 items-center gap-1 rounded-full bg-paper-3 px-3 text-[11px] text-ink hover:bg-vermilion-wash transition-colors hover:text-vermilion-deep"
+            >
+              {open ? "收起详情 ▴" : "评分 · 数理 · 字义 ▾"}
+            </button>
+          ) : null}
           {onDislike ? (
             <button
               onClick={(e) => {

@@ -3,6 +3,7 @@
  * 且公众号 JS 安全域名包含 name.duimai.net）。非微信环境静默跳过。
  */
 import { get } from "./api";
+import { withSrc } from "./src-tag";
 
 let ready = false;
 
@@ -40,7 +41,8 @@ export async function setupWxShare(opts: { title: string; desc: string; link?: s
     const share = {
       title: opts.title,
       desc: opts.desc,
-      link: opts.link || location.href,
+      // 微信分享会剥掉 referrer：链接自带的 src=wx 是唯一能留下来的来源标记
+      link: withSrc(opts.link || location.href, "wx"),
       imgUrl: opts.imgUrl || "https://name.duimai.net/og-card.jpg",
     };
     w.updateAppMessageShareData && w.updateAppMessageShareData(share);

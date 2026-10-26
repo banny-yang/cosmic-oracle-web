@@ -79,6 +79,22 @@ function assetNotFound(): Response {
   });
 }
 
+// 路由参数占位符被原样请求（/$surname、/names/$surname/$animal…）：
+// 说明某处把模板字符串当链接发出去了。这类路径此前先被路由重定向（307）再 404，
+// 爬虫与用户都要多跳一次；直接 404 并标 noindex，也免得被当成可收录页。
+const ROUTE_PLACEHOLDER = /(^|\/)\$[A-Za-z_]/;
+
+function placeholderNotFound(): Response {
+  return new Response("Not Found", {
+    status: 404,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store",
+      "x-robots-tag": "noindex, nofollow",
+    },
+  });
+}
+
 // robots.txt 里 Disallow 的私有页面路径（与 public/robots.txt 清单一致；/api/ 由 robots 单独排除）：
 // 这些页面是站内工具页，
 // 对用户返回 200 属正常（直接访问/回跳需要），但响应头补 X-Robots-Tag: noindex——
@@ -170,7 +186,9 @@ export default {
         });
       }
 
-      if (new URL(request.url).pathname.startsWith("/assets/")) return assetNotFound();
+      const pathname = new URL(request.url).pathname;
+      if (pathname.startsWith("/assets/")) return assetNotFound();
+      if (ROUTE_PLACEHOLDER.test(pathname)) return placeholderNotFound();
 
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

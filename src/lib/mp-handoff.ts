@@ -6,6 +6,7 @@
  */
 import { api } from "./api";
 import { saveAuth } from "./auth";
+import { track } from "./track";
 
 const PARAM = "mp_ticket";
 
@@ -62,6 +63,7 @@ export async function redeemMpHandoffTicket(): Promise<void> {
       tokenBalance: res.tokenBalance,
       hasBazi: res.hasBazi,
     });
+    track("login_success", { via: "mp" });
   } catch {
     /* 静默：不弹错、不打扰，匿名浏览不受影响 */
   }

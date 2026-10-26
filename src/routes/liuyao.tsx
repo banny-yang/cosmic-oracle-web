@@ -246,6 +246,7 @@ function Liuyao() {
   // think/正文解析（共享 hook）：后端逐 token 清洗 <think> 会漏跨 token 残片，客户端全量重算
   const stream = useThinkStream();
   const [showPaywall, setShowPaywall] = useState(false);
+  const [submitting, setSubmitting] = useState(false); // 起卦请求防重入（双击会重复扣费）
   const [history, setHistory] = useState<HistoryItem[] | null>(null);
   const [openLog, setOpenLog] = useState<string | null>(null);
   const [openReading, setOpenReading] = useState("");
@@ -270,11 +271,13 @@ function Liuyao() {
   };
 
   const startToss = async (guest: boolean) => {
+    if (submitting) return;
     setErr("");
     const q = question.trim();
     if (!q) return setErr("请先写下想问的事");
     if (!guest && !requireLogin()) return;
     track(guest ? "liuyao_guest_start" : "liuyao_toss_start", {});
+    setSubmitting(true);
     try {
       const resp = guest
         ? await post<TossResp>(
@@ -297,6 +300,8 @@ function Liuyao() {
       const msg = e instanceof Error ? e.message : "起卦失败，请稍后再试";
       setErr(msg);
       if (/余额|402|不足/.test(msg)) setShowPaywall(true);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -439,13 +444,15 @@ function Liuyao() {
               {err ? <p className="mt-2 text-xs text-vermilion-deep">{err}</p> : null}
               <button
                 onClick={() => startToss(false)}
-                className="mt-4 w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]"
+                disabled={submitting}
+                className="mt-4 w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] disabled:opacity-60"
               >
-                起卦（{price} 点）
+                {submitting ? "起卦中…" : `起卦（${price} 点）`}
               </button>
               <button
                 onClick={() => startToss(true)}
-                className="mt-2 w-full rounded-xl bg-ink py-3 text-sm font-semibold text-paper"
+                disabled={submitting}
+                className="mt-2 w-full rounded-xl bg-ink py-3 text-sm font-semibold text-paper disabled:opacity-60"
               >
                 免费起一卦（不落记录）
               </button>

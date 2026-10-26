@@ -3,11 +3,14 @@
  * 手机号登录/注册时随请求上报（后端 t_user.register_channel / register_referrer 首写生效）。
  *
  * - ?ref=（邀请码，即邀请人的短号）→ 上报 ref，后端顺带绑定邀请人
- * - ?ch= / ?utm_source= → 上报 channel；都没有时用 ?from=（海报二维码口径），再退到 "web"
+ * - ?ch= / ?utm_source= / ?src=（外链统一打标，白名单 wx|baidu|zhihu|...）→ 上报 channel；
+ *   都没有时用 ?from=（海报二维码口径），再退到 "web"
  *
  * ref/ch 摘走的理由同 mp-handoff：留在地址栏会被 wx-share 的 location.href 分享出去，
  * 让下一位访问者莫名绑到别人的邀请码。from 不摘——海报口径的既有约定，其他统计也可能读它。
  */
+
+import { isSrcTag } from "./src-tag";
 
 const REF_KEY = "dm_ref";
 const CH_KEY = "dm_ch";
@@ -29,9 +32,13 @@ function captureFromUrl(): Captured {
     return empty;
   }
   const ref = (url.searchParams.get("ref") || "").trim();
+  // ?src= 是外链统一打标口径（微信会剥 referrer，只有自带参数留得下来）。
+  // 白名单外的 src 是 /naming 的典籍类目码，既不能当渠道，也不能从地址栏摘走。
+  const srcParam = (url.searchParams.get("src") || "").trim();
   const channel = (
     url.searchParams.get("ch") ||
     url.searchParams.get("utm_source") ||
+    (isSrcTag(srcParam) ? srcParam : "") ||
     url.searchParams.get("from") ||
     ""
   ).trim();
@@ -44,10 +51,16 @@ function captureFromUrl(): Captured {
     if (channel && channel !== beforeCh) write(CH_KEY, channel);
   }
 
-  if (ref || url.searchParams.has("ch") || url.searchParams.has("utm_source")) {
+  if (
+    ref ||
+    url.searchParams.has("ch") ||
+    url.searchParams.has("utm_source") ||
+    isSrcTag(srcParam)
+  ) {
     url.searchParams.delete("ref");
     url.searchParams.delete("ch");
     url.searchParams.delete("utm_source");
+    if (isSrcTag(srcParam)) url.searchParams.delete("src");
     try {
       window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
     } catch {

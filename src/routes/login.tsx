@@ -120,7 +120,7 @@ function LoginPage() {
         { phone, code: smsCode, ...loginAttribution() },
         { auth: false },
       );
-      finish(res, "wechat");
+      finish(res, "phone");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "登录失败");
     } finally {
@@ -150,6 +150,7 @@ function LoginPage() {
     setOauthErr("");
     setOauthBusy(true);
     track("login_oauth_start", {});
+    track("oauth_click", { provider: "wechat_official" });
     const ok = await startOfficialOAuth(redirect);
     if (!ok) {
       setOauthBusy(false);
@@ -165,7 +166,7 @@ function LoginPage() {
         .then((r) => {
           if (r?.status === "done" && r.jwtToken) {
             stopPoll();
-            finish(r as unknown as LoginResponse, "phone");
+            finish(r as unknown as LoginResponse, "wechat");
           } else if (r?.status === "expired") {
             stopPoll();
             setQrErr("二维码已过期，请重新生成");

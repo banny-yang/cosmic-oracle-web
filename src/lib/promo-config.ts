@@ -33,8 +33,17 @@ export function promoWebUrl(): Promise<string> {
  */
 export async function posterQrTarget(path: string, opts: { from?: string } = {}): Promise<string> {
   const base = await promoWebUrl();
-  const withFrom = (target: string) =>
-    opts.from ? `${target}?from=${encodeURIComponent(opts.from)}` : target;
+  // path 可能自带查询串：用 URL 拼参数，避免出现第二个问号把参数拼坏
+  const withFrom = (target: string) => {
+    if (!opts.from) return target;
+    try {
+      const u = new URL(target, FALLBACK_BASE);
+      u.searchParams.set("from", opts.from);
+      return /^https?:\/\//i.test(target) ? u.toString() : u.pathname + u.search + u.hash;
+    } catch {
+      return target;
+    }
+  };
   try {
     const u = new URL(base);
     if ((u.pathname && u.pathname !== "/") || u.search) return base;

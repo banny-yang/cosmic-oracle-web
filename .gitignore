@@ -1,8 +1,11 @@
 node_modules/
 .output/
 .assets-carryover/
+.tanstack/
+.zcode/
 .wrangler/
 dist/
 *.local
+*.tgz
 .env
 cosmic-web.tar

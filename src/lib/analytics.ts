@@ -4,6 +4,8 @@
  * 仅生产构建且 VITE_TRACKING=1 时上报；失败静默，绝不影响业务。
  */
 
+import { currentSrcTag } from "./src-tag";
+
 const ENDPOINT = "/api/v1/analytics/collect";
 const VID_KEY = "co_vid";
 const REF_KEY = "co_ref";
@@ -20,7 +22,7 @@ export function beacon(payload: Payload) {
     const body = {
       path: payload.path ?? window.location.pathname,
       event: payload.event,
-      props: payload.props,
+      props: payload.props ?? srcProps(),
       referrer: refHost(),
       vid: vid(),
       device: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
@@ -81,4 +83,10 @@ function refHost(): string | null {
   } catch {
     return null;
   }
+}
+
+/** 渠道标记随 PV 入库：微信剥 referrer 的流量只有 src 这条线能分渠道统计。 */
+function srcProps(): string | undefined {
+  const src = currentSrcTag();
+  return src ? JSON.stringify({ src }) : undefined;
 }

@@ -9,6 +9,7 @@ import { get, post } from "./api";
 import { saveAuth, getAuthUser } from "./auth";
 import { isMiniProgramEnv } from "./mp-bridge";
 import { loginAttribution } from "./attribution";
+import { track } from "./track";
 
 /** 微信内置浏览器且不在小程序 web-view 内——OAuth 网页授权唯一可用的环境。 */
 export function isWeChatBrowser(): boolean {
@@ -79,8 +80,16 @@ export async function redeemOfficialOAuthLogin(): Promise<void> {
       tokenBalance: res.tokenBalance,
       hasBazi: res.hasBazi,
     });
+    // 网页授权是整页跳转回来的，login.tsx 的 finish() 管不到这一路：在这里补登录成功埋点
+    track("login_success", { via: "wechat_oauth" });
     const target = pending.state;
-    if (target && target.startsWith("/") && target !== window.location.pathname + window.location.search) {
+    // state 来自地址栏（可从站外构造），只回跳本站绝对路径；「//evil.com」是协议相对地址，必须排除
+    if (
+      target &&
+      target.startsWith("/") &&
+      !target.startsWith("//") &&
+      target !== window.location.pathname + window.location.search
+    ) {
       window.location.replace(target);
     }
   } catch {
@@ -115,7 +124,8 @@ export async function startOfficialOAuth(targetPath?: string): Promise<boolean> 
   const appId = await fetchOfficialAppId();
   if (!appId) return false;
   const here = window.location.pathname + window.location.search;
-  const target = targetPath && targetPath.startsWith("/") ? targetPath : here;
+  const target =
+    targetPath && targetPath.startsWith("/") && !targetPath.startsWith("//") ? targetPath : here;
   const url = new URL(window.location.href);
   url.hash = "";
   url.searchParams.delete("code");

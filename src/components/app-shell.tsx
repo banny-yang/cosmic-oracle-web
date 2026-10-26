@@ -219,19 +219,46 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
     pageView(location.pathname);
   }, [location.pathname]);
 
-  // 轻量前端错误监控：未捕获异常/未处理 Promise 拒绝 → 埋点
+  // 轻量前端错误监控：未捕获异常 / 资源加载失败 / 未处理 Promise 拒绝 → 埋点。
+  // 线上抓到的 js_error 全是 "Script error."（跨域脚本被脱敏），所以补上能定位的维度：
+  // 错误对象名、行列号、跨域标记、发生页面；资源加载失败走捕获阶段（error 不冒泡）。
   useEffect(() => {
-    const onErr = (e: ErrorEvent) =>
+    const page = () => location.pathname.slice(0, 32);
+    const onErr = (e: Event) => {
+      const el = e.target as (Element & { src?: string; href?: string }) | null;
+      if (el && el.tagName) {
+        // img/script/link 加载失败：只有捕获阶段能听到
+        track("js_error", {
+          msg: `resource:${el.tagName.toLowerCase()}`,
+          src: String(el.src || el.href || "").slice(-44),
+          page: page(),
+        });
+        return;
+      }
+      const ev = e as ErrorEvent;
+      const msg = String(ev.message || "");
       track("js_error", {
-        msg: String(e.message || "").slice(0, 120),
-        src: String(e.filename || "").slice(-60),
+        msg: (msg || "unknown").slice(0, 70),
+        src: String(ev.filename || "").slice(-44),
+        name: String((ev.error as Error | undefined)?.name || "").slice(0, 20),
+        line: typeof ev.lineno === "number" ? ev.lineno : undefined,
+        // 跨域脚本没配 CORS 时消息被浏览器替换成 "Script error."，标出来便于区分业务报错
+        cross: msg === "Script error." ? true : undefined,
+        page: page(),
       });
-    const onRej = (e: PromiseRejectionEvent) =>
-      track("js_error", { msg: "unhandledrejection:" + String(e.reason).slice(0, 120) });
-    window.addEventListener("error", onErr);
+    };
+    const onRej = (e: PromiseRejectionEvent) => {
+      const reason = e.reason as { name?: string; message?: string } | undefined;
+      track("js_error", {
+        msg: ("unhandledrejection:" + String(reason?.message ?? e.reason)).slice(0, 70),
+        name: String(reason?.name ?? "").slice(0, 20),
+        page: page(),
+      });
+    };
+    window.addEventListener("error", onErr, true);
     window.addEventListener("unhandledrejection", onRej);
     return () => {
-      window.removeEventListener("error", onErr);
+      window.removeEventListener("error", onErr, true);
       window.removeEventListener("unhandledrejection", onRej);
     };
   }, []);

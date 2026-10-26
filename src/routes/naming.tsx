@@ -48,16 +48,76 @@ import { refreshBalance } from "@/lib/balance";
 import { setupWxShare } from "@/lib/wx-share";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
-/** 小程序码旁的提示：按打开环境分档（小程序内长按 / 微信内直付或长按 / 手机浏览器扫码 / 电脑用手机扫） */
+/** 生成请求幂等键（crypto.randomUUID 不可用时退化为时间戳+随机数）。 */
+function newRequestId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  }
+}
+
+/** 表单草稿（匿名预览 → 登录 → 回站续填）；带版本号，结构变更即失效。 */
+const FORM_DRAFT_KEY = "naming_form_draft_v1";
+
+interface FormDraft {
+  surname?: string;
+  gender?: "M" | "F" | "U";
+  birthMode?: "born" | "unborn" | "xiyong";
+  calType?: "solar" | "lunar";
+  birthDate?: string;
+  birthTime?: string;
+  lunarYear?: number;
+  lunarMonth?: number;
+  lunarLeap?: boolean;
+  lunarDay?: number;
+  lat?: number;
+  lng?: number;
+  placeName?: string;
+  nameLength?: "DOUBLE" | "SINGLE";
+  twin?: boolean;
+  twinGenderB?: string;
+  wuxingMatch?: boolean;
+  zodiacMatch?: boolean;
+  generationChar?: string;
+  tabooText?: string;
+  stylesSel?: string[];
+  expectSel?: string[];
+  sourcesSel?: string[];
+  booksSel?: string[];
+  classicStyle?: "大众" | "小众";
+  avoidText?: string;
+  manualElements?: string[];
+  preferChars?: string[];
+}
+
+function readFormDraft(): FormDraft | null {
+  try {
+    const raw = sessionStorage.getItem(FORM_DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as FormDraft) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearFormDraft() {
+  try {
+    sessionStorage.removeItem(FORM_DRAFT_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+/** 小程序码旁的提示：按打开环境分档（小程序内长按 / 微信内长按 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT_LOCK: Record<QrEnv, string> = {
   mp: "长按二维码进入「对脉名鉴」小程序充值",
-  "wechat-h5": "长按二维码前往小程序充值，或下拉使用「微信内直接支付」",
+  "wechat-h5": "长按二维码前往小程序充值（到账后回本页点解锁）",
   mobile: "微信扫码进入「对脉名鉴」小程序充值",
   desktop: "请用手机微信扫码进入「对脉名鉴」小程序充值",
 };
 const QR_HINT_BUY: Record<QrEnv, string> = {
   mp: "或长按二维码直购（点数充入当前账号，到账自动提示）",
-  "wechat-h5": "微信内可直接支付（点数充入当前账号）；也可长按二维码前往小程序直购",
+  "wechat-h5": "长按二维码前往小程序直购（点数充入当前账号，到账自动提示）",
   mobile: "或微信扫码直购（点数充入当前账号，到账自动提示）",
   desktop: "或手机微信扫码直购（点数充入当前账号，到账自动提示）",
 };
@@ -75,6 +135,7 @@ import {
   ClipboardCheck,
   Clock3,
   ShieldCheck,
+  Lock,
   SlidersHorizontal,
   ChevronDown,
   PawPrint,
@@ -375,6 +436,8 @@ interface Diagnosis {
   unlockTip?: string;
   /** 免登录预览（后端 /naming/preview）：true 时 cards 仅 3 张方向卡，完整报告需登录生成。 */
   preview?: boolean;
+  /** 本次报告 ID：试用态凭它解锁剩余名字（/naming/reports/{id}/unlock）。 */
+  reportId?: string;
   pillars?: string[];
   poolSize?: number;
   wuxingMatch?: boolean;
@@ -971,6 +1034,8 @@ function Naming() {
     return tag ? [tag] : [];
   });
   const [formErr, setFormErr] = useState("");
+  /** 登录回站后已从草稿恢复表单（只提示，不自动生成）。 */
+  const [draftRestored, setDraftRestored] = useState(false);
 
   // P1：高级选项折叠（起名偏好 + 家族避讳），标题徽标显示已选数量
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -1125,6 +1190,71 @@ function Naming() {
     start(false);
   };
 
+  // ── 付费闭环（V198）：试用态 10 个名字已完整落库，解锁只取回、不重新生成、不重复扣点 ──
+  const [reportId, setReportId] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockErr, setUnlockErr] = useState("");
+  const autoUnlockRef = useRef(false);
+
+  const unlockReport = async (opts: { auto?: boolean } = {}) => {
+    if (!reportId || unlocking) return;
+    setUnlocking(true);
+    setUnlockErr("");
+    if (!opts.auto) track("naming_unlock_click", { locked: diagnosis?.lockedCount ?? 0 });
+    try {
+      const uid = getAuthUser()?.userId;
+      const r = await post<{
+        reportId: string;
+        charged: number;
+        result?: Diagnosis;
+        cards?: NameCardData[];
+      }>(`/api/v1/naming/reports/${reportId}/unlock${uid ? `?user_id=${uid}` : ""}`, {});
+      const full = r?.result || {};
+      const list = (r?.cards || full.cards || []) as NameCardData[];
+      setCards(list);
+      setDiagnosis((prev) => ({
+        ...(prev || {}),
+        ...full,
+        lockedCount: 0,
+        unlockTip: undefined,
+        preview: false,
+        reportId: r?.reportId || reportId,
+      }));
+      setReportId(r?.reportId || reportId);
+      refreshBalance();
+      refreshPass();
+      track("naming_unlock_success", { charged: r?.charged ?? 0, cards: list.length });
+    } catch (e) {
+      const err = e as Error & { statusCode?: number };
+      if (err.statusCode === 402) {
+        // 点数不够：打开既有升级弹层（充值/畅享卡），报告保持原位，充完回来可再点
+        setUpgradeMode("insufficient");
+        setUpgradeOpen(true);
+        track("naming_unlock_insufficient");
+      } else {
+        setUnlockErr(err.message || "解锁失败，请重试");
+        track("naming_unlock_error");
+      }
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
+  // 回站刷新：小程序里充值/开卡后切回网页，点数与畅享状态自动更新
+  useEffect(() => {
+    const onWake = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      refreshPass();
+      refreshBalance();
+    };
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+    return () => {
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+    };
+  }, []);
+
   // 生成状态
   const [loading, setLoading] = useState(false);
   /** 登录态（仅客户端判定，避免 SSR 首屏与客户端不一致）：匿名提交走 /preview 免登录预览 */
@@ -1152,6 +1282,8 @@ function Naming() {
   const [shortlist, setShortlist] = useState<string[]>([]);
   const [posterBusy, setPosterBusy] = useState(false);
   const streamRef = useRef<StreamHandle | null>(null);
+  /** 本次生成的幂等键（服务端据此保证重连不重复扣点）。 */
+  const reqIdRef = useRef("");
 
   // 投票
   const [picking, setPicking] = useState(false);
@@ -1218,10 +1350,94 @@ function Naming() {
 
   /** 登录墙 CTA：带上当前地址（含偏好信号）回跳，登录后不用重填表单。 */
   const goLogin = () => {
+    saveFormDraft();
     track("login_cta_click", { surface: "naming_preview" });
     const back = location.pathname + location.search;
     location.href = "/login?redirect=" + encodeURIComponent(back);
   };
+
+  /**
+   * 表单续存：匿名预览 → 登录跳走 → 回站，字段不能丢（重填是高流失点）。
+   * 只存表单，不自动重跑——避免登录回来被动扣一次点数。
+   */
+  const saveFormDraft = () => {
+    try {
+      sessionStorage.setItem(
+        FORM_DRAFT_KEY,
+        JSON.stringify({
+          surname,
+          gender,
+          birthMode,
+          calType,
+          birthDate,
+          birthTime,
+          lunarYear,
+          lunarMonth,
+          lunarLeap,
+          lunarDay,
+          lat,
+          lng,
+          placeName,
+          nameLength,
+          twin,
+          twinGenderB,
+          wuxingMatch,
+          zodiacMatch,
+          generationChar,
+          tabooText,
+          stylesSel,
+          expectSel,
+          sourcesSel,
+          booksSel,
+          classicStyle,
+          avoidText,
+          manualElements,
+          preferChars,
+        } satisfies FormDraft),
+      );
+    } catch {
+      // 隐私模式/存储已满：静默降级为不续存
+    }
+  };
+
+  // 回站恢复：URL 显式带入的信号优先（灵感库深链），其余字段用草稿
+  useEffect(() => {
+    const draft = readFormDraft();
+    if (!draft) return;
+    if (!preferSearch["x"] && draft.surname) setSurname(draft.surname);
+    if (preferSearch["g"] !== "M" && preferSearch["g"] !== "F" && draft.gender) {
+      setGender(draft.gender);
+    }
+    if (draft.birthMode) setBirthMode(draft.birthMode);
+    if (draft.calType) setCalType(draft.calType);
+    if (draft.birthDate) setBirthDate(draft.birthDate);
+    if (draft.birthTime) setBirthTime(draft.birthTime);
+    if (typeof draft.lunarYear === "number") setLunarYear(draft.lunarYear);
+    if (typeof draft.lunarMonth === "number") setLunarMonth(draft.lunarMonth);
+    if (typeof draft.lunarDay === "number") setLunarDay(draft.lunarDay);
+    if (typeof draft.lunarLeap === "boolean") setLunarLeap(draft.lunarLeap);
+    if (typeof draft.lat === "number") setLat(draft.lat);
+    if (typeof draft.lng === "number") setLng(draft.lng);
+    if (draft.placeName) setPlaceName(draft.placeName);
+    if (draft.nameLength) setNameLength(draft.nameLength);
+    if (typeof draft.twin === "boolean") setTwin(draft.twin);
+    if (draft.twinGenderB) setTwinGenderB(draft.twinGenderB);
+    if (typeof draft.wuxingMatch === "boolean") setWuxingMatch(draft.wuxingMatch);
+    if (typeof draft.zodiacMatch === "boolean") setZodiacMatch(draft.zodiacMatch);
+    if (draft.generationChar) setGenerationChar(draft.generationChar);
+    if (draft.tabooText) setTabooText(draft.tabooText);
+    if (draft.stylesSel?.length) setStylesSel(draft.stylesSel);
+    // 灵感库深链带入的信号（URL 里显式写了）优先于草稿，避免旧草稿覆盖新入口
+    if (!preferSearch["cat"] && draft.expectSel?.length) setExpectSel(draft.expectSel);
+    if (!preferSearch["src"] && draft.sourcesSel?.length) setSourcesSel(draft.sourcesSel);
+    if (!preferSearch["book"] && draft.booksSel?.length) setBooksSel(draft.booksSel);
+    if (draft.classicStyle) setClassicStyle(draft.classicStyle);
+    if (draft.avoidText) setAvoidText(draft.avoidText);
+    if (draft.manualElements?.length) setManualElements(draft.manualElements);
+    if (!preferSearch["prefer"] && draft.preferChars?.length) setPreferChars(draft.preferChars);
+    clearFormDraft();
+    setDraftRestored(true);
+  }, []);
 
   /** 免登录预览：只跑确定性路径（不调 AI、不扣点、不写历史），给 3 张方向卡 + 登录 CTA。
    *  文案与后端 PREVIEW_UNLOCK_TIP 一致，避免两端口径漂移。 */
@@ -1241,6 +1457,8 @@ function Naming() {
     setStageLabel("正在核对喜用神与典籍方向…");
     setSlowHint(false);
     track("naming_preview_start", { regen: exclude });
+    // 预览前存一份表单：登录墙跳转回来时字段还在（不自动重跑，避免被动扣点）
+    saveFormDraft();
     try {
       const r = await post<Diagnosis>(
         "/api/v1/naming/preview",
@@ -1294,9 +1512,11 @@ function Naming() {
     setStageLabel("正在排盘定喜用神…");
     setSlowHint(false);
     track("naming_generate_start", { regen: exclude });
+    // 计费幂等键：一次「开始推演」一个，断线重连沿用同一个值，服务端不会二次扣点
+    reqIdRef.current = newRequestId();
     streamRef.current = streamPost({
       path: "/api/v1/naming/generate/stream",
-      data: body(exclude ? excludeRef.current : []),
+      data: { ...body(exclude ? excludeRef.current : []), requestId: reqIdRef.current },
       idleTimeoutMs: 480_000,
       onEvent: (ev) => {
         const idx = STAGE_INDEX[String(ev.stage)];
@@ -1310,7 +1530,9 @@ function Naming() {
         } else if (ev.stage === "result" && ev.data) {
           const d = ev.data as Diagnosis;
           setCards(d.cards || []);
-          track("naming_generate_done", { cards: (d.cards || []).length });
+          setReportId(d.reportId || "");
+          autoUnlockRef.current = false;
+          track("naming_generate_done", { cards: (d.cards || []).length, trial: !!d.freeTrial });
           setDiagnosis((prev) => ({ ...(prev || {}), ...d, aiGenerated: d.aiGenerated !== false }));
           setLoading(false);
           refreshPass();
@@ -1480,6 +1702,14 @@ function Naming() {
   const zodiacInfo = diagnosis?.zodiacGuide ?? null;
   const trial = !!diagnosis?.freeTrial && (diagnosis?.lockedCount ?? 0) > 0;
   const preview = !!diagnosis?.preview;
+
+  // 畅享卡生效后自动解锁（不扣点）：用户在小程序开卡后切回网页即可看到全部名字。
+  // 点数到账不自动解锁——花不花这 10 点由用户自己点。
+  useEffect(() => {
+    if (!passInfo?.active || !trial || !reportId || autoUnlockRef.current) return;
+    autoUnlockRef.current = true;
+    void unlockReport({ auto: true });
+  }, [passInfo?.active, trial, reportId]);
   const birthLabel = manualMode
     ? `按喜用神（${manualElements.map((e) => ELEMENT_ZH[e] || e).join("·") || "未选"}）`
     : born
@@ -2337,6 +2567,9 @@ function Naming() {
                   </span>
                 </div>
 
+                {draftRestored ? (
+                  <p className="text-xs text-ink-soft">已恢复你上次填写的信息，确认后点「开始推演」。</p>
+                ) : null}
                 {formErr ? <p className="text-xs text-vermilion-deep">{formErr}</p> : null}
                 <button
                   onClick={handleStartClick}
@@ -2861,7 +3094,7 @@ function Naming() {
               )}
 
               {trial || preview
-                ? Array.from({ length: Math.min(diagnosis?.lockedCount ?? 0, 10) }).map((_, i) => (
+                ? Array.from({ length: Math.min(diagnosis?.lockedCount ?? 0, 3) }).map((_, i) => (
                     <div
                       key={"lock" + i}
                       className="relative min-h-56 overflow-hidden rounded-2xl bg-white"
@@ -2889,21 +3122,43 @@ function Naming() {
                               登录看完整方案
                             </button>
                           </>
-                        ) : (
+                        ) : i === 0 ? (
                           <>
-                            <img
-                              src="/mp-qrcode.jpg"
-                              alt="对脉名鉴小程序码"
-                              className="size-24 rounded-lg bg-paper p-1"
-                            />
+                            <Lock aria-hidden className="size-6 text-ink-soft" />
                             <p className="text-sm font-semibold text-vermilion-deep">
-                              充值解锁全部 {diagnosis?.lockedCount} 个名字
+                              剩余 {diagnosis?.lockedCount} 个名字已生成
                             </p>
                             <p className="px-6 text-center text-[11px] leading-relaxed text-ink-soft">
-                              {QR_HINT_LOCK[qrEnv]}
+                              同一份报告直接取回，不必重新生成
                               <br />
-                              点数网页端与小程序通用，登录同一账号即可
+                              {passInfo?.active
+                                ? "畅享期内免费解锁，正在取回…"
+                                : `网页与小程序的点数通用 · ${namingPrice} 点一次`}
                             </p>
+                            <button
+                              onClick={() => void unlockReport()}
+                              disabled={unlocking || !!passInfo?.active}
+                              className="mt-1 rounded-xl bg-vermilion px-5 py-2.5 text-xs font-semibold text-paper disabled:opacity-60"
+                            >
+                              {passInfo?.active
+                                ? "畅享期内自动解锁中…"
+                                : unlocking
+                                  ? "解锁中…"
+                                  : `解锁全部 · ${namingPrice} 点`}
+                            </button>
+                            {unlockErr ? (
+                              <p className="px-6 text-center text-[11px] text-vermilion-deep">
+                                {unlockErr}
+                              </p>
+                            ) : null}
+                            <p className="px-6 text-center text-[10px] leading-relaxed text-ink-soft">
+                              {QR_HINT_LOCK[qrEnv]}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <Lock aria-hidden className="size-5 text-ink-soft/70" />
+                            <p className="text-[11px] text-ink-soft">解锁后可见</p>
                           </>
                         )}
                       </div>
@@ -2937,15 +3192,17 @@ function Naming() {
                 ) : (
                   <>
                     <button
-                      onClick={() => (preview ? goLogin() : start(true))}
-                      disabled={trial}
-                      title={trial ? "充值解锁后可换一批（小程序充值点数）" : undefined}
+                      onClick={() =>
+                        preview ? goLogin() : trial ? void unlockReport() : start(true)
+                      }
+                      disabled={unlocking}
+                      title={trial ? "先解锁本份报告的剩余名字，再换一批" : undefined}
                       className="flex-1 rounded-xl bg-ink py-3 text-sm font-semibold text-paper disabled:opacity-40"
                     >
                       {preview
                         ? "登录后可换一批"
                         : trial
-                          ? "充值解锁后可换一批"
+                          ? "先解锁剩余名字"
                           : passInfo?.active
                             ? `换一批${excludedCount ? `（已排除 ${excludedCount} 个）` : ""}`
                             : `换一批 · 再付 ${namingPrice} 点${excludedCount ? `（已排除 ${excludedCount} 个）` : ""}`}
@@ -3030,11 +3287,28 @@ function Naming() {
                 </div>
               ) : (
                 <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl bg-vermilion-wash p-5 text-center">
-                  <p className="text-sm font-semibold text-vermilion-deep">充值解锁更多好名字</p>
+                  <p className="text-sm font-semibold text-vermilion-deep">
+                    还有 {diagnosis?.lockedCount ?? 0} 个好名字已生成
+                  </p>
                   <p className="text-xs leading-relaxed text-ink-soft">
-                    剩余 {diagnosis?.lockedCount ?? 0} 个精选名字待解锁 · 解锁后可「换一批」继续推演
-                    <br />
-                    前往「对脉名鉴」微信小程序 → 我的 → 点数充值
+                    解锁后可「换一批」继续推演；点数网页与小程序通用
+                  </p>
+                  <button
+                    onClick={() => void unlockReport()}
+                    disabled={unlocking || !!passInfo?.active}
+                    className="mt-1 rounded-xl bg-vermilion px-5 py-2.5 text-xs font-semibold text-paper disabled:opacity-60"
+                  >
+                    {passInfo?.active
+                      ? "畅享期内自动解锁中…"
+                      : unlocking
+                        ? "解锁中…"
+                        : `解锁全部 · ${namingPrice} 点`}
+                  </button>
+                  {unlockErr ? (
+                    <p className="text-[11px] text-vermilion-deep">{unlockErr}</p>
+                  ) : null}
+                  <p className="text-[11px] leading-relaxed text-ink-faint">
+                    点不够？前往「对脉名鉴」微信小程序 → 我的 → 点数充值
                   </p>
                 </div>
               )}

@@ -19,7 +19,7 @@ import { openMpRechargePage } from "@/lib/mp-bridge";
 const QR_HINT: Record<QrEnv, string> = {
   mp: "点击下方按钮 → 在小程序内完成支付（也可长按左侧二维码），点数直接充入当前账号，到账后这里会自动提示。",
   "wechat-h5":
-    "可直接用上方按钮微信支付，点数充入当前账号；也可长按左侧二维码前往小程序支付，到账后这里会自动提示。",
+    "长按左侧二维码前往小程序支付，点数充入当前账号，到账后这里会自动提示。",
   mobile:
     "微信扫一扫左侧二维码支付所选点数（也可在微信里点下方链接），点数直接充入当前账号，到账后这里会自动提示。",
   desktop:
@@ -58,6 +58,8 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
   // 微信内直付（服务号 JSAPI）状态
   const [payBusy, setPayBusy] = useState(false);
   const [payHint, setPayHint] = useState("");
+  // 通道可用性：后端私钥不可读/未配置时压根不显示直付按钮，避免点了只报错
+  const [h5Pay, setH5Pay] = useState(false);
   const baseBalanceRef = useRef<number | null>(null);
 
   const list = skus ?? [];
@@ -124,6 +126,10 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
     refreshBalance().then((b) => {
       if (b != null) baseBalanceRef.current = b;
     });
+    // 支付通道可用性（公开只读）：私钥缺失时后端返回 false，前端据此不渲染直付入口
+    get<{ wxH5Pay?: boolean }>("/api/v1/payments/client/channels", {}, { auth: false, timeoutMs: 6000 })
+      .then((c) => setH5Pay(!!c?.wxH5Pay))
+      .catch(() => setH5Pay(false));
   }, []);
 
   // 选中档位 → 生成专属动态码（携带账号绑定 + 套餐预选）
@@ -199,7 +205,7 @@ export function ScanBuyPanel({ trackWhere = "scan_buy" }: { trackWhere?: string 
         </div>
       ) : null}
 
-      {qrEnv === "wechat-h5" ? (
+      {qrEnv === "wechat-h5" && h5Pay ? (
         <div className="rounded-xl bg-paper-3 p-3">
           <button
             type="button"

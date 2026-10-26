@@ -21,6 +21,9 @@ export function isSrcTag(v: string | null | undefined): v is SrcTag {
 
 const captured: SrcTag | "" = captureFromUrl();
 
+/** 本次落地链接自带的渠道标记（只认 URL 里的 ?src=，不含 localStorage 遗留）。 */
+let landed: SrcTag | "" = "";
+
 function captureFromUrl(): SrcTag | "" {
   if (typeof window === "undefined") return "";
   let url: URL;
@@ -32,6 +35,7 @@ function captureFromUrl(): SrcTag | "" {
   const raw = (url.searchParams.get("src") || "").trim();
   if (isSrcTag(raw)) {
     write(raw);
+    landed = raw;
     url.searchParams.delete("src");
     try {
       window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
@@ -63,6 +67,18 @@ function write(v: SrcTag) {
 /** 当前访客的渠道标记（本次落地参数优先，其次上次留下的）。 */
 export function currentSrcTag(): SrcTag | "" {
   return captured || read();
+}
+
+/**
+ * 本次落地链接自带的渠道标记（只认 URL 里的 ?src=）。
+ *
+ * 与 {@link currentSrcTag} 的区别：后者会回退到 localStorage 里上次留下的值，
+ * 那是给注册归因用的（「这个账号最早从哪来」）。访问埋点必须用本函数——
+ * 否则一个 9 月从百度来的老访客，10 月的每次直接访问都会被算成百度，
+ * 每日来源就永远看不到「直接访问」和真实的口碑回流。
+ */
+export function pageLoadSrcTag(): SrcTag | "" {
+  return landed;
 }
 
 /**

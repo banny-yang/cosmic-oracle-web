@@ -4,7 +4,7 @@
  * 仅生产构建且 VITE_TRACKING=1 时上报；失败静默，绝不影响业务。
  */
 
-import { currentSrcTag } from "./src-tag";
+import { pageLoadSrcTag } from "./src-tag";
 
 const ENDPOINT = "/api/v1/analytics/collect";
 const VID_KEY = "co_vid";
@@ -85,8 +85,10 @@ function refHost(): string | null {
   }
 }
 
-/** 渠道标记随 PV 入库：微信剥 referrer 的流量只有 src 这条线能分渠道统计。 */
+/** 渠道标记随 PV 入库：微信剥 referrer 的流量只有 src 这条线能分渠道统计。
+ *  用 pageLoadSrcTag 而不是 currentSrcTag：后者会带上去次留下的渠道，
+ *  回访会被永远算成老渠道（每日来源里就再也看不到「直接访问」）。 */
 function srcProps(): string | undefined {
-  const src = currentSrcTag();
+  const src = pageLoadSrcTag();
   return src ? JSON.stringify({ src }) : undefined;
 }

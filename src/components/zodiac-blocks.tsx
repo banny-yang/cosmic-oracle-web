@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { hasDetailPage } from "@/lib/name-detail";
 import { track } from "@/lib/track";
 import {
   ganzhiYearText,
@@ -136,13 +137,23 @@ export function ZodiacNameGrid({ names, empty }: { names: ZodiacName[]; empty: s
           <div key={n.word} className={cardCls}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Link
-                  to="/names"
-                  search={{ keyword: n.word }}
-                  className="font-seal text-3xl leading-none text-ink transition-colors hover:text-vermilion-deep"
-                >
-                  {n.word}
-                </Link>
+                {hasDetailPage(n) ? (
+                  <Link
+                    to="/names/detail/$word"
+                    params={{ word: n.word }}
+                    className="font-seal text-3xl leading-none text-ink transition-colors hover:text-vermilion-deep"
+                  >
+                    {n.word}
+                  </Link>
+                ) : (
+                  <Link
+                    to="/names"
+                    search={{ keyword: n.word }}
+                    className="font-seal text-3xl leading-none text-ink transition-colors hover:text-vermilion-deep"
+                  >
+                    {n.word}
+                  </Link>
+                )}
                 {n.pinyin ? (
                   <p className="mt-1.5 text-xs tracking-wider text-ink-soft">{n.pinyin}</p>
                 ) : null}

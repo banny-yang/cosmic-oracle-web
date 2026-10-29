@@ -8,3 +8,26 @@
 export function nameDetailPath(word: string): string {
   return `/names/detail/${encodeURIComponent(word.trim())}`;
 }
+
+/** 判断「是否有详情页」所需的最少字段（灵感库卡片与生肖名字卡片结构兼容）。 */
+export interface NameDetailFields {
+  score?: number | null;
+  pinyin?: string | null;
+  meaning?: string | null;
+  text?: string | null;
+  source?: string | null;
+}
+
+/**
+ * 与后端 NameDetailService.isPublishable 同一口径：评分、拼音、出处原句、意蕴、书名
+ * 五项齐全才出详情页。列表卡片按同一判断挂链接，缺一项就不挂，避免点进 404。
+ */
+export function hasDetailPage(n: NameDetailFields): boolean {
+  return (
+    typeof n.score === "number" &&
+    Boolean(n.pinyin) &&
+    Boolean(n.meaning) &&
+    Boolean(n.text) &&
+    Boolean(n.source)
+  );
+}

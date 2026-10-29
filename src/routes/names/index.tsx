@@ -5,6 +5,7 @@ import { get } from "@/lib/api";
 import { sourceToCategory, categoryToExpectation } from "@/lib/gallery-signals";
 import { TOP_SURNAMES, ZODIAC_SLUGS, currentZodiacSlug as currentZodiacByYear } from "@/lib/surnames";
 import { SEAL_FONT_PRELOAD } from "@/lib/head-links";
+import { hasDetailPage } from "@/lib/name-detail";
 
 export const Route = createFileRoute("/names/")({
   component: NameGallery,
@@ -117,20 +118,6 @@ const chipOff = "bg-paper-3 text-ink-soft hover:bg-vermilion-wash";
 /** 当前生肖年（按公历年粗算，仅用于导航入口；各页面口径仍以立春为准，见 /zodiac）。 */
 const currentZodiacSlug = currentZodiacByYear();
 const currentZodiacAnimal = ZODIAC_SLUGS.find((z) => z.slug === currentZodiacSlug)?.animal ?? "";
-
-/**
- * 该名字是否有详情页：与后端 NameDetailService.isPublishable 同一口径
- * （评分、拼音、出处原句、意蕴、书名齐全才出页），缺一项就不挂链接，避免卡片点进 404。
- */
-function hasDetail(n: GalleryItem): boolean {
-  return (
-    typeof n.score === "number" &&
-    Boolean(n.pinyin) &&
-    Boolean(n.meaning) &&
-    Boolean(n.text) &&
-    Boolean(n.source)
-  );
-}
 
 function NameGallery() {
   const keywordSearch = Route.useSearch();
@@ -375,7 +362,7 @@ function NameGallery() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      {hasDetail(n) ? (
+                      {hasDetailPage(n) ? (
                         <Link
                           to="/names/detail/$word"
                           params={{ word: n.word }}
@@ -444,16 +431,18 @@ function NameGallery() {
                   <Link
                     to="/naming"
                     search={{
+                      x: undefined,
                       prefer: n.word,
                       src: sourceToCategory(n.source),
                       g: n.gender === "M" || n.gender === "F" ? n.gender : undefined,
                       cat: categoryToExpectation(n.category) ? n.category : undefined,
+                      book: undefined,
                     }}
                     className="mt-4 block w-full rounded-xl bg-ink py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
                   >
                     按「{n.word}」的风格起名 →
                   </Link>
-                  {hasDetail(n) ? (
+                  {hasDetailPage(n) ? (
                     <Link
                       to="/names/detail/$word"
                       params={{ word: n.word }}

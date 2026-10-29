@@ -94,3 +94,11 @@ export function zodiacBySlug(slug: string): { slug: string; animal: string } | n
 export function surnameZodiacPath(pinyin: string, slug: string): string {
   return `/names/${pinyin}/${slug}`;
 }
+
+/**
+ * 当前生肖年 slug（按公历年粗算，只用于导航入口的默认落地页；
+ * 判盘/年份页口径仍以立春为准，见 /zodiac）。2024 年为甲辰龙年，12 年一轮。
+ */
+export function currentZodiacSlug(now: Date = new Date()): string {
+  return ZODIAC_SLUGS[(now.getFullYear() - 4) % 12]?.slug ?? "ma";
+}

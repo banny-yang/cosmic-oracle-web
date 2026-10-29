@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppShell, PageHeader, BreadcrumbJsonLd, inputCls } from "@/components/app-shell";
 import { get } from "@/lib/api";
 import { sourceToCategory, categoryToExpectation } from "@/lib/gallery-signals";
-import { TOP_SURNAMES, ZODIAC_SLUGS } from "@/lib/surnames";
+import { TOP_SURNAMES, ZODIAC_SLUGS, currentZodiacSlug as currentZodiacByYear } from "@/lib/surnames";
 import { SEAL_FONT_PRELOAD } from "@/lib/head-links";
 
 export const Route = createFileRoute("/names/")({
@@ -115,22 +115,22 @@ const chipOn = "bg-ink text-paper";
 const chipOff = "bg-paper-3 text-ink-soft hover:bg-vermilion-wash";
 
 /** 当前生肖年（按公历年粗算，仅用于导航入口；各页面口径仍以立春为准，见 /zodiac）。 */
-const ZODIAC_BY_YEAR = [
-  "shu",
-  "niu",
-  "hu",
-  "tu",
-  "long",
-  "she",
-  "ma",
-  "yang",
-  "hou",
-  "ji",
-  "gou",
-  "zhu",
-];
-const currentZodiacSlug = ZODIAC_BY_YEAR[(new Date().getFullYear() - 4) % 12] ?? "ma";
+const currentZodiacSlug = currentZodiacByYear();
 const currentZodiacAnimal = ZODIAC_SLUGS.find((z) => z.slug === currentZodiacSlug)?.animal ?? "";
+
+/**
+ * 该名字是否有详情页：与后端 NameDetailService.isPublishable 同一口径
+ * （评分、拼音、出处原句、意蕴、书名齐全才出页），缺一项就不挂链接，避免卡片点进 404。
+ */
+function hasDetail(n: GalleryItem): boolean {
+  return (
+    typeof n.score === "number" &&
+    Boolean(n.pinyin) &&
+    Boolean(n.meaning) &&
+    Boolean(n.text) &&
+    Boolean(n.source)
+  );
+}
 
 function NameGallery() {
   const keywordSearch = Route.useSearch();
@@ -375,7 +375,17 @@ function NameGallery() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-seal text-3xl leading-none text-ink">{n.word}</p>
+                      {hasDetail(n) ? (
+                        <Link
+                          to="/names/detail/$word"
+                          params={{ word: n.word }}
+                          className="block font-seal text-3xl leading-none text-ink transition-colors hover:text-vermilion-deep"
+                        >
+                          {n.word}
+                        </Link>
+                      ) : (
+                        <p className="font-seal text-3xl leading-none text-ink">{n.word}</p>
+                      )}
                       {n.pinyin ? (
                         <p className="mt-1.5 text-xs tracking-wider text-ink-soft">{n.pinyin}</p>
                       ) : null}
@@ -443,6 +453,15 @@ function NameGallery() {
                   >
                     按「{n.word}」的风格起名 →
                   </Link>
+                  {hasDetail(n) ? (
+                    <Link
+                      to="/names/detail/$word"
+                      params={{ word: n.word }}
+                      className="mt-2 block text-center text-xs text-vermilion-deep transition-colors hover:text-vermilion"
+                    >
+                      看「{n.word}」的出处与逐字解读 →
+                    </Link>
+                  ) : null}
                 </div>
               );
             })}

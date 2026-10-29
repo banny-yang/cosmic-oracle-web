@@ -430,7 +430,7 @@ function NameDetailPage() {
           </Link>
           <Link
             to="/name-eval"
-            search={{ x: undefined, m: word }}
+            search={{ x: undefined, m: word, src: undefined }}
             className="rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash"
           >
             已有名字？测评一下

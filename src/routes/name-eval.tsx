@@ -300,8 +300,8 @@ function NameEval() {
     track("name_eval_submit", { len: x.length + m.length });
     askedRef.current = "";
     void evaluate(x, m);
-    // 写入 URL：结果页可复制给他人、刷新一致
-    void navigate({ to: "/name-eval", search: { x, m }, replace: true });
+    // 写入 URL：结果页可复制给他人、刷新一致（src 不在结果页参数里，清掉免得残留）
+    void navigate({ to: "/name-eval", search: { x, m, src: undefined }, replace: true });
   };
 
   return (

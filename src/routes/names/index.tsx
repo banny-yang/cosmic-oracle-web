@@ -6,15 +6,18 @@ import { sourceToCategory, categoryToExpectation } from "@/lib/gallery-signals";
 import { TOP_SURNAMES, ZODIAC_SLUGS, currentZodiacSlug as currentZodiacByYear } from "@/lib/surnames";
 import { SEAL_FONT_PRELOAD } from "@/lib/head-links";
 import { hasDetailPage } from "@/lib/name-detail";
+import { isSrcTag } from "@/lib/src-tag";
 
 export const Route = createFileRoute("/names/")({
   component: NameGallery,
   // 环 1 回流深链：起名结果「灵感库同款」徽章带 ?keyword=名字 直达搜索；生肖页深链带 ?zodiac=ma
   validateSearch: (
     search: Record<string, unknown>,
-  ): { keyword?: string | undefined; zodiac?: string | undefined } => ({
+  ): { keyword?: string | undefined; zodiac?: string | undefined; src?: string | undefined } => ({
     keyword: typeof search["keyword"] === "string" ? search["keyword"].slice(0, 20) : undefined,
     zodiac: typeof search["zodiac"] === "string" ? search["zodiac"].slice(0, 12) : undefined,
+    // 文章内链会带 ?src=article：原样留在 search 里，落地理一次就够（src-tag 首次加载即采集）
+    src: isSrcTag(search["src"] as string) ? (search["src"] as string) : undefined,
   }),
   // 首屏数据在服务端取好，名字内容随 SSR HTML 直出（AI/搜索引擎不执行 JS 也能读到）
   loaderDeps: ({ search }) => ({ keyword: search.keyword ?? "", zodiac: search.zodiac ?? "" }),

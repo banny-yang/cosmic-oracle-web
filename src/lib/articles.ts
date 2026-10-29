@@ -28,10 +28,20 @@ export interface ArticleSummary {
   updatedAt: string;
 }
 
+export interface ArticleFaqItem {
+  q: string;
+  a: string;
+}
+
 export interface ArticleDetail extends ArticleSummary {
   contentHtml: string;
   seoTitle: string | null;
   seoDescription: string | null;
+  /**
+   * 后台维护的问答（每行「问题|答案」，最多 10 条）。
+   * 页面「常见问题」区块与 FAQPage 结构化数据都由它渲染，正文里不要再手写同内容问答。
+   */
+  faq?: ArticleFaqItem[] | null;
 }
 
 export interface ArticlePage {

@@ -202,12 +202,15 @@ export function animalYearPath(slug: string, year: number): string {
   return `/zodiac/${slug}/${year}`;
 }
 
-/** 起名页 CTA 的 search 参数（各键显式出现；生肖页不新增起名页搜索键）。 */
-export function namingCtaSearch() {
+/**
+ * 起名页 CTA 的 search 参数（各键显式出现；生肖页不新增起名页搜索键）。
+ * src 传渠道码（如文章页传 "article"），不传则不带渠道标记。
+ */
+export function namingCtaSearch(src?: string) {
   return {
     prefer: undefined,
     x: undefined,
-    src: undefined,
+    src,
     g: undefined,
     cat: undefined,
     book: undefined,

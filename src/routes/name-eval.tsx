@@ -8,6 +8,7 @@ import { FeatureClosed } from "@/components/feature-closed";
 import { post } from "@/lib/api";
 import { getAuthUser } from "@/lib/auth";
 import { track } from "@/lib/track";
+import { isSrcTag } from "@/lib/src-tag";
 import { useFeatureEnabled } from "@/lib/use-feature-price";
 
 /** 接口响应（与后端 NameEvalResponse 一致）。 */
@@ -126,6 +127,8 @@ export const Route = createFileRoute("/name-eval")({
   validateSearch: (search: Record<string, unknown>) => ({
     x: typeof search["x"] === "string" ? cleanSurname(search["x"]) : undefined,
     m: typeof search["m"] === "string" ? cleanGiven(search["m"]) : undefined,
+    // 文章内链会带 ?src=article：原样留着，别让路由把它规范化掉
+    src: isSrcTag(search["src"] as string) ? (search["src"] as string) : undefined,
   }),
   head: () => ({
     links: [{ rel: "canonical", href: "https://name.duimai.net/name-eval" }],

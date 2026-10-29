@@ -26,6 +26,8 @@ export const SRC_VALUES = [
   "douyin",
   "toutiao",
   "weibo",
+  /* 站内文章 → 工具的深链（文章页 CTA 自动带），用来量「读完文章去生成」的转化 */
+  "article",
 ] as const;
 export type SrcTag = (typeof SRC_VALUES)[number];
 

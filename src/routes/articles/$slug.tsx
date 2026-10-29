@@ -85,6 +85,8 @@ function ArticleDetailPage() {
     );
   }
 
+  const faq = (article.faq ?? []).filter((f) => f.q && f.a);
+
   return (
     <AppShell>
       <BreadcrumbJsonLd name={article.title} path={articlePath(article.slug)} />
@@ -105,6 +107,23 @@ function ArticleDetailPage() {
           }).replace(/</g, "\\u003c"),
         }}
       />
+      {/* FAQ 结构化：问答由后台 FAQ 字段维护，下方可见区块与这里同源渲染，正文不重复写 */}
+      {faq.length > 0 ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: faq.map((f) => ({
+                "@type": "Question",
+                name: f.q,
+                acceptedAnswer: { "@type": "Answer", text: f.a },
+              })),
+            }).replace(/</g, "\\u003c"),
+          }}
+        />
+      ) : null}
 
       <PageHeader
         eyebrow={`取名知识 · ${articleCategoryLabel(article.category)}`}
@@ -124,12 +143,28 @@ function ArticleDetailPage() {
         dangerouslySetInnerHTML={{ __html: article.contentHtml }}
       />
 
+      {/* 常见问题：可见内容与 FAQPage 结构化数据同源（后台 FAQ 字段），
+          正文里不要再手写同内容问答，避免两处不一致被判作弊 */}
+      {faq.length > 0 ? (
+        <section className="mt-11">
+          <h2 className="text-lg font-semibold">常见问题</h2>
+          <div className="mt-4 space-y-3">
+            {faq.map((f) => (
+              <div key={f.q} className="rounded-2xl bg-white p-5">
+                <p className="text-sm font-semibold">{f.q}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink-soft text-pretty">{f.a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="mt-8 rounded-2xl bg-vermilion-wash p-6">
         <p className="text-sm leading-relaxed text-ink-soft text-pretty">
           读完了？把文章里的宜忌与出处要求带进起名引擎——
           <Link
             to="/naming"
-            search={namingCtaSearch()}
+            search={namingCtaSearch("article")}
             className="mx-1 font-medium text-vermilion-deep underline underline-offset-2"
           >
             到起名页生成一批名字
@@ -137,7 +172,7 @@ function ArticleDetailPage() {
           ，或在
           <Link
             to="/names"
-            search={{ keyword: undefined, zodiac: undefined }}
+            search={{ keyword: undefined, zodiac: undefined, src: "article" }}
             className="mx-1 font-medium text-vermilion-deep underline underline-offset-2"
           >
             名字灵感库

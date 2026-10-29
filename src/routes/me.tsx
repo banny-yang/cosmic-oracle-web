@@ -7,6 +7,10 @@ import { ScanBuyPanel } from "@/components/scan-buy";
 import { get, patch, post, api } from "@/lib/api";
 import { getToken, getAuthUser, useAuth, updateUser, clearAuth, subscribeAuth } from "@/lib/auth";
 import { getUnreadCount } from "@/lib/ops";
+import { getPointTasks, claimShareTask, type PointTaskStatus, type PointTaskState } from "@/lib/points";
+import { withAttribution } from "@/lib/share-link";
+import { shareSrcTag } from "@/lib/src-tag";
+import { refreshBalance } from "@/lib/balance";
 import { detectMiniProgramEnv, openMpProfilePage } from "@/lib/mp-bridge";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
@@ -84,6 +88,23 @@ const CHANNEL_LABEL: Record<string, string> = {
   virtual_pay: "小程序虚拟支付",
 };
 
+/** 免费得点任务状态 → 徽标（claimable 之外都是「还要做什么」的提示） */
+const TASK_STATE_LABEL: Record<PointTaskState, string> = {
+  claimed_today: "今日已领",
+  claimed: "已领",
+  claimable: "可领",
+  after_vote_create: "待发起",
+  after_votes: "待满票",
+};
+
+const TASK_STATE_CLS: Record<PointTaskState, string> = {
+  claimed_today: "bg-paper-3 text-ink-faint",
+  claimed: "bg-paper-3 text-ink-faint",
+  claimable: "bg-vermilion-wash text-vermilion-deep",
+  after_vote_create: "bg-paper-3 text-ink-soft",
+  after_votes: "bg-paper-3 text-ink-soft",
+};
+
 function MePage() {
   const navigate = useNavigate();
   const { loggedIn, user } = useAuth();
@@ -127,6 +148,13 @@ function MePage() {
   const [copied, setCopied] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [unread, setUnread] = useState(0);
+
+  // 免费得点（分享 / 投票 / 邀请 + 每日签到）：价格不动，只给不愿付费的用户一条路
+  const [tasks, setTasks] = useState<PointTaskStatus | null>(null);
+  const [tasksErr, setTasksErr] = useState("");
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [checkinMsg, setCheckinMsg] = useState("");
+  const [shareMsg, setShareMsg] = useState("");
 
   // 小程序 web-view 内：微信头像昵称只能在原生页用官方弹层获取，这里只做引导
   const [inMp, setInMp] = useState(false);
@@ -190,6 +218,63 @@ function MePage() {
       })
       .catch(() => {});
   }, [loggedIn, navigate]);
+
+  // 免费得点任务清单：额度与状态以服务端为准（管理端改额度/开关即时生效）
+  useEffect(() => {
+    if (!loggedIn) return;
+    getPointTasks()
+      .then((t) => {
+        setTasks(t);
+        setTasksErr("");
+      })
+      .catch(() => setTasksErr("任务加载失败，稍后重试"));
+  }, [loggedIn]);
+
+  const checkIn = async () => {
+    const userId = getAuthUser()?.userId;
+    if (!userId || checkingIn) return;
+    setCheckingIn(true);
+    setCheckinMsg("");
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const r = await post<{
+        status?: string;
+        streak?: number;
+        tokens_earned?: number;
+        streak_bonus?: number;
+      }>(`/api/v1/users/checkin?user_id=${userId}${tz ? `&tz=${encodeURIComponent(tz)}` : ""}`, {});
+      if (r?.status === "already_checked_in") {
+        setCheckinMsg("今天已签到，明天再来（连续满 7 天追加 3 点）");
+      } else {
+        setCheckinMsg(
+          `签到成功 +${r?.tokens_earned ?? 1} 点${
+            r?.streak_bonus ? `（连续 ${r?.streak} 天奖励 +${r.streak_bonus}）` : `，连续 ${r?.streak ?? 1} 天`
+          }`,
+        );
+        void refreshBalance();
+        void getPointTasks().then(setTasks).catch(() => {});
+      }
+    } catch (e) {
+      setCheckinMsg(e instanceof Error ? e.message : "签到失败，稍后重试");
+    } finally {
+      setCheckingIn(false);
+    }
+  };
+
+  /** 卡片里的分享入口：复制带 src+ref 的链接，并领当日分享点。 */
+  const shareTool = () => {
+    navigator.clipboard?.writeText(
+      withAttribution("https://name.duimai.net/naming", shareSrcTag()),
+    );
+    setShareMsg("链接已复制，发给朋友即可");
+    void claimShareTask().then((r) => {
+      if (r?.granted) {
+        setShareMsg(`链接已复制，分享奖励 +${r.tokens ?? 0} 点已到账`);
+        void getPointTasks().then(setTasks).catch(() => {});
+      }
+    });
+    setTimeout(() => setShareMsg(""), 4000);
+  };
 
   const savePersona = async () => {
     if (!name.trim()) return setErr("请填写昵称");
@@ -442,7 +527,7 @@ function MePage() {
         className="ink-in d2 mt-4 flex items-center justify-between rounded-2xl bg-white px-5 py-4 transition-colors hover:bg-vermilion-wash"
       >
         <span className="text-sm font-medium">邀请好友</span>
-        <span className="text-xs text-ink-faint">分享链接，好友首充有奖</span>
+        <span className="text-xs text-ink-faint">好友首次起名，奖励点数</span>
       </Link>
 
       {/* 出生信息 */}
@@ -491,6 +576,100 @@ function MePage() {
             </button>
           </div>
         ) : null}
+      </section>
+
+      {/* 免费得点：分享 / 投票 / 邀请 / 签到——价格不动，只把「不花钱也能解锁」的路径摆出来 */}
+      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <p className="text-sm font-medium">免费得点</p>
+            <p className="mt-0.5 text-[11px] text-ink-faint">
+              一次起名 10 点 · 做任务攒点，不花钱也能解锁
+            </p>
+          </div>
+          <span className="shrink-0 text-xs text-ink-faint">
+            {tasks?.earnedLast30Days ? `近 30 天已得 ${tasks.earnedLast30Days} 点` : "价格不变"}
+          </span>
+        </div>
+
+        {tasksErr ? <p className="px-5 pb-3 text-xs text-vermilion-deep">{tasksErr}</p> : null}
+        {!tasks && !tasksErr ? <p className="px-5 pb-3 text-xs text-ink-faint">加载中…</p> : null}
+
+        {tasks?.enabled ? (
+          <ul className="px-5">
+            {tasks.tasks.map((t) => (
+              <li key={t.key} className="flex items-start justify-between gap-3 border-t border-paper-3 py-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-ink">
+                    {t.label}
+                    <span className="ml-1.5 font-semibold text-vermilion-deep">+{t.tokens} 点</span>
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">{t.desc}</p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${TASK_STATE_CLS[t.state] ?? "bg-paper-3 text-ink-soft"}`}
+                >
+                  {TASK_STATE_LABEL[t.state] ?? ""}
+                </span>
+              </li>
+            ))}
+            <li className="flex items-start justify-between gap-3 border-t border-paper-3 py-3">
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-ink">
+                  邀请好友使用
+                  <span className="ml-1.5 font-semibold text-vermilion-deep">+点数</span>
+                </p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
+                  好友通过你的链接完成首次起名，奖励自动到账
+                </p>
+              </div>
+              <Link to="/invite" className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[10px] font-medium text-ink">
+                去邀请
+              </Link>
+            </li>
+          </ul>
+        ) : tasks && !tasks.enabled ? (
+          <p className="px-5 pb-3 text-xs text-ink-faint">
+            任务暂未开放，签到与邀请仍然可用。
+          </p>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-3 border-t border-paper-3 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-ink">每日签到 +1 点</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
+              连续签到满 7 天追加 3 点；一周签到攒 10 点，正好够再起一次名
+            </p>
+            {checkinMsg ? (
+              <p className="mt-1 text-[11px] font-medium text-vermilion-deep">{checkinMsg}</p>
+            ) : null}
+          </div>
+          <button
+            onClick={() => void checkIn()}
+            disabled={checkingIn}
+            className="shrink-0 rounded-xl bg-vermilion px-4 py-2 text-xs font-semibold text-paper disabled:opacity-60"
+          >
+            {checkingIn ? "签到中…" : "签到"}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-paper-3 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-ink">把起名工具分享给朋友</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
+              每日首次分享 +{tasks?.tasks.find((t) => t.key === "SHARE_RESULT")?.tokens ?? 2} 点
+            </p>
+            {shareMsg ? (
+              <p className="mt-1 text-[11px] font-medium text-vermilion-deep">{shareMsg}</p>
+            ) : null}
+          </div>
+          <button
+            onClick={shareTool}
+            className="shrink-0 rounded-xl bg-ink px-4 py-2 text-xs font-semibold text-paper"
+          >
+            复制链接
+          </button>
+        </div>
       </section>
 
       {/* 余额与支付 */}

@@ -135,14 +135,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         title: "对脉名鉴 · AI 摘要（llms.txt）",
         href: `${SITE_URL}/llms.txt`,
       },
-      /* 毛笔字体预载：首屏印章字与标题直接渲染，Core Web Vitals */
-      {
-        rel: "preload",
-        href: "/fonts/mashanzheng.woff2",
-        as: "font",
-        type: "font/woff2",
-        crossOrigin: "anonymous",
-      },
+      /* 毛笔字体不再全站预载（1.7MB）：预载在 4G 上会和首屏 JS/CSS 抢带宽，
+         而大多数页面只有头像那一枚小字用到它。现在只在印章字撑门面的
+         / /naming /names 三条路由的 head 里单独 preload，
+         其余页面交给 font-display: swap 惰性加载（生产上 11/14 条 js_error
+         就是这条 link 预载超时被中断产生的）。 */
     ],
     scripts: [
       /* 头条搜索自动收录：等价于后台给的插入式片段（同一 script src + id="ttzz"），

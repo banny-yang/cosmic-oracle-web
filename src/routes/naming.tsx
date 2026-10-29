@@ -36,9 +36,13 @@ import {
   type ClassicBookTree,
 } from "@/lib/classic-books";
 import { BirthplaceInput } from "@/components/birthplace-input";
+import { PageBrief } from "@/components/page-brief";
 import { streamPost, type StreamHandle } from "@/lib/sse";
 import { track } from "@/lib/track";
-import { isSrcTag, shareSrcTag, withSrc } from "@/lib/src-tag";
+import { isSrcTag, shareSrcTag } from "@/lib/src-tag";
+import { withAttribution } from "@/lib/share-link";
+import { claimShareTask } from "@/lib/points";
+import { SEAL_FONT_PRELOAD } from "@/lib/head-links";
 import { post, get, api } from "@/lib/api";
 import { useFeaturePrice, useFeatureEnabled } from "@/lib/use-feature-price";
 import { FeatureClosed } from "@/components/feature-closed";
@@ -175,7 +179,7 @@ export const Route = createFileRoute("/naming")({
         : undefined,
   }),
   head: () => ({
-    links: [{ rel: "canonical", href: "https://name.duimai.net/naming" }],
+    links: [{ rel: "canonical", href: "https://name.duimai.net/naming" }, SEAL_FONT_PRELOAD],
     meta: [
       { title: "宝宝起名 · 对脉名鉴" },
       {
@@ -1255,6 +1259,45 @@ function Naming() {
     };
   }, []);
 
+  // 投票解锁：票在亲友那一侧投，这边只能靠轮询/回站确认。达标即服务端已解锁，
+  // 这里把内容取回（unlock 幂等、不扣点），用户不必再点「解锁」。
+  const voteLocked = (diagnosis?.lockedCount ?? 0) > 0;
+  useEffect(() => {
+    if (!voteLink || !reportId || !voteLocked) return;
+    const userId = getAuthUser()?.userId;
+    if (!userId) return;
+    let alive = true;
+    const check = async () => {
+      try {
+        const s = await get<{ unlocked?: boolean; unlockSource?: string }>(
+          `/api/v1/naming/reports/${reportId}/status?user_id=${userId}`,
+        );
+        if (!alive || !s?.unlocked) return;
+        setVoteUnlockGranted(true);
+        track("naming_unlock_vote_reached", { source: s.unlockSource || "VOTE" });
+        await unlockReport({ auto: true });
+      } catch {
+        /* 网络抖动：下一轮再查 */
+      }
+    };
+    const timer = setInterval(check, 20000);
+    const onWake = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      void check();
+    };
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+    void check();
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+    };
+    // unlockReport 每次渲染都是新函数，进依赖会无限重挂定时器；reportId/voteLink 足够标识
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voteLink, reportId, voteLocked]);
+
   // 生成状态
   const [loading, setLoading] = useState(false);
   /** 登录态（仅客户端判定，避免 SSR 首屏与客户端不一致）：匿名提交走 /preview 免登录预览 */
@@ -1290,6 +1333,9 @@ function Naming() {
   const [picked, setPicked] = useState<string[]>([]);
   const [voting, setVoting] = useState(false);
   const [voteLink, setVoteLink] = useState("");
+  /** 投票解锁阈值与标的状态：本会话发起投票后展示「还差 N 票」，达标由服务端解锁。 */
+  const [voteThreshold, setVoteThreshold] = useState(0);
+  const [voteUnlockGranted, setVoteUnlockGranted] = useState(false);
 
   const wugeCells = (c: NameCardData) =>
     [
@@ -1593,12 +1639,20 @@ function Naming() {
     setVoting(true);
     track("vote_create", { count: picked.length });
     try {
-      const res = await post<{ sessionToken?: string }>("/api/v1/naming/voting/session", {
+      const res = await post<{
+        sessionToken?: string;
+        unlockThreshold?: number;
+        unlockGranted?: boolean;
+      }>("/api/v1/naming/voting/session", {
         babySurname: surname,
         candidateNames: picked,
+        // 带上报告：票数达标后服务端免费解锁这份报告的剩余名字（不扣点）
+        ...(reportId ? { reportId } : {}),
       });
       if (res?.sessionToken) {
-        setVoteLink(withSrc(`${location.origin}/vote/${res.sessionToken}`, "vote"));
+        setVoteLink(withAttribution(`${location.origin}/vote/${res.sessionToken}`, "vote"));
+        setVoteThreshold(Number(res.unlockThreshold || 0));
+        setVoteUnlockGranted(!!res.unlockGranted);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "投票创建失败");
@@ -1820,6 +1874,25 @@ function Naming() {
             title="宝宝起名"
             desc="填写姓氏与生辰偏好，为孩子拟一组有来历、有数理的名字。"
           />
+
+          {/* GEO：首屏给一段可摘录的结论 + 深层页面链接，AI 抓走后总结时有据可引、有链接可带 */}
+          {!hasResult && !loading ? (
+            <PageBrief
+              summary="对脉名鉴·宝宝起名是一个中文起名 Web 工具：填入姓氏与出生信息，先做真太阳时校正、排八字取喜用五行，再从 118 万句典籍语料中推演候选字，给出拼音、典籍出处原句与意蕴，并按五格数理与谐音安全核验排序；首次起名可免费体验 3 个名字。"
+              points={[
+                "取字依据：真太阳时校正后的八字喜用五行，叠加生肖宜用部首与音律筛选。",
+                "出处可查：每个名字标注典籍原文与书名（《诗经》《楚辞》、唐诗宋词等），引文经后端原文回查校验。",
+                "计费方式：完整 10 个方案按次计点，1 点 = 1 元，页面明示价格后才扣点；充值在小程序「对脉名鉴」完成，点数两端通用。",
+              ]}
+              links={[
+                { label: "现成好名灵感库", to: "/names" },
+                { label: "生肖取名宜忌", to: "/zodiac" },
+                { label: "典籍馆", to: "/dianji" },
+                { label: "姓名测评", to: "/name-eval" },
+              ]}
+              canonical="https://name.duimai.net/naming"
+            />
+          ) : null}
 
           {/* 表单 */}
           {!hasResult && !loading ? (
@@ -3146,6 +3219,15 @@ function Naming() {
                                   ? "解锁中…"
                                   : `解锁全部 · ${namingPrice} 点`}
                             </button>
+                            {/* 第二条路径：不掏点也能解锁——勾选几个名字发起亲友投票，
+                                满阈值后服务端免费解锁，同时把链接分享出去（裂变） */}
+                            <button
+                              onClick={() => setPicking(true)}
+                              disabled={!!passInfo?.active}
+                              className="text-[11px] font-medium text-vermilion-deep underline underline-offset-2 disabled:opacity-60"
+                            >
+                              或发起亲友投票 · 满 {voteThreshold || 3} 票免费解锁
+                            </button>
                             {unlockErr ? (
                               <p className="px-6 text-center text-[11px] text-vermilion-deep">
                                 {unlockErr}
@@ -3274,10 +3356,15 @@ function Naming() {
                     ) : null}
                     <button
                       onClick={() => {
+                        // 复制必须同步：await 会丢 Safari 的剪贴板手势授权
                         navigator.clipboard?.writeText(
-                          withSrc("https://name.duimai.net/naming", shareSrcTag()),
+                          withAttribution("https://name.duimai.net/naming", shareSrcTag()),
                         );
                         track("invite_copy", {});
+                        // 分享即得点（每日 1 次，服务端台账幂等；失败静默）
+                        void claimShareTask().then((r) => {
+                          if (r?.granted) track("points_share_granted", { tokens: r.tokens ?? 0 });
+                        });
                       }}
                       className="text-xs font-medium text-ink-soft underline underline-offset-2"
                     >
@@ -3316,11 +3403,21 @@ function Naming() {
               {voteLink ? (
                 <section className="mt-5 rounded-2xl bg-vermilion-wash p-5">
                   <p className="text-sm font-semibold text-vermilion-deep">投票链接已生成</p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">
+                    {voteUnlockGranted
+                      ? "票数已达标，剩余名字已自动解锁。"
+                      : trial
+                        ? `发给家人投票：满 ${voteThreshold || 3} 票，这份报告的剩余 ${diagnosis?.lockedCount ?? 0} 个名字自动免费解锁，不用花点数。`
+                        : "发给家人投票，选出大家都喜欢的那个。"}
+                  </p>
                   <p className="mt-2 break-all rounded-lg bg-paper px-3 py-2 text-xs text-ink">
                     {voteLink}
                   </p>
                   <button
-                    onClick={() => navigator.clipboard?.writeText(voteLink)}
+                    onClick={() => {
+                      navigator.clipboard?.writeText(voteLink);
+                      void claimShareTask();
+                    }}
                     className="mt-3 rounded-xl bg-vermilion px-5 py-2 text-xs font-semibold text-paper"
                   >
                     复制链接发给亲友
@@ -3525,6 +3622,8 @@ function Naming() {
                     <button
                       onClick={async () => {
                         track("poster_share", { name: poster.name });
+                        // 海报分享同样计入「首次分享得点」——分享动作已发生，先上报再说
+                        void claimShareTask();
                         try {
                           const blob = await (await fetch(poster.jpg)).blob();
                           const file = new File([blob], `起名海报_${poster.name}.jpg`, {
@@ -3539,7 +3638,7 @@ function Naming() {
                             await navigator.share({
                               title: `起名海报 ${poster.name}`,
                               text: `为「${poster.name}」生成的起名海报`,
-                              url: withSrc("https://name.duimai.net/naming", shareSrcTag()),
+                              url: withAttribution("https://name.duimai.net/naming", shareSrcTag()),
                             });
                           }
                         } catch {

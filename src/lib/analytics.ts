@@ -22,7 +22,11 @@ export function beacon(payload: Payload) {
     const body = {
       path: payload.path ?? window.location.pathname,
       event: payload.event,
-      props: payload.props ?? srcProps(),
+      /* 渠道标记走独立字段（后端 SourceClassifier 优先级：src > props.src > referrer）。
+         早期写成 props ?? {src}：业务事件一带 props（名字/份数/订单号）就把落地渠道顶掉，
+         来源面板因此把绝大多数事件算进了「直接访问」。props 现在只装业务载荷。 */
+      src: pageLoadSrcTag() || undefined,
+      props: payload.props,
       referrer: refHost(),
       vid: vid(),
       device: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
@@ -83,12 +87,4 @@ function refHost(): string | null {
   } catch {
     return null;
   }
-}
-
-/** 渠道标记随 PV 入库：微信剥 referrer 的流量只有 src 这条线能分渠道统计。
- *  用 pageLoadSrcTag 而不是 currentSrcTag：后者会带上去次留下的渠道，
- *  回访会被永远算成老渠道（每日来源里就再也看不到「直接访问」）。 */
-function srcProps(): string | undefined {
-  const src = pageLoadSrcTag();
-  return src ? JSON.stringify({ src }) : undefined;
 }

@@ -19,12 +19,14 @@ import {
   type Surname,
 } from "@/lib/surnames";
 import { lookupZodiacGuide, type ZodiacGuideView } from "@/lib/zodiac-guide";
+import { SurnameNoteBlock, type SurnameNoteView } from "@/components/surname-note";
 
 /**
  * 姓氏×生肖取名长尾页：/names/{姓氏拼音}/{生肖slug}（如 /names/wang/ma）。
  * 姓氏与生肖都先在前端常量校验（未收录 → 404，不产生无效地址）；生肖宜忌与干支由
- * zodiac-guide 现算（口径与 /zodiac 一致），男/女名字从灵感库按生肖+性别筛（各 8 个）。
- * 内容形态照抄生肖年份页：FAQPage 与可见问答共用同一数组，接口失败走 noindex 兜底。
+ * zodiac-guide 现算（口径与 /zodiac 一致），男/女名字从灵感库按生肖+性别+姓氏筛（各 8 个）：
+ * 带 surname 时灵感库会剔掉含姓氏本字、以及首字读音与该姓口语谐音撞车的名字（见 t_surname_note），
+ * 让每个姓氏页的候选名单真正不同，而不是换个姓氏汉字复用同一批名字。
  */
 export const Route = createFileRoute("/names/$surname/$animal")({
   component: SurnameZodiacPage,
@@ -32,13 +34,14 @@ export const Route = createFileRoute("/names/$surname/$animal")({
     const surname = surnameByPinyin(params.surname);
     const zodiac = zodiacBySlug(params.animal);
     if (!surname || !zodiac) throw notFound();
-    const [guide, boys, girls] = await Promise.all([
+    const [guide, boys, girls, note] = await Promise.all([
       lookupZodiacGuide({ animal: params.animal, limit: 10 }),
-      fetchZodiacNames(params.animal, "M"),
-      fetchZodiacNames(params.animal, "F"),
+      fetchZodiacNames(params.animal, "M", surname.han),
+      fetchZodiacNames(params.animal, "F", surname.han),
+      fetchSurnameNote(surname.han),
     ]);
     // 生肖 slug 已过常量校验，invalid 理论不出现；view 为 null 视为接口未就绪（页面走 noindex 兜底）
-    return { surname, zodiac, view: guide.view, boys, girls };
+    return { surname, zodiac, view: guide.view, boys, girls, note };
   },
   head: ({ loaderData }) => {
     const surname = loaderData?.surname;
@@ -86,15 +89,24 @@ interface GalleryName {
   meaning?: string | null;
 }
 
-/** 灵感库按生肖+性别取名字（与 /names 同接口，页首直出；失败返回空，区块隐藏）。 */
-function fetchZodiacNames(zodiac: string, gender: "M" | "F"): Promise<GalleryName[]> {
+/** 灵感库按生肖+性别+姓氏取名字（与 /names 同接口，页首直出；失败返回空，区块隐藏）。 */
+function fetchZodiacNames(zodiac: string, gender: "M" | "F", surname?: string): Promise<GalleryName[]> {
   return get<{ items: GalleryName[] }>(
     "/api/v1/naming/name-gallery",
-    { page: 0, size: 8, zodiac, gender },
+    { page: 0, size: 8, zodiac, gender, surname },
     { auth: false, timeoutMs: 10000 },
   )
     .then((r) => (Array.isArray(r?.items) ? r.items : []))
     .catch(() => []);
+}
+
+/** 该姓的谐音/连读提示（V206）；未收录返回 found=false，页面隐藏该区块。 */
+function fetchSurnameNote(surname: string): Promise<SurnameNoteView> {
+  return get<SurnameNoteView>(
+    "/api/v1/naming/surname-note",
+    { surname },
+    { auth: false, timeoutMs: 8000 },
+  ).catch(() => ({ found: false }));
 }
 
 const sectionTitle = "text-lg font-semibold";
@@ -102,12 +114,13 @@ const ghostCls =
   "rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash";
 
 function SurnameZodiacPage() {
-  const { surname, zodiac, view, boys, girls } = Route.useLoaderData() as {
+  const { surname, zodiac, view, boys, girls, note } = Route.useLoaderData() as {
     surname: Surname;
     zodiac: { slug: string; animal: string };
     view: ZodiacGuideView | null;
     boys: GalleryName[];
     girls: GalleryName[];
+    note: SurnameNoteView;
   };
 
   if (!view) {
@@ -148,6 +161,14 @@ function SurnameZodiacPage() {
       q: `${surname.han}姓${zodiac.animal}年宝宝取名宜用哪些部首？`,
       a: `按传统取名习俗，属${zodiac.animal}宜用 ${info.preferredRadicals.join("、")} 等部首，忌用 ${info.forbiddenRadicals.join("、")} 等部首。本页推荐的${surname.han}姓${zodiac.animal}年名字均命中宜用部首、未用忌用部首；宜忌是文化参考，最终以字音、字义与书写综合取舍。`,
     },
+    ...(note.found && note.homophoneNote
+      ? [
+          {
+            q: `${surname.han}姓取名要注意哪些谐音？`,
+            a: note.homophoneNote,
+          },
+        ]
+      : []),
     {
       q: `${surname.han}姓${zodiac.animal}年男宝名字有哪些推荐？`,
       a: boyWords
@@ -214,6 +235,31 @@ function SurnameZodiacPage() {
         title={`${surname.han}姓${zodiac.animal}年宝宝取名`}
         desc={`${info.ganzhi}${zodiac.animal}年（${info.termStart} 立春起）出生的宝宝属${zodiac.animal}。本页按${zodiac.animal}年宜用部首筛出与「${surname.han}」姓搭配的名字，男宝女宝各一组，附拼音、典籍出处原句与意蕴。${info.note}`}
       />
+
+      {/* 可摘录结论（GEO）：一段话说清本页有什么，AI 抓取后可直接引用并带链接 */}
+      <section className="mt-6 rounded-2xl bg-vermilion-wash p-5">
+        <p className="text-[11px] font-semibold tracking-wide text-vermilion-deep">
+          本页结论 · 可直接引用
+        </p>
+        <p className="mt-1.5 text-sm leading-relaxed text-ink text-pretty">
+          {surname.han}姓{zodiac.animal}年（{info.ganzhi}年）宝宝取名，按传统习俗宜用{" "}
+          {info.preferredRadicals.join("、")} 等部首，忌用 {info.forbiddenRadicals.join("、")}{" "}
+          等部首；本页给出 {boys.length + girls.length} 个候选名字（男宝 {boys.length} 个、女宝{" "}
+          {girls.length} 个），
+          {note.found
+            ? `已剔除含「${surname.han}」本字、以及与「${surname.han}」连读易被听混的读音${
+                (note.avoidSyllables || []).length
+                  ? `（${(note.avoidSyllables || []).join("、")}）`
+                  : ""
+              }开头的名字。`
+            : "均按生肖宜用部首筛出。"}
+        </p>
+        <p className="mt-1.5 break-all text-[11px] text-ink-faint">
+          引用时请保留本页链接：https://name.duimai.net{surnameZodiacPath(surname.pinyin, zodiac.slug)}
+        </p>
+      </section>
+
+      <SurnameNoteBlock han={surname.han} note={note} />
 
       <div className="mt-7 rounded-2xl bg-white p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-3">

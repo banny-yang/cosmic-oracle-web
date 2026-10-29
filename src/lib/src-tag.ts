@@ -7,10 +7,26 @@
  * 2. 只有白名单值才从地址栏摘走，杂参数一律原样留着。
  *
  * 采到的值落 localStorage dm_src，注册时由 attribution 作为 channel 上报
- * （后端 t_user.register_channel 首写生效），PV 埋点也带上 src 便于分渠道看访问。
+ * （后端 t_user.register_channel 首写生效），PV 埋点经 beacon 的顶层 src 字段上报。
+ *
+ * 新增取值时同步后端 SourceClassifier.SRC_LABELS，否则标签会显示成裸代码。
  */
-
-export const SRC_VALUES = ["wx", "baidu", "zhihu", "poster", "share", "mp", "vote"] as const;
+export const SRC_VALUES = [
+  "wx",
+  "baidu",
+  "zhihu",
+  "poster",
+  "share",
+  "mp",
+  "vote",
+  /* V201 外部投放渠道：人工在站外放链接时手工带参（这些平台站内跳转全剥 referrer） */
+  "wxgzh",
+  "wxtimeline",
+  "xhs",
+  "douyin",
+  "toutiao",
+  "weibo",
+] as const;
 export type SrcTag = (typeof SRC_VALUES)[number];
 
 const SRC_KEY = "dm_src";
@@ -93,6 +109,28 @@ export function withSrc(url: string, src: SrcTag): string {
     const u = new URL(url, base);
     u.searchParams.set("src", src);
     // 传进来是相对路径就还回相对路径，避免首屏/客户端渲染出不同字符串
+    return absolute ? u.toString() : u.pathname + u.search + u.hash;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * 在已打好渠道标记的链接上补邀请人短号（?ref=）。
+ *
+ * 站内所有分享此前只带 src 不带 ref，被分享人落地后后端拿不到邀请人，
+ * 「好友完成首次起名 +8 点」的邀请链路就永远不触发。ref 与 src 同用相对/绝对
+ * 形态返回，保证首屏与客户端渲染出同一字符串。
+ */
+export function withRef(url: string, ref: string): string {
+  const code = (ref || "").trim();
+  if (!code) return url;
+  try {
+    const absolute = /^https?:\/\//i.test(url);
+    const base =
+      typeof window === "undefined" ? "https://name.duimai.net" : window.location.origin;
+    const u = new URL(url, base);
+    u.searchParams.set("ref", code);
     return absolute ? u.toString() : u.pathname + u.search + u.hash;
   } catch {
     return url;

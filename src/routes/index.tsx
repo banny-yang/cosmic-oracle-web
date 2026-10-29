@@ -10,6 +10,7 @@ import { get } from "@/lib/api";
 import { fetchClassicBookTree, promotedCategories, type ClassicBookTree } from "@/lib/classic-books";
 import { fetchFestival, type FestivalHeroData } from "@/lib/festival";
 import { track } from "@/lib/track";
+import { SEAL_FONT_PRELOAD } from "@/lib/head-links";
 import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
 /** 小程序码旁的操作提示：按打开环境分档（小程序内长按 / 微信内长按 / 手机浏览器扫码 / 电脑用手机扫） */
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/")({
     return { classic, festival };
   },
   head: () => ({
-    links: [{ rel: "canonical", href: "https://name.duimai.net/" }],
+    links: [{ rel: "canonical", href: "https://name.duimai.net/" }, SEAL_FONT_PRELOAD],
     meta: [
       { title: "对脉名鉴 · 起名与姓名文化参考" },
       {

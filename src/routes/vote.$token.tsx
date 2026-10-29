@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/app-shell";
 import { get, post } from "@/lib/api";
 import { track } from "@/lib/track";
+import { withSrc } from "@/lib/src-tag";
 import { setupWxShare } from "@/lib/wx-share";
 
 export const Route = createFileRoute("/vote/$token")({
@@ -36,6 +37,10 @@ interface SessionView {
   babySurname?: string;
   totalVotes: number;
   candidates: Candidate[];
+  /** 发起人这份报告需要多少票才免费解锁（0/缺省 = 纯投票，不解锁报告）。 */
+  unlockThreshold?: number;
+  /** 是否已达标并解锁（服务端在最后一票时判定，重复查看不再变化）。 */
+  unlockGranted?: boolean;
 }
 
 const VOTER_KEY = "dm_voter_key";
@@ -111,7 +116,9 @@ function VotePage() {
   /** 转发给更多家人：优先系统分享面板，否则复制链接 */
   const share = async () => {
     track("vote_share_click");
-    const url = location.href;
+    // 投票页的地址里 src/ref 已被归因模块摘走，转发时重新打上渠道标记，
+    // 让下一位访客（以及注册归因）仍能看出这条链接来自投票
+    const url = withSrc(location.href, "vote");
     const text = `${session?.babySurname || ""}家宝宝的名字投票，来帮你喜欢的名字投一票`;
     try {
       if (navigator.share) {
@@ -181,6 +188,34 @@ function VotePage() {
         ) : (
           <>
             <p className="mt-6 text-xs text-ink-faint">共 {session?.totalVotes || 0} 人参与</p>
+            {session?.unlockThreshold ? (
+              <div className="mt-2 rounded-xl bg-vermilion-wash px-3.5 py-2.5">
+                {session.unlockGranted ? (
+                  <p className="text-[11px] leading-relaxed text-vermilion-deep">
+                    票数已达标，发起人现在可以免费查看这份报告的完整方案了。
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-[11px] leading-relaxed text-vermilion-deep">
+                      已收 {session.totalVotes || 0} 票，满 {session.unlockThreshold} 票发起人即可免费
+                      查看完整方案 —— 还差{" "}
+                      {Math.max(0, session.unlockThreshold - (session.totalVotes || 0))} 票
+                    </p>
+                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-paper">
+                      <div
+                        className="h-full rounded-full bg-vermilion"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            ((session.totalVotes || 0) / session.unlockThreshold) * 100,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : null}
             <div className="mt-3 space-y-3">
               {(session?.candidates || []).map((c) => {
                 const mine = myChoice === c.name;

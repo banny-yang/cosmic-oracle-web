@@ -197,8 +197,22 @@ function LoginPage() {
       <PageHeader
         eyebrow="账号"
         title="登录对脉名鉴"
-        desc="登录后同步解析记录、购买内容与亲友投票——网页与小程序同账号互通，点数通用。"
+        desc="登录后可看完整 10 个起名方案：逐字解读、五格音律、生肖契合，以及亲友投票。"
       />
+
+      {/* 登录墙的收益说明：此前这里只写登录方式，用户不知道登录换来什么 */}
+      <ul className="ink-in d1 mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {[
+          ["完整 10 个方案", "免登只有 3 个方向预览"],
+          ["逐字解读与音律", "五行、五格、生肖契合"],
+          ["亲友投票与记录", "网页与小程序同账号"],
+        ].map(([title, sub]) => (
+          <li key={title} className="rounded-xl bg-white px-4 py-3">
+            <p className="text-xs font-semibold text-ink">{title}</p>
+            <p className="mt-0.5 text-[11px] text-ink-faint">{sub}</p>
+          </li>
+        ))}
+      </ul>
 
       <div className="ink-in d1 mt-7 flex rounded-xl bg-paper-2 p-1">
         {(

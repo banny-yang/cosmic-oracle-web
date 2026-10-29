@@ -4,6 +4,7 @@ import { AppShell, PageHeader, BreadcrumbJsonLd, inputCls } from "@/components/a
 import { get } from "@/lib/api";
 import { sourceToCategory, categoryToExpectation } from "@/lib/gallery-signals";
 import { TOP_SURNAMES, ZODIAC_SLUGS } from "@/lib/surnames";
+import { SEAL_FONT_PRELOAD } from "@/lib/head-links";
 
 export const Route = createFileRoute("/names/")({
   component: NameGallery,
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/names/")({
     return { initial, meta, keyword: deps.keyword, zodiac: deps.zodiac };
   },
   head: () => ({
-    links: [{ rel: "canonical", href: "https://name.duimai.net/names" }],
+    links: [{ rel: "canonical", href: "https://name.duimai.net/names" }, SEAL_FONT_PRELOAD],
     meta: [
       { title: "名字灵感库 · 对脉名鉴" },
       {

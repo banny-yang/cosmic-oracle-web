@@ -6,6 +6,7 @@ import { bindInviter, getMyInvite, type InviteInfo } from "@/lib/ops";
 import { promoWebUrl } from "@/lib/promo-config";
 import { getToken } from "@/lib/auth";
 import { track } from "@/lib/track";
+import { shareSrcTag, withSrc } from "@/lib/src-tag";
 
 export const Route = createFileRoute("/invite")({
   component: InvitePage,
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/invite")({
     meta: [
       { name: "robots", content: "noindex" },
       { title: "邀请好友 · 对脉名鉴" },
-      { name: "description", content: "分享专属邀请链接，好友首次充值后你可获得点数奖励。" },
+      { name: "description", content: "分享专属邀请链接，好友完成首次起名后你可获得点数奖励。" },
     ],
   }),
 });
@@ -32,9 +33,12 @@ function InvitePage() {
     getMyInvite()
       .then((res) => {
         setInfo(res);
-        // 专属链接 = 推广域名 + ?ref=<我的短号>，与后端 trackLogin 的 ref 口径一致
+        // 专属链接 = 推广域名 + ?ref=<我的短号>，与后端 trackLogin 的 ref 口径一致；
+        // 再补 ?src= 让站外链接有自己的渠道标记（微信内分享记 wx，其他记 share）
         if (res?.inviteCode) {
-          promoWebUrl().then((base) => setShareUrl(`${base}/?ref=${res.inviteCode}`));
+          promoWebUrl().then((base) =>
+            setShareUrl(withSrc(`${base}/?ref=${res.inviteCode}`, shareSrcTag())),
+          );
         }
         setLoaded(true);
       })
@@ -102,7 +106,7 @@ function InvitePage() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="账号" title="邀请好友" desc="好友首次充值后，奖励自动到账。" />
+      <PageHeader eyebrow="账号" title="邀请好友" desc="好友完成首次起名后，奖励自动到账。" />
 
       {err ? <p className="mt-4 text-xs text-vermilion-deep">{err}</p> : null}
 
@@ -121,7 +125,7 @@ function InvitePage() {
                 <p className="mt-1 text-xs text-ink-faint">
                   {info?.enabled === false
                     ? "邀请奖励当前暂停发放，邀请关系仍会记录"
-                    : `好友首次充值后，你获得 ${info?.rewardTokens ?? 0} 点`}
+                    : `好友完成首次起名后，你获得 ${info?.rewardTokens ?? 0} 点`}
                 </p>
               </div>
               <span className="shrink-0 rounded-xl bg-paper-3 px-3.5 py-1.5 font-mono text-base font-semibold text-ink">
@@ -158,7 +162,7 @@ function InvitePage() {
             ))}
           </div>
           <p className="mt-2 text-[11px] text-ink-faint">
-            好友完成首次充值才发奖，同一好友只计一次。
+            好友完成首次起名才发奖，同一好友只计一次；好友后来充值不再重复发奖。
           </p>
 
           {info && !info.invited ? (

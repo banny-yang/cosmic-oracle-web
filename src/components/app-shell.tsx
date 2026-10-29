@@ -5,6 +5,7 @@ import { pageView } from "@/lib/analytics";
 import type { ReactNode } from "react";
 import { useAuth, getToken, subscribeAuth, updateToken } from "@/lib/auth";
 import { refreshBalance } from "@/lib/balance";
+import { preloadShareRef } from "@/lib/share-link";
 import { post } from "@/lib/api";
 import { getUnreadCount } from "@/lib/ops";
 import { useFeatureEnabled } from "@/lib/use-feature-price";
@@ -224,32 +225,49 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
   // 错误对象名、行列号、跨域标记、发生页面；资源加载失败走捕获阶段（error 不冒泡）。
   useEffect(() => {
     const page = () => location.pathname.slice(0, 32);
+    /* 同类错误每次会话只报 2 条：一个坏资源会连发十几条同名错误，把真正的新问题挤掉
+       （10-27 的 8 条 woff2 失败就是这样堆满一屏的）。 */
+    const seen = new Map<string, number>();
+    const report = (props: Record<string, string | number | boolean | null | undefined>) => {
+      const key = `${props["msg"]}|${props["src"] ?? ""}|${props["line"] ?? ""}`;
+      const n = (seen.get(key) ?? 0) + 1;
+      seen.set(key, n);
+      if (n > 2) return;
+      track("js_error", props);
+    };
     const onErr = (e: Event) => {
       const el = e.target as (Element & { src?: string; href?: string }) | null;
       if (el && el.tagName) {
         // img/script/link 加载失败：只有捕获阶段能听到
-        track("js_error", {
+        const rawSrc = String(el.src || el.href || "");
+        /* 字体加载中断不报：@font-face 已是 font-display: swap，字池未覆盖或网络慢时
+           正文落回系统楷体/宋体，用户无感。这类「错误」原本占全部 js_error 的八成。 */
+        if (/\.(woff2?|ttf|otf)(\?|$)/i.test(rawSrc)) return;
+        report({
           msg: `resource:${el.tagName.toLowerCase()}`,
-          src: String(el.src || el.href || "").slice(-44),
+          src: rawSrc.slice(-44),
           page: page(),
         });
         return;
       }
       const ev = e as ErrorEvent;
       const msg = String(ev.message || "");
-      track("js_error", {
+      const file = String(ev.filename || "");
+      /* 跨域脚本没配 CORS 时浏览器把消息脱敏成 "Script error." 且不给文件名/行号——
+           这类上报拿不到任何定位信息，只会把真实异常埋掉。带文件名的一律保留。 */
+      if (msg === "Script error." && !file) return;
+      report({
         msg: (msg || "unknown").slice(0, 70),
-        src: String(ev.filename || "").slice(-44),
+        src: file.slice(-44),
         name: String((ev.error as Error | undefined)?.name || "").slice(0, 20),
         line: typeof ev.lineno === "number" ? ev.lineno : undefined,
-        // 跨域脚本没配 CORS 时消息被浏览器替换成 "Script error."，标出来便于区分业务报错
         cross: msg === "Script error." ? true : undefined,
         page: page(),
       });
     };
     const onRej = (e: PromiseRejectionEvent) => {
       const reason = e.reason as { name?: string; message?: string } | undefined;
-      track("js_error", {
+      report({
         msg: ("unhandledrejection:" + String(reason?.message ?? e.reason)).slice(0, 70),
         name: String(reason?.name ?? "").slice(0, 20),
         page: page(),
@@ -267,6 +285,8 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
   useEffect(() => {
     if (!getToken()) return;
     refreshBalance();
+    // 邀请码预取：分享链接要同步拼 ?ref=，不能等点击时才去请求
+    preloadShareRef();
     post<{ token?: string }>("/api/v1/users/refresh-token", undefined, { timeoutMs: 8000 })
       .then((r) => {
         if (r?.token) updateToken(r.token);

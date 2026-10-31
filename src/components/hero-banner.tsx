@@ -269,12 +269,12 @@ export function HeroBanner({ children }: { children: ReactNode }) {
                       className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-multiply"
                     />
                     <div className="absolute right-4 bottom-4 flex items-center gap-3 rounded-full bg-paper py-1.5 pr-5 pl-1.5 lg:right-8 lg:bottom-6">
-                      <span className="grid size-9 place-items-center rounded-full bg-vermilion font-seal text-lg text-paper">
+                      <span className="grid size-9 place-items-center rounded-full bg-vermilion font-seal text-lg leading-none text-paper">
                         {s.seal}
                       </span>
                       <span className="leading-tight">
                         <span className="block text-sm font-semibold">{s.title}</span>
-                        <span className="block text-[11px] text-ink-soft">{s.desc}</span>
+                        <span className="block text-xs text-ink-soft">{s.desc}</span>
                       </span>
                     </div>
                   </div>

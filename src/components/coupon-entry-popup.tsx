@@ -78,6 +78,16 @@ export function CouponEntryPopup() {
     setItems([]);
   };
 
+  // Esc 关闭：这是阻断式遮罩，键盘用户需要一个出口
+  useEffect(() => {
+    if (items.length === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [items]);
+
   const claim = async (c: ClaimableCoupon) => {
     setClaimingId(c.templateId);
     setErr("");
@@ -97,19 +107,22 @@ export function CouponEntryPopup() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4" onClick={close}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="coupon-popup-title"
         className="ink-in w-full max-w-sm rounded-2xl bg-white p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold">有福利可领取</h3>
+            <h3 id="coupon-popup-title" className="text-base font-semibold">有福利可领取</h3>
             <p className="mt-0.5 text-xs text-ink-faint">领取后即可使用</p>
           </div>
           <button
             type="button"
             aria-label="关闭"
             onClick={close}
-            className="grid size-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-paper-3"
+            className="grid size-10 place-items-center rounded-full text-ink-soft transition-colors hover:bg-paper-3"
           >
             <X className="size-4" />
           </button>
@@ -128,7 +141,7 @@ export function CouponEntryPopup() {
                 type="button"
                 onClick={() => claim(c)}
                 disabled={claimingId === c.templateId}
-                className="shrink-0 rounded-xl bg-vermilion px-4 py-2 text-xs font-semibold text-paper disabled:opacity-60"
+                className="shrink-0 rounded-xl bg-vermilion px-4 py-2.5 text-sm font-semibold text-paper disabled:opacity-60"
               >
                 {claimingId === c.templateId ? "领取中…" : "领取"}
               </button>

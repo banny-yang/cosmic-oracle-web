@@ -103,7 +103,7 @@ function ClaimableSection({ onChanged }: { onChanged: () => void }) {
           </div>
         ))}
       </div>
-      {err ? <p className="mt-2 text-xs text-vermilion-deep">{err}</p> : null}
+      {err ? <p role="alert" className="mt-2 text-xs text-vermilion-deep">{err}</p> : null}
     </section>
   );
 }
@@ -173,12 +173,13 @@ function CouponsPage() {
       <ClaimableSection onChanged={load} />
 
       {/* 兑换码 */}
-      <section className="ink-in d1 mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+      <section className="ink-in d1 mt-7 rounded-2xl bg-white p-5">
         <p className="text-sm font-medium">兑换码兑换</p>
         <p className="mt-1 text-xs text-ink-faint">点数券兑换即到账；抵扣券进券包，充值时自动可选</p>
         <div className="mt-3 flex gap-2">
           <input
-            className={inputCls}
+            aria-label="兑换码"
+            className={inputCls + " min-w-0 flex-1"}
             placeholder="请输入兑换码"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
@@ -193,12 +194,12 @@ function CouponsPage() {
           </button>
         </div>
         {okLine ? <p className="mt-2 text-xs text-emerald-700">{okLine}</p> : null}
-        {err ? <p className="mt-2 text-xs text-vermilion-deep">{err}</p> : null}
+        {err ? <p role="alert" className="mt-2 text-xs text-vermilion-deep">{err}</p> : null}
       </section>
 
       {/* 券包 */}
       <div className="mt-6 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">券包</h2>
+        <h2 className="text-lg font-semibold">券包</h2>
         <span className="text-xs text-ink-faint">可用 {usable} 张</span>
       </div>
 
@@ -210,7 +211,7 @@ function CouponsPage() {
         </div>
       ) : items.length === 0 ? (
         <div className="mt-3 rounded-2xl bg-white p-10 text-center transition-colors hover:bg-vermilion-wash">
-          <p className="font-seal text-3xl text-ink-faint">券</p>
+          <p className="font-seal text-3xl leading-none text-ink-faint">券</p>
           <p className="mt-3 text-sm font-medium">券包还是空的</p>
           <p className="mt-1 text-xs text-ink-faint">参与活动、邀请好友或在客服处领取兑换码</p>
           <Link to="/invite" className="mt-5 inline-block rounded-xl bg-vermilion px-6 py-2.5 text-sm font-semibold text-paper">
@@ -225,10 +226,10 @@ function CouponsPage() {
               <div
                 key={c.id}
                 className={`ink-in flex items-center gap-4 rounded-2xl bg-white p-4 transition-colors ${
-                  expired ? "opacity-60" : "hover:bg-vermilion-wash"
+                  expired ? "" : "hover:bg-vermilion-wash"
                 }`}
               >
-                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink font-seal text-lg text-paper">
+                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink font-seal text-lg leading-none text-paper">
                   券
                 </span>
                 <div className="min-w-0 flex-1">

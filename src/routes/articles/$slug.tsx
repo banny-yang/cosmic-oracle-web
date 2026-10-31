@@ -139,7 +139,7 @@ function ArticleDetailPage() {
 
       {/* 正文：服务端白名单渲染的 HTML（标题/段落/列表/引用/链接），SSR 直出 */}
       <article
-        className="article-prose mt-7 rounded-2xl bg-white p-7 md:p-9"
+        className="prose-reading article-prose mt-7 rounded-2xl bg-white p-7 md:p-9"
         dangerouslySetInnerHTML={{ __html: article.contentHtml }}
       />
 

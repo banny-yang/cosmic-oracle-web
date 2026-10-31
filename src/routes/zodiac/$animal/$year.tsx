@@ -208,9 +208,9 @@ function ZodiacYearPage() {
 
       <div className="mt-7 rounded-2xl bg-white p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <p className="text-sm font-semibold">
+          <h3 className="text-base font-semibold">
             {current ? "当前生肖年" : "该年生肖"} · 宜用与忌用部首
-          </p>
+          </h3>
           <Link
             to="/zodiac/$animal"
             params={{ animal: info.slug }}

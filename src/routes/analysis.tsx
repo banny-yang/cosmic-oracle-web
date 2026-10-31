@@ -38,11 +38,19 @@ function Analysis() {
   const [nameA, setNameA] = useState("");
   const [nameB, setNameB] = useState("");
   const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  // running 失败会回到 form，届时解除按钮锁
+  useEffect(() => {
+    if (flow.phase === "form") setBusy(false);
+  }, [flow.phase]);
 
   const submit = () => {
+    if (busy) return;
     setErr("");
     if (!nameA.trim()) return setErr("请输入要解析的姓名");
     if (!nameB.trim()) return setErr("请输入对比姓名（姓名共振为双名对照）");
+    setBusy(true);
     flow.run({
       userId: getAuthUser()?.userId,
       reportType: "NAME",
@@ -71,19 +79,20 @@ function Analysis() {
           <Field label="对比姓名">
             <input className={inputCls} maxLength={12} placeholder="如：林知远" value={nameB} onChange={(e) => setNameB(e.target.value)} />
           </Field>
-          {err ? <p className="text-xs text-vermilion-deep">{err}</p> : null}
+          {err ? <p role="alert" className="text-xs text-vermilion-deep">{err}</p> : null}
           <button
             onClick={submit}
-            className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]"
+            disabled={busy}
+            className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] disabled:opacity-60"
           >
-            开始解析
+            {busy ? "解析中…" : "开始解析"}
           </button>
         </ReportForm>
       ) : flow.phase === "running" ? (
         <>
           <ReportRunning error={flow.error} />
           {flow.markdown ? (
-            <section className="mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+            <section className="mt-4 rounded-2xl bg-white p-5">
               <MiniMarkdown text={flow.markdown} />
             </section>
           ) : null}
@@ -92,8 +101,8 @@ function Analysis() {
         <>
           {showPaywall ? <RechargeModal message={flow.error} onClose={() => setShowPaywall(false)} /> : null}
           {!flow.needPay && flow.error ? (
-            <section className="mt-7 rounded-2xl bg-white p-5 text-center transition-colors hover:bg-vermilion-wash">
-              <p className="text-sm text-vermilion-deep">{flow.error}</p>
+            <section className="mt-7 rounded-2xl bg-white p-5 text-center">
+              <p role="alert" className="text-sm text-vermilion-deep">{flow.error}</p>
             </section>
           ) : null}
           <NameSummaryCard detail={detail} />
@@ -124,7 +133,7 @@ function Analysis() {
             }}
           />
           {flow.markdown ? (
-            <section className="ink-in mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+            <section className="ink-in mt-5 rounded-2xl bg-white p-5">
               <MiniMarkdown text={flow.markdown} />
             </section>
           ) : null}

@@ -209,12 +209,12 @@ function LoginPage() {
         ].map(([title, sub]) => (
           <li key={title} className="rounded-xl bg-white px-4 py-3">
             <p className="text-xs font-semibold text-ink">{title}</p>
-            <p className="mt-0.5 text-[11px] text-ink-faint">{sub}</p>
+            <p className="mt-0.5 text-xs text-ink-faint">{sub}</p>
           </li>
         ))}
       </ul>
 
-      <div className="ink-in d1 mt-7 flex rounded-xl bg-paper-2 p-1">
+      <div role="group" aria-label="登录方式" className="ink-in d1 mt-7 flex rounded-xl bg-paper-2 p-1">
         {(
           [
             ["phone", "手机验证码"],
@@ -224,7 +224,8 @@ function LoginPage() {
           <button
             key={k}
             onClick={() => setTab(k)}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+            aria-pressed={tab === k}
+            className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors ${
               tab === k ? "bg-ink text-paper" : "text-ink-soft"
             }`}
           >
@@ -234,7 +235,7 @@ function LoginPage() {
       </div>
 
       {tab === "phone" ? (
-        <section className="ink-in d2 mt-4 space-y-3 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+        <section className="ink-in d2 mt-4 space-y-3 rounded-2xl bg-white p-5">
           <Field label="手机号">
             <input
               className={inputCls}
@@ -253,17 +254,18 @@ function LoginPage() {
                 value={captchaInput}
                 onChange={(e) => setCaptchaInput(e.target.value)}
               />
-              {captchaImg ? (
-                <img
-                  src={captchaImg}
-                  alt="图形验证码，点击刷新"
-                  title="点击刷新"
-                  className="h-10 w-28 shrink-0 cursor-pointer rounded-lg object-contain bg-paper-3"
-                  onClick={loadCaptcha}
-                />
-              ) : (
-                <div className="h-10 w-28 shrink-0 rounded-lg bg-paper-3" />
-              )}
+              <button
+                type="button"
+                onClick={loadCaptcha}
+                aria-label={captchaImg ? "图形验证码，点击刷新" : "重新加载图形验证码"}
+                className="grid h-10 w-28 shrink-0 place-items-center overflow-hidden rounded-lg bg-paper-3"
+              >
+                {captchaImg ? (
+                  <img src={captchaImg} alt="" className="h-full w-full object-contain" />
+                ) : (
+                  <span className="text-xs text-ink-faint">加载中…</span>
+                )}
+              </button>
             </div>
           </Field>
           <Field label="短信验证码">
@@ -285,7 +287,7 @@ function LoginPage() {
               </button>
             </div>
           </Field>
-          {err ? <p className="text-xs text-vermilion-deep">{err}</p> : null}
+          {err ? <p role="alert" className="text-xs text-vermilion-deep">{err}</p> : null}
           <button
             disabled={logging}
             onClick={phoneLogin}
@@ -293,10 +295,10 @@ function LoginPage() {
           >
             {logging ? "登录中…" : "登录"}
           </button>
-          <p className="text-center text-[11px] text-ink-faint">未注册的手机号，验证通过后将自动创建账号</p>
+          <p className="text-center text-xs text-ink-faint">未注册的手机号，验证通过后将自动创建账号</p>
         </section>
       ) : (
-        <section className="ink-in d2 mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+        <section className="ink-in d2 mt-4 rounded-2xl bg-white p-5">
           <p className="text-sm leading-relaxed text-ink-soft">{QR_HINT[qrEnv]}</p>
           {qrEnv === "wechat-h5" ? (
             <div className="mt-4">
@@ -307,8 +309,8 @@ function LoginPage() {
               >
                 {oauthBusy ? "跳转微信授权中…" : "微信一键登录"}
               </button>
-              {oauthErr ? <p className="mt-2 text-xs text-vermilion-deep">{oauthErr}</p> : null}
-              <p className="mt-3 text-center text-[11px] text-ink-faint">或长按下方二维码，在小程序内确认登录</p>
+              {oauthErr ? <p role="alert" className="mt-2 text-xs text-vermilion-deep">{oauthErr}</p> : null}
+              <p className="mt-3 text-center text-xs text-ink-faint">或长按下方二维码，在小程序内确认登录</p>
             </div>
           ) : null}
           <div className="mt-4 flex flex-col items-center gap-3">
@@ -320,7 +322,7 @@ function LoginPage() {
               </div>
             )}
             {qrWaiting && qr ? <p className="text-xs text-ink-faint">等待扫码确认…</p> : null}
-            {qrErr ? <p className="text-xs text-vermilion-deep">{qrErr}</p> : null}
+            {qrErr ? <p role="alert" className="text-xs text-vermilion-deep">{qrErr}</p> : null}
             <button
               onClick={createTicket}
               className="rounded-xl bg-vermilion px-6 py-2.5 text-sm font-semibold text-paper"
@@ -332,7 +334,7 @@ function LoginPage() {
       )}
 
       <p className="mt-6 text-center text-xs text-ink-faint">
-        登录遇到问题？<Link to="/" className="text-vermilion-deep underline underline-offset-2">回首页</Link>
+        登录遇到问题？<Link to="/help" className="text-vermilion-deep underline underline-offset-2">查看帮助中心</Link>
       </p>
     </AppShell>
   );

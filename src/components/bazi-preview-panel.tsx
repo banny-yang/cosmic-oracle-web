@@ -52,19 +52,19 @@ export function BaziPreviewPanel({
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   return (
-    <div className="mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+    <div className="mt-4 rounded-2xl bg-white p-5">
       <div className="flex items-center gap-4 rounded-xl bg-paper-2 p-4">
         <div className="grid size-16 shrink-0 place-items-center rounded-full">
           <div className="text-center leading-none">
             <p className="text-xl font-bold tabular-nums text-ink">{data.total}</p>
-            <p className="mt-0.5 text-[9px] text-ink-faint">综合指数</p>
+            <p className="mt-0.5 text-[11px] text-ink-faint">综合指数</p>
           </div>
         </div>
         <div>
           <p className={`text-base font-semibold ${LEVEL_COLOR[data.level] ?? ""}`}>
             <Heart className="mr-1 inline size-4" /> {data.level}
           </p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-soft">{data.summary}</p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">{data.summary}</p>
         </div>
       </div>
       <div className="mt-3 space-y-1.5">
@@ -79,7 +79,7 @@ export function BaziPreviewPanel({
               </span>
               <span className="w-24 shrink-0 text-sm font-medium">
                 {it.label}
-                <span className="ml-1 text-[9px] font-normal text-ink-faint">{it.weight}%</span>
+                <span className="ml-1 text-[11px] font-normal text-ink-faint">{it.weight}%</span>
               </span>
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-paper-3">
                 <div className={`h-full rounded-full ${scoreColor(it.score)}`} style={{ width: `${it.score}%` }} />
@@ -90,8 +90,8 @@ export function BaziPreviewPanel({
               />
             </button>
             {openKey === it.key ? (
-              <div className="px-3.5 py-3 text-xs leading-relaxed">
-                <p className="text-[10px] text-ink-faint">
+              <div className="px-3.5 py-3 text-sm leading-reading">
+                <p className="text-ink-faint">
                   权重 {it.weight}% · 证据等级 {it.grade} · {it.summary}
                 </p>
                 <p className="mt-2 font-medium text-emerald-700">正向因素</p>
@@ -113,7 +113,7 @@ export function BaziPreviewPanel({
       </div>
       {!embedded ? (
         <>
-          <p className="mt-3 text-[10px] leading-relaxed text-ink-faint">
+          <p className="mt-3 text-xs leading-relaxed text-ink-faint">
             评分为传统合婚规则的量化模型，仅供文化参考与娱乐。
           </p>
           <button

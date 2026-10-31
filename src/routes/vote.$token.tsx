@@ -63,6 +63,7 @@ function VotePage() {
   const { token } = Route.useParams();
   const [session, setSession] = useState<SessionView | null>(null);
   const [myChoice, setMyChoice] = useState("");
+  const [voting, setVoting] = useState("");
   const [error, setError] = useState("");
   const [gone, setGone] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -97,7 +98,8 @@ function VotePage() {
   };
 
   const vote = async (name: string) => {
-    if (myChoice) return;
+    if (myChoice || voting) return;
+    setVoting(name);
     try {
       const r = await post<SessionView>(
         `/api/v1/naming/voting/${token}/vote`,
@@ -110,6 +112,8 @@ function VotePage() {
       track("vote_cast", { name });
     } catch (e) {
       setError(e instanceof Error ? e.message : "投票失败");
+    } finally {
+      setVoting("");
     }
   };
 
@@ -159,8 +163,8 @@ function VotePage() {
         </p>
 
         {gone ? (
-          <div className="mt-7 rounded-2xl bg-white p-8 text-center transition-colors hover:bg-vermilion-wash">
-            <span className="font-seal text-3xl text-ink-faint">过</span>
+          <div className="mt-7 rounded-2xl bg-white p-8 text-center">
+            <span className="font-seal text-3xl leading-none text-ink-faint">过</span>
             <p className="mt-3 text-sm font-medium text-ink">投票链接已失效或不存在</p>
             <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">
               链接可能已过期，或发起人已关闭投票。可以请发起人重新分享。
@@ -173,8 +177,8 @@ function VotePage() {
             </Link>
           </div>
         ) : error ? (
-          <div className="mt-7 rounded-2xl bg-white p-8 text-center transition-colors hover:bg-vermilion-wash">
-            <p className="text-sm text-vermilion-deep">{error}</p>
+          <div className="mt-7 rounded-2xl bg-white p-8 text-center">
+            <p role="alert" className="text-sm text-vermilion-deep">{error}</p>
             <button onClick={refresh} className="mt-4 rounded-xl bg-ink px-6 py-2.5 text-sm font-semibold text-paper">
               重新加载
             </button>
@@ -191,12 +195,12 @@ function VotePage() {
             {session?.unlockThreshold ? (
               <div className="mt-2 rounded-xl bg-vermilion-wash px-3.5 py-2.5">
                 {session.unlockGranted ? (
-                  <p className="text-[11px] leading-relaxed text-vermilion-deep">
+                  <p className="text-xs leading-relaxed text-vermilion-deep">
                     票数已达标，发起人现在可以免费查看这份报告的完整方案了。
                   </p>
                 ) : (
                   <>
-                    <p className="text-[11px] leading-relaxed text-vermilion-deep">
+                    <p className="text-xs leading-relaxed text-vermilion-deep">
                       已收 {session.totalVotes || 0} 票，满 {session.unlockThreshold} 票发起人即可免费
                       查看完整方案 —— 还差{" "}
                       {Math.max(0, session.unlockThreshold - (session.totalVotes || 0))} 票
@@ -223,7 +227,8 @@ function VotePage() {
                 return (
                   <button
                     key={c.name}
-                    disabled={chosen}
+                    disabled={chosen || !!voting}
+                    aria-busy={voting === c.name}
                     onClick={() => vote(c.name)}
                     className={`relative w-full overflow-hidden rounded-2xl bg-white p-4 text-left transition-colors ${
                       mine ? "bg-vermilion-wash" : "hover:bg-vermilion-wash"
@@ -235,7 +240,7 @@ function VotePage() {
                     />
                     <span className="relative flex items-center justify-between">
                       <span className="flex items-baseline gap-2">
-                        <span className="font-seal text-2xl text-ink">{c.name}</span>
+                        <span className="font-seal text-2xl leading-none text-ink">{c.name}</span>
                         {c.pinyin ? <span className="text-xs text-ink-faint">{c.pinyin}</span> : null}
                         {mine ? <span className="text-[11px] font-medium text-vermilion-deep">我的选择</span> : null}
                       </span>
@@ -256,7 +261,7 @@ function VotePage() {
                 </button>
               </div>
             ) : null}
-            <p className="mt-10 text-center text-[11px] leading-relaxed text-ink-faint">
+            <p className="mt-10 text-center text-xs leading-relaxed text-ink-faint">
               投票由对脉名鉴提供 · 内容仅供文化参考与娱乐
             </p>
           </>

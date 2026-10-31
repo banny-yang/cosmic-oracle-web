@@ -88,19 +88,19 @@ export function MiniMarkdown({ text }: { text: string }) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/^###\s?(.+)$/gm, '<h4 class="mt-5 text-sm font-semibold text-ink">$1</h4>')
-    .replace(/^##\s?(.+)$/gm, '<h3 class="mt-6 text-base font-semibold text-ink">$1</h3>')
-    .replace(/^#\s?(.+)$/gm, '<h2 class="mt-7 text-lg font-bold text-ink">$1</h2>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-ink">$1</strong>')
-    .replace(/^[-*]\s+(.+)$/gm, '<li class="ml-4 list-disc text-sm leading-relaxed text-ink-soft">$1</li>')
+    .replace(/^###\s?(.+)$/gm, "<h4>$1</h4>")
+    .replace(/^##\s?(.+)$/gm, "<h3>$1</h3>")
+    .replace(/^#\s?(.+)$/gm, "<h2>$1</h2>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/^[-*]\s+(.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
     .split(/\n{2,}/)
     .map((block) =>
       block.startsWith("<h") || block.startsWith("<li")
         ? block
-        : `<p class="mt-3 text-sm leading-relaxed text-ink-soft">${block.replace(/\n/g, "<br/>")}</p>`,
+        : `<p>${block.replace(/\n/g, "<br/>")}</p>`,
     )
     .join("");
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div className="prose-reading" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 /** 生成中骨架 */
@@ -138,7 +138,7 @@ export function PaywallCard({ message, inModal }: { message: string; inModal?: b
   return (
     <section className={(inModal ? "" : "mt-7 ") + "rounded-2xl bg-vermilion-wash p-5 "}>
       <p className="text-sm font-semibold text-vermilion-deep">{message}</p>
-      <p className="mt-1 text-xs text-ink-soft">{QR_HINT[qrEnv]}</p>
+      <p className="mt-1 text-sm leading-relaxed text-ink-soft">{QR_HINT[qrEnv]}</p>
       <div className="mt-3">
         <ScanBuyPanel trackWhere="paywall" />
       </div>

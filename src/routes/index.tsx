@@ -416,7 +416,7 @@ function Index() {
             <p className="text-xs font-medium tracking-widest text-ink-soft">
               今日一名 · 典籍里的好字
             </p>
-            <span className="text-[11px] text-ink-faint">{verse.source}</span>
+            <span className="text-xs text-ink-faint">{verse.source}</span>
           </div>
           <p className="mt-2 text-lg leading-relaxed text-ink">{verse.text}</p>
           {verse.meaning ? <p className="mt-1 text-xs text-ink-soft">「{verse.meaning}」</p> : null}
@@ -453,7 +453,7 @@ function Index() {
           {social.feed.slice(0, 6).map((f, i) => (
             <span
               key={i}
-              className="shrink-0 rounded-full bg-paper-3 px-3 py-1.5 text-[11px] text-ink-soft"
+              className="shrink-0 rounded-full bg-paper-3 px-3 py-1.5 text-xs text-ink-soft"
             >
               {f.text}
             </span>
@@ -485,11 +485,11 @@ function Index() {
             {classicBooks.books.map((b) => (
               <div key={b.book} className="rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash">
                 <p className="font-seal text-xl leading-none text-ink">《{b.book}》</p>
-                <p className="mt-2 text-xs leading-relaxed text-ink-soft text-pretty">
+                <p className="mt-2 text-sm leading-relaxed text-ink-soft text-pretty">
                   {b.intro ?? ""}
                 </p>
                 {b.highlight ? (
-                  <p className="mt-2 text-xs leading-relaxed text-ink">
+                  <p className="mt-2 text-sm leading-relaxed text-ink">
                     {b.highlight}
                     {b.highlightSource ? (
                       <span className="text-ink-faint"> —— {b.highlightSource}</span>
@@ -567,7 +567,7 @@ function Index() {
               <p className="mt-1 text-lg font-semibold tabular-nums text-vermilion-deep">
                 {priceLabel(c.code, c.cost)}
               </p>
-              <p className="mt-1 text-[11px] leading-snug text-ink-faint">{c.note}</p>
+              <p className="mt-1 text-xs leading-snug text-ink-faint">{c.note}</p>
             </div>
           ))}
         </div>
@@ -579,7 +579,7 @@ function Index() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">
                 小程序充值档位
-                <span className="ml-2 text-[11px] font-normal text-ink-faint">1 点 ≈ ¥1</span>
+                <span className="ml-2 text-xs font-normal text-ink-faint">1 点 ≈ ¥1</span>
               </p>
               <div className="mt-3 grid grid-cols-3 gap-2 md:max-w-md">
                 {pointSkus.map((t, i) => (
@@ -588,14 +588,14 @@ function Index() {
                     className={`relative rounded-xl bg-paper-3 p-3 transition-colors ${t.tag ? "bg-vermilion-wash" : "hover:bg-vermilion-wash"}`}
                   >
                     {t.tag ? (
-                      <span className="absolute -top-2 right-2 rounded-full bg-vermilion px-1.5 py-0.5 text-[10px] font-semibold text-paper">
+                      <span className="absolute -top-2 right-2 rounded-full bg-vermilion px-1.5 py-0.5 text-[11px] font-semibold text-paper">
                         {t.tag}
                       </span>
                     ) : null}
                     <p className="text-lg font-bold leading-tight tabular-nums text-ink">
                       ¥{yuan(t.priceFen)}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-ink-soft">{t.credits} 点</p>
+                    <p className="mt-0.5 text-xs text-ink-soft">{t.credits} 点</p>
                   </div>
                 ))}
               </div>
@@ -606,7 +606,7 @@ function Index() {
                 alt="对脉名鉴小程序码"
                 className="size-20 shrink-0 rounded object-contain"
               />
-              <p className="text-[11px] font-medium text-ink md:text-[10px]">{QR_HINT_TIER[qrEnv]}</p>
+              <p className="text-xs leading-relaxed font-medium text-ink">{QR_HINT_TIER[qrEnv]}</p>
             </div>
           </div>
           {/* 畅享卡只在网页端展示与开通（小程序不售卖套餐）：不写死点数价，点数价在起名下单单弹出里显示 */}
@@ -632,14 +632,14 @@ function Index() {
                   </p>
                 </div>
                 <p
-                  className={`max-w-[14ch] text-right text-[11px] leading-snug ${ps.dark ? "text-paper" : "text-ink-soft"}`}
+                  className={`max-w-[14ch] text-right text-xs leading-snug ${ps.dark ? "text-paper" : "text-ink-soft"}`}
                 >
                   宝宝起名生成与换一批不限次
                 </p>
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[11px] leading-relaxed text-ink-faint">
+          <p className="mt-3 text-xs leading-relaxed text-ink-faint">
             首次起名免费体验 3 个精选名字；点数与畅享登录同一账号、网页端与小程序通用，畅享卡在起名页用点数开通。
           </p>
         </div>
@@ -673,12 +673,12 @@ function Index() {
               key={s.title}
               className={`ink-in d${(i % 3) + 1} flex gap-3 rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash`}
             >
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-ink font-seal text-base text-paper">
+              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-ink font-seal text-base leading-none text-paper">
                 {s.seal}
               </span>
               <div>
                 <p className="text-sm font-semibold">{s.title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-ink-soft">{s.desc}</p>
+                <p className="mt-1 text-sm leading-relaxed text-ink-soft">{s.desc}</p>
               </div>
             </div>
           ))}
@@ -753,7 +753,7 @@ function Index() {
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-[11px] leading-relaxed text-ink-faint">
+            <p className="mt-4 text-xs leading-relaxed text-ink-faint">
               共七维评分，此处展示四维；完整报告含相处建议。
             </p>
           </div>
@@ -771,19 +771,19 @@ function Index() {
             <p className="text-xl font-semibold tabular-nums text-ink">
               {social?.todayCount != null ? fmt(social.todayCount) : "—"}
             </p>
-            <p className="mt-1 text-[11px] text-ink-soft">今日已生成</p>
+            <p className="mt-1 text-xs text-ink-soft">今日已生成</p>
           </div>
           <div className="rounded-2xl bg-white p-4 text-center transition-colors hover:bg-vermilion-wash">
             <p className="text-xl font-semibold tabular-nums text-ink">
               {social?.namingFamilies ? fmt(social.namingFamilies) : "—"}
             </p>
-            <p className="mt-1 text-[11px] text-ink-soft">累计服务家庭</p>
+            <p className="mt-1 text-xs text-ink-soft">累计服务家庭</p>
           </div>
           <div className="rounded-2xl bg-white p-4 text-center transition-colors hover:bg-vermilion-wash">
             <p className="text-xl font-semibold tabular-nums text-ink">
               {social?.avgMinutes ? Math.round(social.avgMinutes) : "—"}
             </p>
-            <p className="mt-1 text-[11px] text-ink-soft">平均出案分钟</p>
+            <p className="mt-1 text-xs text-ink-soft">平均出案分钟</p>
           </div>
         </div>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -792,7 +792,7 @@ function Index() {
               <blockquote className="text-sm leading-relaxed text-ink-soft">
                 「{f.text}」
               </blockquote>
-              <figcaption className="mt-3 text-[11px] text-ink-faint">
+              <figcaption className="mt-3 text-xs text-ink-faint">
                 {f.from} · 示例展示
               </figcaption>
             </figure>
@@ -810,7 +810,7 @@ function Index() {
                 {f.q}
                 <span className="text-ink-faint transition-transform group-open:rotate-45">＋</span>
               </summary>
-              <p className="mt-3 text-xs leading-relaxed text-ink-soft text-pretty">{f.a}</p>
+              <p className="mt-3 text-sm leading-relaxed text-ink-soft text-pretty">{f.a}</p>
             </details>
           ))}
         </div>
@@ -833,7 +833,7 @@ function Index() {
             >
               开始为TA起名
             </Link>
-            <p className="mt-3 text-[11px] text-paper">网页与小程序同账号互通 · 点数通用</p>
+            <p className="mt-3 text-xs text-paper">网页与小程序同账号互通 · 点数通用</p>
           </div>
           <div className="flex shrink-0 flex-col items-center gap-2 rounded-2xl bg-paper-2 p-4 transition-colors hover:bg-vermilion-wash">
             <img
@@ -842,7 +842,7 @@ function Index() {
               alt="对脉名鉴小程序码"
               className="size-32 rounded-lg object-contain md:size-36"
             />
-            <p className="text-[11px] font-medium text-ink">{QR_HINT_BOTTOM[qrEnv]}</p>
+            <p className="text-xs leading-relaxed font-medium text-ink">{QR_HINT_BOTTOM[qrEnv]}</p>
           </div>
         </div>
       </section>

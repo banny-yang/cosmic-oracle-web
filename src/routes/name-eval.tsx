@@ -203,7 +203,7 @@ function ScoreRing({ score, size = 116 }: { score: number; size?: number }) {
         y={size / 2 + size / 6.2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize={size / 14}
+        fontSize={Math.max(size / 14, 10)}
         fill="currentColor"
         fillOpacity={0.55}
       >
@@ -357,7 +357,7 @@ function NameEval() {
                 三才分析
               </button>
             </div>
-            <p className="mt-1.5 text-[11px] text-ink-soft">
+            <p className="mt-1.5 text-xs text-ink-soft">
               五行与三才为传统姓名文化的构成说明，不含吉凶测算与命理推断
             </p>
             <button
@@ -368,7 +368,7 @@ function NameEval() {
               {loading ? "评测中…" : "免费评测"}
             </button>
             {error ? <p className="mt-2 text-xs text-vermilion-deep">{error}</p> : null}
-            <p className="mt-2 text-center text-[11px] text-ink-soft">
+            <p className="mt-2 text-center text-xs text-ink-soft">
               规则引擎即时出结果，可复制当前链接分享同一个名字的评测
             </p>
           </section>
@@ -387,7 +387,7 @@ function CommonNameChip({ idx }: { idx: number }) {
   return (
     <span
       title={`该名在近年常见名榜单中的估算档位（${idx}）：同班同学撞名概率偏高。基于公开榜单估算，非户籍重名实数`}
-      className="rounded bg-paper-3 px-1.5 py-0.5 text-[10px] text-ink-soft"
+      className="rounded bg-paper-3 px-1.5 py-0.5 text-xs text-ink-soft"
     >
       高频重名 · 估算
     </span>
@@ -437,7 +437,7 @@ function ResultBlocks({
             {DIMENSION_NAMES.map((name) => (
               <li
                 key={name}
-                className="rounded-full bg-paper-3 px-2.5 py-1 text-[11px] text-ink-faint"
+                className="rounded-full bg-paper-3 px-2.5 py-1 text-xs text-ink-faint"
               >
                 🔒 {name}
               </li>
@@ -467,7 +467,7 @@ function ResultBlocks({
             用「{r.surname}」姓 AI 取名，首次免费看 3 个精选名 →
           </Link>
         </section>
-        <p className="mt-5 text-center text-[11px] leading-relaxed text-ink-soft">{r.disclaimer}</p>
+        <p className="mt-5 text-center text-xs leading-relaxed text-ink-faint">{r.disclaimer}</p>
       </>
     );
   }
@@ -506,7 +506,7 @@ function ResultBlocks({
         {r.share.shareable ? (
           <div className="mt-4 rounded-xl bg-paper-3 p-3.5">
             <p className="text-xs font-semibold text-ink">汉字美学评测名片</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">{r.share.code}</p>
+            <p className="mt-1 text-xs leading-relaxed text-ink-soft">{r.share.code}</p>
             <ReportPosterButtons
               fileName={`名字评测_${r.fullName}`}
               trackKey="name_eval_poster"
@@ -532,7 +532,7 @@ function ResultBlocks({
         ) : (
           <div className="mt-4 rounded-xl bg-paper-3 p-3.5">
             <p className="text-xs font-semibold text-ink">{r.upgrade.reason}</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">{r.upgrade.cta}</p>
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">{r.upgrade.cta}</p>
             <Link
               to="/naming"
               search={{
@@ -552,8 +552,8 @@ function ResultBlocks({
       </section>
 
       <section className="ink-in d2 mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
-        <h2 className="text-sm font-semibold text-ink">五维拆解</h2>
-        <p className="mt-1 text-[11px] text-ink-soft">
+        <h2 className="text-lg font-semibold text-ink">五维拆解</h2>
+        <p className="mt-1 text-xs text-ink-soft">
           权重合计 100：典籍文化度 30 · 音律平仄度 25 · 意象寓意度 20 · 避俗辨识度 15 · 字形书写美
           10；开启五行/三才分析时，其搭配计分另按规则权重并入总分（见各区块）
         </p>
@@ -568,7 +568,7 @@ function ResultBlocks({
           {r.dimensions.map((d) => (
             <li key={d.key} className="rounded-xl bg-paper-3 p-3">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xs font-semibold text-ink">
+                <span className="text-sm font-semibold text-ink">
                   {d.name}
                   <span className="ml-1.5 font-normal text-ink-soft">权重 {d.weight}%</span>
                 </span>
@@ -580,11 +580,11 @@ function ResultBlocks({
                   style={{ width: `${Math.min(100, Math.max(0, d.score))}%` }}
                 />
               </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">{d.summary}</p>
+              <p className="mt-2 text-sm leading-relaxed text-ink-soft">{d.summary}</p>
               {d.notes.length ? (
                 <ul className="mt-1.5 space-y-0.5">
                   {d.notes.map((n) => (
-                    <li key={n} className="text-[11px] leading-relaxed text-ink-soft">
+                    <li key={n} className="text-sm leading-relaxed text-ink-soft">
                       · {n}
                     </li>
                   ))}
@@ -597,11 +597,11 @@ function ResultBlocks({
 
       {r.citations.length ? (
         <section className="ink-in d2 mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
-          <h2 className="text-sm font-semibold text-ink">典籍出处</h2>
+          <h2 className="text-lg font-semibold text-ink">典籍出处</h2>
           <ul className="mt-3 space-y-3">
             {r.citations.map((c) => (
               <li key={`${c.word}-${c.book}`} className="rounded-xl bg-paper-3 p-3">
-                <p className="text-xs font-semibold text-ink">
+                <p className="text-sm font-semibold text-ink">
                   {c.word}
                   <span className="ml-2 font-normal text-ink-soft">
                     {c.book}
@@ -611,10 +611,10 @@ function ResultBlocks({
                 {c.sentence ? (
                   <p className="mt-1.5 text-sm leading-relaxed text-ink">「{c.sentence}」</p>
                 ) : (
-                  <p className="mt-1.5 text-[11px] text-ink-soft">语料未收录原句，仅记书目来源</p>
+                  <p className="mt-1.5 text-xs text-ink-soft">语料未收录原句，仅记书目来源</p>
                 )}
                 {c.meaning ? (
-                  <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">{c.meaning}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-ink-soft">{c.meaning}</p>
                 ) : null}
               </li>
             ))}
@@ -623,7 +623,7 @@ function ResultBlocks({
       ) : null}
 
       <section className="ink-in d2 mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
-        <h2 className="text-sm font-semibold text-ink">读音与声调</h2>
+        <h2 className="text-lg font-semibold text-ink">读音与声调</h2>
         <p className="mt-2 text-2xl leading-none tracking-wider text-vermilion-deep">
           {r.phonetics.pinyins.join(" ") || "—"}
         </p>
@@ -642,7 +642,7 @@ function ResultBlocks({
         {r.phonetics.notes.length ? (
           <ul className="mt-3 space-y-0.5">
             {r.phonetics.notes.map((n) => (
-              <li key={n} className="text-[11px] leading-relaxed text-ink-soft">
+              <li key={n} className="text-sm leading-relaxed text-ink-soft">
                 · {n}
               </li>
             ))}
@@ -650,17 +650,17 @@ function ResultBlocks({
         ) : null}
         {r.dialects.length ? (
           <>
-            <h3 className="mt-4 text-xs font-semibold text-ink">方言读音风控</h3>
+            <h3 className="mt-4 text-sm font-semibold text-ink">方言读音风控</h3>
             <ul className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-3">
               {r.dialects.map((d) => {
                 const st = DIALECT_STATUS[d.status] ?? { label: d.status, cls: "text-ink-soft" };
                 return (
                   <li key={d.dialect} className="rounded-xl bg-paper-3 p-2.5">
-                    <p className="text-[11px] font-semibold text-ink">
+                    <p className="text-xs font-semibold text-ink">
                       {d.zh || d.dialect}
                       <span className={`ml-1.5 font-normal ${st.cls}`}>{st.label}</span>
                     </p>
-                    <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">{d.note}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-ink-soft">{d.note}</p>
                   </li>
                 );
               })}
@@ -670,13 +670,13 @@ function ResultBlocks({
       </section>
 
       <section className="ink-in d2 mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
-        <h2 className="text-sm font-semibold text-ink">逐字用字</h2>
+        <h2 className="text-lg font-semibold text-ink">逐字用字</h2>
         <ul className="mt-3 space-y-2.5">
           {r.chars.map((c) => (
             <li key={c.ch} className="flex items-start gap-3 rounded-xl bg-paper-3 p-3">
               <span className="font-seal text-2xl leading-none text-ink">{c.ch}</span>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] leading-relaxed text-ink-soft">
+                <p className="text-xs leading-relaxed text-ink-faint">
                   {c.pinyin || "读音未收录"} · {c.tone ? `${c.tone} 声` : "声调未识别"}
                   {c.strokes != null ? ` · ${c.strokes} 画` : " · 笔画未收录"}
                   {c.radical ? ` · 部首 ${c.radical}` : ""}
@@ -684,15 +684,15 @@ function ResultBlocks({
                   {c.frequency != null ? ` · 语料频次 ${c.frequency}` : ""}
                 </p>
                 {c.cliche ? (
-                  <span className="mt-1 inline-flex rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-medium text-vermilion-deep">
+                  <span className="mt-1 inline-flex rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-medium text-vermilion-deep">
                     近年高频用字
                   </span>
                 ) : null}
                 {c.meaning ? (
-                  <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">{c.meaning}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-ink-soft">{c.meaning}</p>
                 ) : null}
                 {c.source ? (
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-ink-soft">
+                  <p className="mt-0.5 text-xs leading-relaxed text-ink-faint">
                     出处：{c.source}
                   </p>
                 ) : null}
@@ -704,13 +704,13 @@ function ResultBlocks({
 
       {showWuxing && r.wuxing ? (
         <section className="ink-in d2 mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-ink">
             五行分析
             <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-semibold text-vermilion-deep">
               搭配计分 {r.wuxing.score}
             </span>
           </h2>
-          <p className="mt-1 text-[11px] text-ink-soft">
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">
             用字五行与姓氏搭配的关系说明；搭配计分随本分析开启计入总分（不含吉凶测算与命理推断）
           </p>
           <ul className="mt-3 flex flex-wrap gap-2">
@@ -720,7 +720,7 @@ function ResultBlocks({
                 <span className="ml-2 text-xs font-semibold text-vermilion-deep">
                   {row.element}
                 </span>
-                <span className="ml-1 text-[10px] text-ink-soft">
+                <span className="ml-1 text-xs text-ink-soft">
                   {row.role === "surname" ? "姓" : "名"}
                 </span>
               </li>
@@ -730,7 +730,7 @@ function ResultBlocks({
           {r.wuxing.notes.length ? (
             <ul className="mt-2 space-y-0.5">
               {r.wuxing.notes.map((n) => (
-                <li key={n} className="text-[11px] leading-relaxed text-ink-soft">
+                <li key={n} className="text-sm leading-relaxed text-ink-soft">
                   · {n}
                 </li>
               ))}
@@ -741,13 +741,13 @@ function ResultBlocks({
 
       {showSanCai && r.sanCai ? (
         <section className="ink-in d2 mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-ink">
             三才分析
             <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-semibold text-vermilion-deep">
               配置计分 {r.sanCai.score}
             </span>
           </h2>
-          <p className="mt-1 text-[11px] text-ink-soft">
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">
             按康熙笔画取天/人/地三格与三才配置的关系说明；配置计分随本分析开启计入总分（不含吉凶测算与命理推断）
           </p>
           <ul className="mt-3 grid grid-cols-3 gap-2">
@@ -757,7 +757,7 @@ function ResultBlocks({
               { label: "地格", ge: r.sanCai.diGe },
             ].map((g) => (
               <li key={g.label} className="rounded-xl bg-paper-3 p-2.5 text-center">
-                <p className="text-[11px] text-ink-soft">{g.label}</p>
+                <p className="text-xs text-ink-soft">{g.label}</p>
                 <p className="mt-1 text-lg font-semibold leading-none text-ink">{g.ge}</p>
               </li>
             ))}
@@ -777,7 +777,7 @@ function ResultBlocks({
           {r.sanCai.notes.length ? (
             <ul className="mt-2 space-y-0.5">
               {r.sanCai.notes.map((n) => (
-                <li key={n} className="text-[11px] leading-relaxed text-ink-soft">
+                <li key={n} className="text-sm leading-relaxed text-ink-soft">
                   · {n}
                 </li>
               ))}
@@ -786,7 +786,7 @@ function ResultBlocks({
         </section>
       ) : null}
 
-      <p className="mt-5 text-center text-[11px] leading-relaxed text-ink-soft">{r.disclaimer}</p>
+      <p className="mt-5 text-center text-xs leading-relaxed text-ink-faint">{r.disclaimer}</p>
     </>
   );
 }

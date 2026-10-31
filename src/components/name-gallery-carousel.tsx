@@ -99,7 +99,7 @@ export function NameGalleryCarousel() {
                         <p className="mt-1.5 text-xs tracking-wider text-ink-soft">{n.pinyin}</p>
                       ) : null}
                     </div>
-                    <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] text-ink-soft">
+                    <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-xs text-ink-soft">
                       {n.category}
                     </span>
                   </div>
@@ -116,7 +116,7 @@ export function NameGalleryCarousel() {
                         </p>
                       ) : null}
                       {n.source ? (
-                        <p className="mt-1 text-[11px] text-ink-faint">—— {n.source}</p>
+                        <p className="mt-1 text-xs text-ink-faint">—— {n.source}</p>
                       ) : null}
                     </div>
                   ) : null}

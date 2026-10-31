@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ChevronDown } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { useFeaturePrice } from "@/lib/use-feature-price";
 
@@ -42,10 +43,12 @@ function HelpPage() {
       <section className="ink-in d1 mt-7 space-y-3">
         {faq.map(([q, a], i) => (
           <details key={i} className="group rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash">
-            <summary className="cursor-pointer list-none text-sm font-medium marker:hidden">
-              <span className="mr-2 text-vermilion-deep">Q</span>{q}
+            <summary className="-m-4 flex cursor-pointer list-none items-center gap-2 p-4 text-sm font-medium marker:hidden">
+              <span className="text-vermilion-deep">Q</span>
+              <span className="flex-1">{q}</span>
+              <ChevronDown aria-hidden className="size-4 shrink-0 text-ink-faint transition-transform group-open:rotate-180" />
             </summary>
-            <p className="mt-2 pl-6 text-xs leading-relaxed text-ink-soft">{a}</p>
+            <p className="mt-2 pl-6 text-sm leading-reading text-ink-soft">{a}</p>
           </details>
         ))}
       </section>

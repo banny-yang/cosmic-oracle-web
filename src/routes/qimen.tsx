@@ -89,6 +89,7 @@ function Qimen() {
   const [question, setQuestion] = useState("");
   const [err, setErr] = useState("");
   const [showPaywall, setShowPaywall] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // 代占（大师版）：self=为自己问；new=新建求测人；数字=既有求测人 id
   const [subjects, setSubjects] = useState<Subject[] | null>(null);
@@ -159,6 +160,7 @@ function Qimen() {
   };
 
   const submit = async () => {
+    if (submitting) return;
     setErr("");
     const uid = getAuthUser()?.userId;
     if (!uid) {
@@ -167,6 +169,7 @@ function Qimen() {
     }
     const q = question.trim();
     if (!q) return setErr("请写下要断的事（可代他人问，信息越具体越准）");
+    setSubmitting(true);
     track("qimen_judge_start", { scene: sceneCode || "auto", subject: subjectSel !== "self" });
 
     setPhase("running");
@@ -214,6 +217,7 @@ function Qimen() {
       } catch (e) {
         setPhase("form");
         setErr(e instanceof Error ? e.message : "扣费失败，请稍后再试");
+        setSubmitting(false);
         setShowPaywall(true);
         return;
       }
@@ -264,6 +268,7 @@ function Qimen() {
       });
     } catch (e) {
       setPhase("form");
+      setSubmitting(false);
       setErr(e instanceof Error ? e.message : "断局失败，请稍后再试");
     }
   };
@@ -290,6 +295,7 @@ function Qimen() {
     setYingqi(null);
     setJudge(null);
     answerStream.reset();
+    setSubmitting(false);
     setErr("");
   };
 
@@ -321,7 +327,7 @@ function Qimen() {
           />
 
           {phase === "form" ? (
-            <section className="mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+            <section className="mt-7 rounded-2xl bg-white p-5">
               {presets.length > 0 ? (
                 <Field label="问题类别（可不选，由 AI 识别）">
                   <div className="flex flex-wrap gap-2">
@@ -392,6 +398,7 @@ function Qimen() {
                   {subjectSel === "new" ? (
                     <div className="mt-3 grid grid-cols-2 gap-3 rounded-xl bg-paper-3 p-3 md:grid-cols-4">
                       <input
+                        aria-label="求测人姓名"
                         className={inputCls}
                         maxLength={50}
                         placeholder="姓名 *"
@@ -399,6 +406,7 @@ function Qimen() {
                         onChange={(e) => setNewName(e.target.value)}
                       />
                       <select
+                        aria-label="求测人性别"
                         className={inputCls}
                         value={newGender}
                         onChange={(e) => setNewGender(e.target.value)}
@@ -408,6 +416,7 @@ function Qimen() {
                         <option value="U">不详</option>
                       </select>
                       <input
+                        aria-label="求测人生辰"
                         className={inputCls}
                         maxLength={30}
                         placeholder="生辰（选填，如 1990-05 午时）"
@@ -415,6 +424,7 @@ function Qimen() {
                         onChange={(e) => setNewBirth(e.target.value)}
                       />
                       <input
+                        aria-label="与求测人的关系"
                         className={inputCls}
                         maxLength={20}
                         placeholder="关系（选填，如 客户）"
@@ -426,17 +436,18 @@ function Qimen() {
                 </Field>
               ) : null}
 
-              {err ? <p className="mt-2 text-xs text-vermilion-deep">{err}</p> : null}
+              {err ? <p role="alert" className="mt-2 text-xs text-vermilion-deep">{err}</p> : null}
               {loggedIn ? null : (
-                <p className="mt-2 text-[11px] text-ink-faint">
+                <p className="mt-2 text-xs text-ink-faint">
                   登录后可代他人断局并保留断局记录。
                 </p>
               )}
               <button
                 onClick={submit}
-                className="mt-4 w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]"
+                disabled={submitting}
+                className="mt-4 w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] disabled:opacity-60"
               >
-                开始断局（{price} 点）
+                {submitting ? "断局中…" : `开始断局（${price} 点）`}
               </button>
             </section>
           ) : (
@@ -449,7 +460,7 @@ function Qimen() {
                   {(intent.yongshen ?? []).map((y) => (
                     <span
                       key={y}
-                      className="rounded-full bg-paper-3 px-2.5 py-1 text-[11px] text-ink-soft"
+                      className="rounded-full bg-paper-3 px-2.5 py-1 text-xs text-ink-soft"
                     >
                       用神 · {y}
                     </span>
@@ -459,14 +470,14 @@ function Qimen() {
                   ) : null}
                 </div>
               ) : phase === "running" ? (
-                <div className="flex items-center gap-3 rounded-xl bg-paper-2 p-4 transition-colors hover:bg-vermilion-wash">
+                <div className="flex items-center gap-3 rounded-xl bg-paper-2 p-4">
                   <span className="size-2 animate-pulse rounded-full bg-vermilion" />
                   <p className="text-sm font-medium">正在起局推演…</p>
                 </div>
               ) : null}
 
               {plate ? (
-                <div className="rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+                <div className="rounded-2xl bg-white p-5">
                   <QimenPlateHeader plate={plate} />
                   <div className="mt-4">
                     <QimenPalaceGrid
@@ -490,7 +501,7 @@ function Qimen() {
                 visible={answerStream.visible}
                 placeholder="正在推演断语…"
               />
-              {err ? <p className="text-xs text-vermilion-deep">{err}</p> : null}
+              {err ? <p role="alert" className="text-xs text-vermilion-deep">{err}</p> : null}
               {phase === "done" ? (
                 <button
                   onClick={reset}
@@ -512,7 +523,7 @@ function Qimen() {
               </button>
               {records !== null ? (
                 records.length === 0 ? (
-                  <p className="mt-3 rounded-2xl bg-white p-5 text-center text-xs text-ink-faint transition-colors hover:bg-vermilion-wash">
+                  <p className="mt-3 rounded-2xl bg-white p-5 text-center text-xs text-ink-faint">
                     还没有断局记录。
                   </p>
                 ) : (
@@ -534,7 +545,7 @@ function Qimen() {
                               >
                                 <div className="min-w-0">
                                   <p className="truncate text-sm text-ink">{r.situationText}</p>
-                                  <p className="mt-0.5 text-[11px] text-ink-faint">
+                                  <p className="mt-0.5 text-xs text-ink-faint">
                                     {r.verdict ?? r.scenario}
                                     {r.createdAt
                                       ? ` · ${new Date(r.createdAt).toLocaleString("zh-CN")}`
@@ -548,7 +559,7 @@ function Qimen() {
                               {openRec === r.logId && openDetail ? (
                                 <div className="space-y-4 p-4">
                                   {openDetail.subjectName ? (
-                                    <p className="text-[11px] text-ink-faint">
+                                    <p className="text-xs text-ink-faint">
                                       代占：{openDetail.subjectName}
                                       {openDetail.subjectGender &&
                                       GENDER_ZH[openDetail.subjectGender]

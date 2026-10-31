@@ -133,7 +133,7 @@ function InvitePage() {
               </span>
             </div>
 
-            <p className="mt-4 break-all rounded-xl bg-paper-3 px-3 py-2 text-[11px] text-ink-soft">
+            <p className="mt-4 break-all rounded-xl bg-paper-3 px-3 py-2 text-xs text-ink-soft">
               {shareUrl || "链接生成中…"}
             </p>
 
@@ -154,14 +154,14 @@ function InvitePage() {
               { label: "累计奖励", value: info?.earnedTokens ?? 0, unit: "点" },
             ].map((s) => (
               <div key={s.label} className="rounded-2xl bg-white p-4 text-center">
-                <p className="text-xl font-semibold">{s.value}</p>
-                <p className="mt-1 text-[11px] text-ink-faint">
+                <p className="text-xl font-semibold tabular-nums">{s.value}</p>
+                <p className="mt-1 text-xs text-ink-faint">
                   {s.label}（{s.unit}）
                 </p>
               </div>
             ))}
           </div>
-          <p className="mt-2 text-[11px] text-ink-faint">
+          <p className="mt-2 text-xs text-ink-faint">
             好友完成首次起名才发奖，同一好友只计一次；好友后来充值不再重复发奖。
           </p>
 
@@ -173,7 +173,8 @@ function InvitePage() {
               </p>
               <div className="mt-3 flex gap-2">
                 <input
-                  className={inputCls}
+                  aria-label="好友邀请码"
+                  className={inputCls + " min-w-0 flex-1"}
                   placeholder="好友的邀请码"
                   value={bindCode}
                   onChange={(e) => setBindCode(e.target.value)}

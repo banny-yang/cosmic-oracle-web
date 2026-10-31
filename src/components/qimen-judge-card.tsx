@@ -85,7 +85,7 @@ export function QimenJudgeCard({ judge }: { judge: QimenJudgeData }) {
             {judge.verdict?.text || "（引擎未给出评断）"}
           </p>
           {judge.confidence?.score != null ? (
-            <p className="mt-1 text-[11px] text-ink-faint">
+            <p className="mt-1 text-xs text-ink-faint">
               置信度 {judge.confidence.score}%
               {judge.confidence.basis ? ` · ${judge.confidence.basis}` : ""}
             </p>
@@ -100,7 +100,7 @@ export function QimenJudgeCard({ judge }: { judge: QimenJudgeData }) {
         <div className="mt-4 rounded-xl bg-paper-3 p-3">
           <p className="text-xs font-semibold text-ink">主客分析 · {judge.host_guest.conclusion}</p>
           {judge.host_guest.explanation ? (
-            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">
               {judge.host_guest.explanation}
             </p>
           ) : null}
@@ -133,7 +133,7 @@ export function QimenYingQiCard({ yingqi }: { yingqi: QimenYingQi }) {
                   <span className="text-[11px] tabular-nums text-vermilion-deep">{prob}%</span>
                 ) : null}
               </div>
-              <p className="mt-1 text-[11px] text-ink-soft">
+              <p className="mt-1 text-xs text-ink-soft">
                 {[c.start_time, c.end_time].filter(Boolean).join(" ~ ") || ""}
                 {c.action_type ? ` · ${c.action_type}` : ""}
               </p>

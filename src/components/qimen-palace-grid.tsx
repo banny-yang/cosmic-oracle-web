@@ -86,7 +86,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <span className="flex items-center gap-1">
       <span className="size-2 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-[10px] text-ink-faint">{label}</span>
+      <span className="text-xs text-ink-faint">{label}</span>
     </span>
   );
 }
@@ -116,7 +116,7 @@ export function QimenPalaceGrid({
     <div>
       {showLegend ? (
         <div className="mb-2.5 flex items-center gap-4">
-          <span className="text-[13px] font-bold text-vermilion-deep">奇门遁甲 · 排盘</span>
+          <span className="text-sm font-bold text-vermilion-deep">奇门遁甲 · 排盘</span>
           <span className="ml-auto flex items-center gap-3">
             <LegendDot color={SUBJECT_COLOR} label="主宫" />
             <LegendDot color={OBJECT_COLOR} label="客宫" />
@@ -181,7 +181,7 @@ export function QimenPalaceGrid({
               {!isCenter ? (
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-0 grid place-items-center font-seal text-5xl font-bold leading-none text-ink opacity-10"
+                  className="pointer-events-none absolute inset-0 grid place-items-center font-seal text-5xl leading-none text-ink opacity-10"
                 >
                   {TRIGRAM_NAMES[i]}
                 </span>
@@ -189,14 +189,14 @@ export function QimenPalaceGrid({
 
               {/* 八神 · 左上（右侧留白避让空亡○/天盘干）· 深赭黄 */}
               {god ? (
-                <span className="absolute left-1.5 top-1 right-9 truncate text-[10px] font-semibold text-[#8A5A1E]">
+                <span className="absolute left-1.5 top-1 right-9 truncate text-[11px] font-semibold text-[#8A5A1E]">
                   {god}
                 </span>
               ) : null}
 
               {/* 空亡○ · 右上 */}
               {isVoid ? (
-                <span className="absolute right-1.5 top-1 text-[10px] font-bold leading-none text-ink-soft">
+                <span className="absolute right-1.5 top-1 text-[11px] font-bold leading-none text-ink-soft">
                   ○
                 </span>
               ) : null}
@@ -222,7 +222,7 @@ export function QimenPalaceGrid({
                     </span>
                   ) : null}
                   {isMa ? (
-                    <span className="mt-[1px] rounded-full bg-paper px-1 text-[9px] font-semibold leading-tight text-ink-soft">
+                    <span className="mt-[1px] rounded-full bg-paper px-1 text-[11px] font-semibold leading-tight text-ink-soft">
                       驿马
                     </span>
                   ) : null}
@@ -231,7 +231,7 @@ export function QimenPalaceGrid({
 
               {/* 底行：洛书宫数·方位·五行（左） + 地盘干（右，墨色粗体） */}
               <div className="absolute inset-x-1.5 bottom-1 flex items-end justify-between gap-1">
-                <span className="whitespace-nowrap text-[9.5px] font-medium leading-none text-ink-soft">
+                <span className="min-w-0 flex-1 truncate text-[11px] font-medium leading-none text-ink-soft">
                   {palaceLabel}
                 </span>
                 {diGan ? (
@@ -242,7 +242,7 @@ export function QimenPalaceGrid({
               {/* 主/客/用神标记 · 顶部居中 */}
               {highlightLabel && borderColor ? (
                 <span
-                  className="absolute inset-x-0 top-0 text-center text-[8px] font-bold leading-tight"
+                  className="absolute inset-x-0 top-0 text-center text-[11px] font-bold leading-tight"
                   style={{ color: borderColor }}
                 >
                   {highlightLabel}

@@ -215,9 +215,10 @@ function NameGallery() {
       />
 
       {/* 筛选区：分类为主轴 + 性别/五行/搜索 */}
-      <section className="mt-7 space-y-3 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+      <section className="mt-7 space-y-3 rounded-2xl bg-white p-5">
         <div className="flex flex-wrap gap-2">
           <button
+            aria-pressed={category === ""}
             className={[chips, category === "" ? chipOn : chipOff].join(" ")}
             onClick={() => pick(() => setCategory(""))}
           >
@@ -228,11 +229,12 @@ function NameGallery() {
             .map((c) => (
               <button
                 key={c.category}
+                aria-pressed={category === c.category}
                 className={[chips, category === c.category ? chipOn : chipOff].join(" ")}
                 onClick={() => pick(() => setCategory(c.category))}
               >
                 {c.category}
-                <span className="ml-1 opacity-60">{c.count}</span>
+                <span className="ml-1 opacity-80">{c.count}</span>
               </button>
             ))}
         </div>
@@ -244,6 +246,7 @@ function NameGallery() {
           ].map((g) => (
             <button
               key={g.v}
+              aria-pressed={gender === g.v}
               className={[chips, gender === g.v ? chipOn : chipOff].join(" ")}
               onClick={() => pick(() => setGender(g.v))}
             >
@@ -251,6 +254,7 @@ function NameGallery() {
             </button>
           ))}
           <button
+            aria-pressed={element === ""}
             className={[chips, element === "" ? chipOn : chipOff].join(" ")}
             onClick={() => pick(() => setElement(""))}
           >
@@ -259,6 +263,7 @@ function NameGallery() {
           {(meta?.elements ?? []).map((e) => (
             <button
               key={e}
+              aria-pressed={element === e}
               className={[chips, element === e ? chipOn : chipOff].join(" ")}
               onClick={() => pick(() => setElement(e))}
             >
@@ -266,6 +271,8 @@ function NameGallery() {
             </button>
           ))}
           <input
+            type="search"
+            aria-label="搜索名字或出处"
             // 手机端（含 430px 宽的 Pro Max 机型）搜索框独占整行；≥768px 才回到右对齐窄框
             className={inputCls + " md:ml-auto md:max-w-44"}
             placeholder="搜名字 / 出处…"
@@ -280,6 +287,7 @@ function NameGallery() {
         {(meta?.zodiacs ?? []).length > 0 ? (
           <div className="flex flex-wrap gap-2 border-t border-paper-3 pt-3">
             <button
+              aria-pressed={zodiac === ""}
               className={[chips, zodiac === "" ? chipOn : chipOff].join(" ")}
               onClick={() => pick(() => setZodiac(""))}
             >
@@ -288,6 +296,7 @@ function NameGallery() {
             {(meta?.zodiacs ?? []).map((z) => (
               <button
                 key={z.slug}
+                aria-pressed={zodiac === z.slug}
                 className={[chips, zodiac === z.slug ? chipOn : chipOff].join(" ")}
                 onClick={() => pick(() => setZodiac(z.slug))}
               >
@@ -299,9 +308,9 @@ function NameGallery() {
       </section>
 
       {/* 姓氏×生肖取名入口：长尾页（/names/{姓氏拼音}/{生肖slug}）的站内发现路径之一 */}
-      <section className="mt-5 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+      <section className="mt-5 rounded-2xl bg-white p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="text-sm font-semibold">姓氏 × 生肖取名</p>
+          <h2 className="text-base font-semibold">姓氏 × 生肖取名</h2>
           <Link
             to="/zodiac"
             className="text-xs text-vermilion-deep transition-colors hover:text-vermilion"
@@ -382,11 +391,11 @@ function NameGallery() {
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-1.5">
                       {n.gender === "M" ? (
-                        <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] font-medium text-paper">
+                        <span className="rounded-full bg-ink px-2 py-0.5 text-xs font-medium text-paper">
                           男
                         </span>
                       ) : n.gender === "F" ? (
-                        <span className="rounded-full bg-vermilion px-2 py-0.5 text-[10px] font-medium text-paper">
+                        <span className="rounded-full bg-vermilion px-2 py-0.5 text-xs font-medium text-paper">
                           女
                         </span>
                       ) : null}
@@ -394,21 +403,21 @@ function NameGallery() {
                         ELEMENT_ZH[e] ? (
                           <span
                             key={i}
-                            className="rounded-full bg-paper-3 px-2 py-0.5 text-[10px] text-ink-soft"
+                            className="rounded-full bg-paper-3 px-2 py-0.5 text-xs text-ink-soft"
                           >
                             {ELEMENT_ZH[e]}
                           </span>
                         ) : null,
                       )}
                       {typeof n.score === "number" ? (
-                        <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-semibold text-vermilion-deep">
+                        <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-semibold text-vermilion-deep">
                           {n.score} 分
                         </span>
                       ) : null}
                     </div>
                   </div>
 
-                  <p className="mt-3 inline-block rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] text-ink-soft">
+                  <p className="mt-3 inline-block rounded-full bg-paper-3 px-2.5 py-0.5 text-xs text-ink-soft">
                     {n.category}
                   </p>
 
@@ -420,12 +429,12 @@ function NameGallery() {
                   {n.text || n.source ? (
                     <div className="mt-3 rounded-xl bg-paper-2 p-3">
                       {n.text ? (
-                        <p className="text-xs leading-relaxed text-ink-soft text-pretty">
+                        <p className="text-sm leading-relaxed text-ink-soft text-pretty">
                           {n.text}
                         </p>
                       ) : null}
                       {n.source ? (
-                        <p className="mt-1 text-[11px] text-ink-faint">—— {n.source}</p>
+                        <p className="mt-1 text-xs text-ink-faint">—— {n.source}</p>
                       ) : null}
                     </div>
                   ) : null}

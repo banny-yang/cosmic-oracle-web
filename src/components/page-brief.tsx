@@ -55,14 +55,14 @@ export function PageBrief({ summary, points, links = [], canonical }: PageBriefP
         <button
           type="button"
           onClick={copy}
-          className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] text-ink-soft transition-colors hover:text-vermilion-deep"
+          className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs text-ink-soft transition-colors hover:text-vermilion-deep"
         >
           {copied ? "已复制" : "复制要点"}
         </button>
       </div>
       <p className="mt-1.5 text-sm leading-relaxed text-ink text-pretty">{summary}</p>
       {points.length ? (
-        <ul className="mt-2 space-y-1 text-xs leading-relaxed text-ink-soft">
+        <ul className="mt-2 space-y-1 text-sm leading-relaxed text-ink-soft">
           {points.map((p) => (
             <li key={p} className="flex gap-1.5">
               <span aria-hidden className="mt-[7px] size-1 shrink-0 rounded-full bg-vermilion" />
@@ -72,7 +72,7 @@ export function PageBrief({ summary, points, links = [], canonical }: PageBriefP
         </ul>
       ) : null}
       {links.length ? (
-        <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+        <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 text-xs">
           {links.map((l) => (
             <Link
               key={l.to}
@@ -84,7 +84,7 @@ export function PageBrief({ summary, points, links = [], canonical }: PageBriefP
           ))}
         </div>
       ) : null}
-      <p className="mt-1.5 break-all text-[11px] text-ink-faint">
+      <p className="mt-1.5 break-all text-xs text-ink-faint">
         引用时请保留本页链接：{canonical}
       </p>
     </section>

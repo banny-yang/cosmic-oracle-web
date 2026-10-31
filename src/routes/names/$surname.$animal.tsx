@@ -254,7 +254,7 @@ function SurnameZodiacPage() {
               }开头的名字。`
             : "均按生肖宜用部首筛出。"}
         </p>
-        <p className="mt-1.5 break-all text-[11px] text-ink-faint">
+        <p className="mt-1.5 break-all text-xs text-ink-faint">
           引用时请保留本页链接：https://name.duimai.net{surnameZodiacPath(surname.pinyin, zodiac.slug)}
         </p>
       </section>
@@ -263,10 +263,10 @@ function SurnameZodiacPage() {
 
       <div className="mt-7 rounded-2xl bg-white p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <p className="text-sm font-semibold">
+          <h3 className="text-base font-semibold">
             {info.year} {info.ganzhi}
             {zodiac.animal}年 · 宜用与忌用部首
-          </p>
+          </h3>
           <Link
             to="/zodiac/$animal"
             params={{ animal: zodiac.slug }}
@@ -426,16 +426,16 @@ function PairedNameCards({ surname, names }: { surname: string; names: GalleryNa
             </div>
             <div className="flex flex-wrap items-center justify-end gap-1.5">
               {n.gender === "M" ? (
-                <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] font-medium text-paper">
+                <span className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-medium text-paper">
                   男
                 </span>
               ) : n.gender === "F" ? (
-                <span className="rounded-full bg-vermilion px-2 py-0.5 text-[10px] font-medium text-paper">
+                <span className="rounded-full bg-vermilion px-2 py-0.5 text-[11px] font-medium text-paper">
                   女
                 </span>
               ) : null}
               {typeof n.score === "number" ? (
-                <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-semibold text-vermilion-deep">
+                <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-semibold text-vermilion-deep">
                   {n.score} 分
                 </span>
               ) : null}
@@ -447,9 +447,9 @@ function PairedNameCards({ surname, names }: { surname: string; names: GalleryNa
           {n.text || n.source ? (
             <div className="mt-3 rounded-xl bg-paper-2 p-3">
               {n.text ? (
-                <p className="text-xs leading-relaxed text-ink-soft text-pretty">{n.text}</p>
+                <p className="text-sm leading-relaxed text-ink-soft text-pretty">{n.text}</p>
               ) : null}
-              {n.source ? <p className="mt-1 text-[11px] text-ink-faint">—— {n.source}</p> : null}
+              {n.source ? <p className="mt-1 text-xs text-ink-faint">—— {n.source}</p> : null}
             </div>
           ) : null}
         </div>

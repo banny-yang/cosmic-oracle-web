@@ -80,7 +80,7 @@ export function DimRadar({
         const [x, y] = pt(i, 1.24);
         return (
           <g key={d.label} textAnchor={anchorOf(i)} fill="currentColor">
-            <text x={x} y={y} dominantBaseline="middle" fontSize={size / 16} fillOpacity={0.7}>
+            <text x={x} y={y} dominantBaseline="middle" fontSize={Math.max(size / 16, 10)} fillOpacity={0.7}>
               {d.label}
             </text>
             <text
@@ -88,7 +88,7 @@ export function DimRadar({
               y={y}
               dy={size / 15}
               dominantBaseline="middle"
-              fontSize={size / 17}
+              fontSize={Math.max(size / 17, 10)}
               fontWeight={600}
               fillOpacity={0.9}
             >

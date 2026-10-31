@@ -278,8 +278,8 @@ export function ReportPosterButtons({
                   <p className="text-sm font-semibold">{fileName}</p>
                   <button
                     onClick={() => setPoster(null)}
-                    className="text-ink-soft hover:text-ink"
-                    title="关闭"
+                    aria-label="关闭海报"
+                    className="grid size-9 place-items-center rounded-full text-ink-soft hover:bg-paper-3 hover:text-ink"
                   >
                     <X className="size-4" />
                   </button>
@@ -306,7 +306,7 @@ export function ReportPosterButtons({
                     分享
                   </button>
                 </div>
-                <p className="mt-2 text-center text-[11px] text-ink-soft">长按图片也可保存或转发（手机端）</p>
+                <p className="mt-2 text-center text-xs text-ink-soft">长按图片也可保存或转发（手机端）</p>
               </div>
             </div>,
             document.body,

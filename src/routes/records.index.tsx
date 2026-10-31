@@ -85,7 +85,7 @@ function RecordsPage() {
         </div>
       ) : items.length === 0 ? (
         <div className="mt-7 rounded-2xl bg-white p-10 text-center transition-colors hover:bg-vermilion-wash">
-          <p className="font-seal text-3xl text-ink-faint">析</p>
+          <p className="font-seal text-3xl leading-none text-ink-faint">析</p>
           <p className="mt-3 text-sm font-medium">暂无解析记录</p>
           <p className="mt-1 text-xs text-ink-faint">到「宝宝起名」体验生成吧</p>
           <Link to="/naming" className="mt-5 inline-block rounded-xl bg-vermilion px-6 py-2.5 text-sm font-semibold text-paper">
@@ -102,7 +102,7 @@ function RecordsPage() {
                 params={{ id: it.id }}
                 className="ink-in flex items-center gap-4 rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash active:scale-[0.99]"
               >
-                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink font-seal text-lg text-paper">
+                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink font-seal text-lg leading-none text-paper">
                   {(it.raw as NamingLog).surname || "名"}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -120,7 +120,7 @@ function RecordsPage() {
                 key={"r" + it.id}
                 className="ink-in flex items-center gap-4 rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash"
               >
-                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-stone-600 font-seal text-lg text-paper">
+                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-stone-600 font-seal text-lg leading-none text-paper">
                   {SEALS[String((it.raw as ReportItem).reportType || "").toUpperCase()] || "析"}
                 </span>
                 <div className="min-w-0 flex-1">

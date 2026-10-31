@@ -143,7 +143,7 @@ function ClassicLibrary() {
           <section key={c.code} className="mt-9">
             <div className="flex items-baseline gap-3">
               <h2 className="text-lg font-semibold">{c.name}</h2>
-              <span className="text-[11px] text-ink-faint">{c.books.length} 部</span>
+              <span className="text-xs text-ink-faint">{c.books.length} 部</span>
             </div>
             <div className="mt-3 grid gap-4 md:grid-cols-2">
               {c.books.map((b) => (
@@ -153,15 +153,15 @@ function ClassicLibrary() {
                       <p className="font-seal text-2xl leading-none text-ink">《{b.book}》</p>
                       {/* 类目名与书名相同时不重复；不同名时标出（起名页按类目找书要用这一类目名） */}
                       {c.name !== b.book ? (
-                        <p className="mt-1.5 text-[11px] text-ink-faint">类目 · {c.name}</p>
+                        <p className="mt-1.5 text-xs text-ink-faint">类目 · {c.name}</p>
                       ) : null}
                     </div>
                     {b.sentenceCount > 0 ? (
-                      <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[10px] tabular-nums text-ink-soft">
+                      <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] tabular-nums text-ink-soft">
                         原文 {b.sentenceCount.toLocaleString()} 句
                       </span>
                     ) : b.entryCount > 0 ? (
-                      <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[10px] tabular-nums text-ink-soft">
+                      <span className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] tabular-nums text-ink-soft">
                         精选条目 {b.entryCount} 条
                       </span>
                     ) : null}
@@ -177,7 +177,7 @@ function ClassicLibrary() {
                     <div className="mt-3 rounded-xl bg-paper-2 p-3">
                       <p className="text-sm leading-relaxed text-ink text-pretty">{b.highlight}</p>
                       {b.highlightSource ? (
-                        <p className="mt-1 text-[11px] text-ink-faint">—— {b.highlightSource}</p>
+                        <p className="mt-1 text-xs text-ink-faint">—— {b.highlightSource}</p>
                       ) : null}
                     </div>
                   ) : null}

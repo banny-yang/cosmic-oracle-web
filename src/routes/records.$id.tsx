@@ -407,7 +407,7 @@ function RecordDetail() {
                 <Lock aria-hidden className="size-4 text-vermilion-deep" />
                 这份报告还有 {lockedCount} 个名字已生成、待解锁
               </p>
-              <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">
+              <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
                 不需要重新生成：解锁后同一份报告直接取回剩余名字，可反复打开、可复制带走。
                 解锁按一次起名扣 {namingPrice} 点，畅享卡有效期内免费。
               </p>
@@ -436,9 +436,9 @@ function RecordDetail() {
           {diag ? (
             <section className="ink-in d1 mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-base font-semibold">出生五行分析</h2>
+                <h2 className="text-lg font-semibold">出生五行分析</h2>
                 {diag.wuxingMatch === false ? (
-                  <span className="text-[11px] text-ink-faint">本次按典故优先，未按喜用筛字</span>
+                  <span className="text-xs text-ink-faint">本次按典故优先，未按喜用筛字</span>
                 ) : null}
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
@@ -461,7 +461,7 @@ function RecordDetail() {
                   <span className="rounded-full bg-paper-3 px-3 py-1.5">四柱 · {diag.pillars.join(" ")}</span>
                 ) : null}
               </div>
-              {diag.reason ? <p className="mt-3 text-xs leading-relaxed text-ink-soft">{diag.reason}</p> : null}
+              {diag.reason ? <p className="mt-3 text-sm leading-relaxed text-ink-soft">{diag.reason}</p> : null}
               {diag.zodiacGuide ? (
                 <div className="mt-3 rounded-xl bg-paper-3 p-3">
                   <p className="text-xs font-medium text-ink">
@@ -481,18 +481,18 @@ function RecordDetail() {
                     ) : null}
                   </div>
                   {diag.zodiacGuide.note ? (
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-ink-faint">{diag.zodiacGuide.note}</p>
+                    <p className="mt-1.5 text-xs leading-relaxed text-ink-faint">{diag.zodiacGuide.note}</p>
                   ) : null}
                 </div>
               ) : null}
               {diag.criticalBoundary?.note ? (
-                <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-800">
+                <p className="mt-3 flex items-start gap-1.5 text-xs leading-relaxed text-amber-800">
                   <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
                   {diag.criticalBoundary.note}
                 </p>
               ) : null}
               {diag.avoidSummary ? (
-                <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">{diag.avoidSummary}</p>
+                <p className="mt-2 text-xs leading-relaxed text-ink-faint">{diag.avoidSummary}</p>
               ) : null}
             </section>
           ) : null}
@@ -514,7 +514,7 @@ function RecordDetail() {
             </button>
           </div>
           {copied === "fail" ? (
-            <p className="mt-1.5 text-[11px] text-vermilion-deep">
+            <p role="alert" className="mt-1.5 text-xs text-vermilion-deep">
               浏览器不允许自动复制，可长按选中页面内容手动复制（纯文本约 {reportTextLength} 字）。
             </p>
           ) : null}
@@ -539,7 +539,7 @@ function RecordDetail() {
             </div>
           ) : null}
 
-          <p className="mt-8 text-center text-[11px] leading-relaxed text-ink-faint">
+          <p className="mt-8 text-center text-xs leading-relaxed text-ink-faint">
             评分为字义、音律、典籍、五行搭配等维度的综合参考，非命理断言；重名为公开榜单估算，非户籍重名实数。
             <br />
             <a href="/naming" className="text-vermilion-deep underline-offset-2 hover:underline">
@@ -562,13 +562,13 @@ function CardBlock({ c }: { c: CardData }) {
   return (
     <section className="relative rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
       {c.recommended ? (
-        <span className="absolute top-0 right-5 flex flex-col items-center rounded-b-lg bg-vermilion px-2 py-1.5 font-seal text-xs leading-tight text-paper">
+        <span className="absolute top-0 right-5 flex flex-col items-center rounded-b-lg bg-vermilion px-2 py-1.5 text-[11px] font-semibold leading-tight text-paper">
           <span>推</span>
           <span>荐</span>
         </span>
       ) : null}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <p className="font-seal text-3xl text-ink">{c.name}</p>
+        <p className="font-seal text-3xl leading-none text-ink">{c.name}</p>
         {c.pinyin ? (
           <p className="text-xs text-ink-soft">
             {c.pinyin}
@@ -576,7 +576,7 @@ function CardBlock({ c }: { c: CardData }) {
           </p>
         ) : null}
         {c.twinGender ? (
-          <span className="rounded-full bg-paper-3 px-2 py-0.5 text-[10px] text-ink-soft">
+          <span className="rounded-full bg-paper-3 px-2 py-0.5 text-xs text-ink-soft">
             {GENDER_ZH[c.twinGender] || c.twinGender}
           </span>
         ) : null}
@@ -623,9 +623,9 @@ function CardBlock({ c }: { c: CardData }) {
             <div key={g.label} className="rounded-lg bg-paper-3 py-1.5 text-center">
               <p className="text-sm font-semibold tabular-nums">
                 {g.value}
-                <span className="text-[10px] font-normal text-ink-soft">画</span>
+                <span className="text-[11px] font-normal text-ink-soft">画</span>
               </p>
-              <p className="text-[10px] text-ink-soft">{g.label}</p>
+              <p className="text-xs text-ink-soft">{g.label}</p>
             </div>
           ))}
         </div>
@@ -645,7 +645,7 @@ function CardBlock({ c }: { c: CardData }) {
               const v = Math.min(100, Math.max(0, c.dimensionScores?.[k] ?? 60));
               return (
                 <div key={k} className="flex items-center gap-2">
-                  <span className="w-14 shrink-0 text-[11px] text-ink-soft">{label}</span>
+                  <span className="w-14 shrink-0 text-xs text-ink-soft">{label}</span>
                   <div className="h-1.5 flex-1 overflow-hidden rounded bg-white/70">
                     <div className="h-full rounded bg-vermilion-deep" style={{ width: `${v}%` }} />
                   </div>
@@ -669,15 +669,15 @@ function CardBlock({ c }: { c: CardData }) {
               ) : null}
             </p>
           ) : null}
-          <p className="mt-1 text-xs leading-relaxed text-ink-soft">{c.classicCitation}</p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">{c.classicCitation}</p>
         </div>
       ) : null}
 
       {c.charCitations?.length ? (
         <div className="mt-2 space-y-1.5">
           {c.charCitations.map((cc, i) => (
-            <div key={i} className="flex items-start gap-2 text-[11px] leading-relaxed">
-              <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded bg-vermilion-wash font-seal text-xs text-vermilion-deep">
+            <div key={i} className="flex items-start gap-2 text-sm leading-relaxed">
+              <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded bg-vermilion-wash text-xs font-semibold text-vermilion-deep">
                 {cc.char || "·"}
               </span>
               <span className="min-w-0 text-ink-soft">
@@ -690,24 +690,24 @@ function CardBlock({ c }: { c: CardData }) {
       ) : null}
 
       {c.surnameSameSource && c.surnameCitation ? (
-        <p className="mt-2 rounded-xl bg-vermilion-wash px-3 py-2 text-[11px] leading-relaxed text-ink-soft">
+        <p className="mt-2 rounded-xl bg-vermilion-wash px-3 py-2 text-sm leading-relaxed text-ink-soft">
           <span className="text-vermilion-deep">姓与名同出一句</span>「{c.surnameCitation}」
         </p>
       ) : null}
 
       {c.surnameNote ? (
-        <p className="mt-3 text-[11px] leading-relaxed text-ink-faint">
+        <p className="mt-3 text-sm leading-relaxed text-ink-faint">
           <span className="text-ink-soft">姓+名 ·</span> {c.surnameNote}
         </p>
       ) : null}
 
-      {c.fusionNote ? <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">{c.fusionNote}</p> : null}
-      {c.wugeWarning ? <p className="mt-2 text-[11px] leading-relaxed text-amber-700">· {c.wugeWarning}</p> : null}
+      {c.fusionNote ? <p className="mt-2 text-sm leading-relaxed text-ink-faint">{c.fusionNote}</p> : null}
+      {c.wugeWarning ? <p className="mt-2 text-sm leading-relaxed text-amber-700">· {c.wugeWarning}</p> : null}
 
       {c.phoneticNotes?.length ? (
         <div className="mt-2 flex flex-wrap gap-1">
           {c.phoneticNotes.map((n) => (
-            <span key={n} className="rounded bg-vermilion-wash px-1.5 py-0.5 text-[10px] text-vermilion-deep">
+            <span key={n} className="rounded bg-vermilion-wash px-1.5 py-0.5 text-[11px] text-vermilion-deep">
               {n}
             </span>
           ))}
@@ -715,11 +715,11 @@ function CardBlock({ c }: { c: CardData }) {
       ) : null}
 
       {c.zodiacHits?.note ? (
-        <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">{c.zodiacHits.note}</p>
+        <p className="mt-2 text-sm leading-relaxed text-ink-faint">{c.zodiacHits.note}</p>
       ) : null}
 
       {blocked.length ? (
-        <div className="mt-2 text-[11px] leading-relaxed text-vermilion-deep">
+        <div className="mt-2 text-sm leading-relaxed text-vermilion-deep">
           <p>方言谐音检测存在风险提示</p>
           <ul className="mt-0.5 list-none space-y-0.5 text-ink-soft">
             {blocked.map((d) => (
@@ -730,32 +730,32 @@ function CardBlock({ c }: { c: CardData }) {
           </ul>
         </div>
       ) : passedDialects > 0 ? (
-        <p className="mt-2 text-[11px] text-amber-700">已通过普通话 + {passedDialects} 方言谐音检测</p>
+        <p className="mt-2 text-xs text-amber-700">已通过普通话 + {passedDialects} 方言谐音检测</p>
       ) : null}
 
       {c.wuxingAnalysis ? (
-        <p className="mt-3 border-t border-vermilion/10 pt-3 text-xs leading-relaxed text-ink-soft">
+        <p className="mt-3 border-t border-vermilion/10 pt-3 text-sm leading-relaxed text-ink-soft">
           <span className="mr-1 font-medium text-ink">字义详解</span>
           {c.wuxingAnalysis}
         </p>
       ) : null}
 
       {c.polyphoneNotes?.length ? (
-        <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">{c.polyphoneNotes.join("；")}</p>
+        <p className="mt-2 text-sm leading-relaxed text-ink-faint">{c.polyphoneNotes.join("；")}</p>
       ) : null}
       {c.clicheChars?.length ? (
-        <p className="mt-1 text-[11px] leading-relaxed text-ink-faint">
+        <p className="mt-1 text-xs leading-relaxed text-ink-faint">
           近年高频用字：{c.clicheChars.join("、")}
         </p>
       ) : null}
       {c.rareChars?.length ? (
-        <p className="mt-1 text-[11px] leading-relaxed text-ink-faint">
+        <p className="mt-1 text-xs leading-relaxed text-ink-faint">
           生僻倾向用字：{c.rareChars.join("、")}
         </p>
       ) : null}
       {c.commonNameIndex ? (
         <p
-          className="mt-1 text-[11px] leading-relaxed text-ink-faint"
+          className="mt-1 text-xs leading-relaxed text-ink-faint"
           title="基于公开常见名榜单估算，非户籍重名实数"
         >
           重名档位 {c.commonNameIndex}（估算，非户籍重名实数）
@@ -763,12 +763,12 @@ function CardBlock({ c }: { c: CardData }) {
       ) : null}
 
       {c.homophoneSafe === false ? (
-        <p className="mt-3 flex items-start gap-1 text-[11px] leading-snug text-vermilion-deep">
+        <p className="mt-3 flex items-start gap-1 text-xs leading-snug text-vermilion-deep">
           <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
           {c.safetyNote || "谐音需留意"}
         </p>
       ) : (
-        <p className="mt-3 text-[11px] text-ink-faint">✓ 谐音安全</p>
+        <p className="mt-3 text-xs text-ink-faint">✓ 谐音安全</p>
       )}
     </section>
   );

@@ -112,18 +112,18 @@ function LockedOverlay({ price, balance, loggedIn }: { price: number; balance: n
         {loggedIn ? (
           <>
             <p className="mt-3 text-sm font-semibold text-ink">点数不足，结果已暂存</p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">
               解锁完整结果与 AI 解读需 {price} 点，当前余额 {balance} 点
             </p>
             <div className="mt-3 flex flex-col items-center gap-1.5">
               <img src="/mp-qrcode.jpg" alt="对脉名鉴小程序码" className="size-20 rounded object-contain" />
-              <p className="text-[11px] text-ink-faint">{QR_HINT[qrEnv]}</p>
+              <p className="text-xs text-ink-faint">{QR_HINT[qrEnv]}</p>
             </div>
           </>
         ) : (
           <>
             <p className="mt-3 text-sm font-semibold text-ink">登录后查看完整结果</p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">
               登录并解锁后可查看完整结果，并使用 AI 对结果进行深度解读
             </p>
             <a
@@ -240,7 +240,7 @@ function Marriage() {
                 <BirthplaceInput lat={female.lat} lng={female.lng} placeholder="城市或地区名" onPick={(v) => setFemale({ ...female, lat: v.lat, lng: v.lng })} />
               </Field>
             </div>
-            {err ? <p className="text-xs text-vermilion-deep">{err}</p> : null}
+            {err ? <p role="alert" className="text-xs text-vermilion-deep">{err}</p> : null}
             <button
               onClick={runPreview}
               disabled={loading}
@@ -251,7 +251,11 @@ function Marriage() {
           </ReportForm>
           {preview ? (
             <div className="relative">
-              <div className={insufficient ? "pointer-events-none select-none blur-[7px]" : ""}>
+              <div
+                inert={insufficient}
+                aria-hidden={insufficient || undefined}
+                className={insufficient ? "pointer-events-none select-none blur-[7px]" : ""}
+              >
                 <BaziPreviewPanel data={preview} price={price} onBuy={buyReport} buying={loading} />
               </div>
               {insufficient ? <LockedOverlay price={price} balance={balance} loggedIn={!!user} /> : null}
@@ -263,7 +267,7 @@ function Marriage() {
           {preview ? <BaziPreviewPanel data={preview} embedded /> : null}
           <ReportRunning error={flow.error} />
           {flow.markdown ? (
-            <section className="mt-4 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+            <section className="mt-4 rounded-2xl bg-white p-5">
               <MiniMarkdown text={flow.markdown} />
             </section>
           ) : null}
@@ -273,7 +277,11 @@ function Marriage() {
           {preview ? (
             <div className="relative">
               {/* 购买失败（点数不足等）时毛玻璃遮住结果，扣费完成后自动清晰展示 */}
-              <div className={flow.needPay ? "pointer-events-none select-none blur-[7px]" : ""}>
+              <div
+                inert={flow.needPay}
+                aria-hidden={flow.needPay || undefined}
+                className={flow.needPay ? "pointer-events-none select-none blur-[7px]" : ""}
+              >
                 <BaziResultHero data={preview} persons={preview.persons} />
                 <BaziPreviewPanel data={preview} embedded />
               </div>
@@ -282,19 +290,19 @@ function Marriage() {
           ) : null}
           {showPaywall ? <RechargeModal message={flow.error} onClose={() => setShowPaywall(false)} /> : null}
           {!flow.needPay && flow.error ? (
-            <section className="mt-7 rounded-2xl bg-white p-5 text-center transition-colors hover:bg-vermilion-wash">
-              <p className="text-sm text-vermilion-deep">{flow.error}</p>
+            <section className="mt-7 rounded-2xl bg-white p-5 text-center">
+              <p role="alert" className="text-sm text-vermilion-deep">{flow.error}</p>
             </section>
           ) : null}
           {flow.markdown ? (
-            <section className="bazi-report ink-in relative mt-5 overflow-hidden rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash [&_h2]:mt-7 [&_h3]:mt-6">
+            <section className="bazi-report ink-in relative mt-5 overflow-hidden rounded-2xl bg-white p-5 [&_h2]:mt-7 [&_h3]:mt-6">
               <div className="mb-1 flex items-center gap-2 text-xs font-medium text-ink-faint">
                 <PenLine className="size-3.5" />
                 AI 深度解读
               </div>
               <MiniMarkdown text={splitDisclaimer(flow.markdown).body} />
               {splitDisclaimer(flow.markdown).disclaimer ? (
-                <p className="mt-5 pt-3 text-[11px] leading-relaxed text-ink-faint">
+                <p className="mt-5 pt-3 text-xs leading-relaxed text-ink-faint">
                   {splitDisclaimer(flow.markdown).disclaimer}
                 </p>
               ) : null}

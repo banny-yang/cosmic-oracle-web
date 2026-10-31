@@ -106,6 +106,7 @@ function ArticleListPage() {
         <Link
           to="/articles"
           search={{ page: undefined, cat: undefined }}
+          aria-current={!cat ? "page" : undefined}
           className={!cat ? ghostCls + " bg-ink text-paper hover:bg-ink" : ghostCls}
         >
           全部
@@ -115,6 +116,7 @@ function ArticleListPage() {
             key={c.key}
             to="/articles"
             search={{ cat: c.key, page: undefined }}
+            aria-current={cat === c.key ? "page" : undefined}
             className={cat === c.key ? ghostCls + " bg-ink text-paper hover:bg-ink" : ghostCls}
           >
             {c.label}

@@ -412,7 +412,7 @@ function DimRadar({ scores, size = 150 }: { scores: Record<string, number>; size
             y={y}
             textAnchor={ANCHOR[i]}
             dominantBaseline="middle"
-            fontSize={size / 15}
+            fontSize={Math.max(size / 15, 10)}
             fill="currentColor"
             fillOpacity={0.65}
           >
@@ -501,7 +501,7 @@ function MultiRadar({
             y={y}
             textAnchor={ANCHOR[i]}
             dominantBaseline="middle"
-            fontSize={size / 16}
+            fontSize={Math.max(size / 16, 10)}
             fill="currentColor"
             fillOpacity={0.6}
           >
@@ -1259,44 +1259,6 @@ function Naming() {
     };
   }, []);
 
-  // 投票解锁：票在亲友那一侧投，这边只能靠轮询/回站确认。达标即服务端已解锁，
-  // 这里把内容取回（unlock 幂等、不扣点），用户不必再点「解锁」。
-  const voteLocked = (diagnosis?.lockedCount ?? 0) > 0;
-  useEffect(() => {
-    if (!voteLink || !reportId || !voteLocked) return;
-    const userId = getAuthUser()?.userId;
-    if (!userId) return;
-    let alive = true;
-    const check = async () => {
-      try {
-        const s = await get<{ unlocked?: boolean; unlockSource?: string }>(
-          `/api/v1/naming/reports/${reportId}/status?user_id=${userId}`,
-        );
-        if (!alive || !s?.unlocked) return;
-        setVoteUnlockGranted(true);
-        track("naming_unlock_vote_reached", { source: s.unlockSource || "VOTE" });
-        await unlockReport({ auto: true });
-      } catch {
-        /* 网络抖动：下一轮再查 */
-      }
-    };
-    const timer = setInterval(check, 20000);
-    const onWake = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-      void check();
-    };
-    document.addEventListener("visibilitychange", onWake);
-    window.addEventListener("focus", onWake);
-    void check();
-    return () => {
-      alive = false;
-      clearInterval(timer);
-      document.removeEventListener("visibilitychange", onWake);
-      window.removeEventListener("focus", onWake);
-    };
-    // unlockReport 每次渲染都是新函数，进依赖会无限重挂定时器；reportId/voteLink 足够标识
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voteLink, reportId, voteLocked]);
 
   // 生成状态
   const [loading, setLoading] = useState(false);
@@ -1336,6 +1298,45 @@ function Naming() {
   /** 投票解锁阈值与标的状态：本会话发起投票后展示「还差 N 票」，达标由服务端解锁。 */
   const [voteThreshold, setVoteThreshold] = useState(0);
   const [voteUnlockGranted, setVoteUnlockGranted] = useState(false);
+
+  // 投票解锁：票在亲友那一侧投，这边只能靠轮询/回站确认。达标即服务端已解锁，
+  // 这里把内容取回（unlock 幂等、不扣点），用户不必再点「解锁」。
+  const voteLocked = (diagnosis?.lockedCount ?? 0) > 0;
+  useEffect(() => {
+    if (!voteLink || !reportId || !voteLocked) return;
+    const userId = getAuthUser()?.userId;
+    if (!userId) return;
+    let alive = true;
+    const check = async () => {
+      try {
+        const s = await get<{ unlocked?: boolean; unlockSource?: string }>(
+          `/api/v1/naming/reports/${reportId}/status?user_id=${userId}`,
+        );
+        if (!alive || !s?.unlocked) return;
+        setVoteUnlockGranted(true);
+        track("naming_unlock_vote_reached", { source: s.unlockSource || "VOTE" });
+        await unlockReport({ auto: true });
+      } catch {
+        /* 网络抖动：下一轮再查 */
+      }
+    };
+    const timer = setInterval(check, 20000);
+    const onWake = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      void check();
+    };
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+    void check();
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+    };
+    // unlockReport 每次渲染都是新函数，进依赖会无限重挂定时器；reportId/voteLink 足够标识
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voteLink, reportId, voteLocked]);
 
   const wugeCells = (c: NameCardData) =>
     [
@@ -1902,7 +1903,7 @@ function Naming() {
                 className="ink-in d1 mt-7 space-y-4 rounded-2xl bg-white p-5"
               >
                 {/* P2 信任条 + 示例填充 */}
-                <div className="flex items-center justify-between gap-2 text-[11px] text-ink-soft">
+                <div className="flex items-center justify-between gap-2 text-xs text-ink-soft">
                   <span className="flex min-w-0 items-center gap-1.5">
                     <ShieldCheck aria-hidden className="size-3.5 shrink-0 text-emerald-700" />
                     典藏 118 万句典籍语料 · 信息仅用于本次起名
@@ -1994,7 +1995,7 @@ function Naming() {
                         ))}
                       </div>
                       {twin ? (
-                        <p className="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
+                        <p className="mt-1.5 text-sm leading-relaxed text-ink-faint">
                           双胞胎模式：名字两两成对推荐（共 10 个名字、5 组），同对讲究呼应——同字起名（如修远&修竹）或同句拆字（如景和&景明），同出一部典籍；大宝二宝性别可不同（龙凤胎）
                         </p>
                       ) : null}
@@ -2057,7 +2058,7 @@ function Naming() {
                           ))}
                         </div>
                         {gender !== twinGenderB ? (
-                          <p className="mt-1.5 text-[11px] text-amber-700">
+                          <p className="mt-1.5 text-xs text-amber-700">
                             龙凤胎模式：男宝名与女宝名按性别画像分别取名，成对同典
                           </p>
                         ) : null}
@@ -2088,15 +2089,15 @@ function Naming() {
                               >
                                 {zh}
                                 {order === 0 ? (
-                                  <span className="ml-1 text-[10px] text-vermilion-wash">主</span>
+                                  <span className="ml-1 text-[11px] text-vermilion-wash">主</span>
                                 ) : order === 1 ? (
-                                  <span className="ml-1 text-[10px] text-vermilion-wash">辅</span>
+                                  <span className="ml-1 text-[11px] text-vermilion-wash">辅</span>
                                 ) : null}
                               </button>
                             );
                           })}
                         </div>
-                        <p className="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
+                        <p className="mt-1.5 text-sm leading-relaxed text-ink-faint">
                           不透露生辰的模式：跳过八字排盘与生肖/时辰分析，按所选五行直接筛选用字取名
                         </p>
                       </Field>
@@ -2193,7 +2194,7 @@ function Naming() {
                         </Field>
                       ) : (
                         <div className="flex items-end pb-1">
-                          <p className="text-[11px] leading-snug text-ink-faint">
+                          <p className="text-xs leading-snug text-ink-faint">
                             预产期方案按当日午时（12:00）推演，宝宝出生后可用实际生辰重新生成精算
                           </p>
                         </div>
@@ -2241,7 +2242,7 @@ function Naming() {
                       </button>
                     ))}
                   </div>
-                  <p className="mt-1.5 text-[11px] text-ink-soft">
+                  <p className="mt-1.5 text-xs text-ink-soft">
                     选中的期望将用于选字与寓意判词，名字尽量呼应
                   </p>
                 </Field>
@@ -2265,24 +2266,26 @@ function Naming() {
                           <button
                             type="button"
                             title="移除偏好字"
+                            aria-label="移除偏好字"
                             onClick={() => setPreferChars([])}
-                            className="ml-0.5 text-ink-faint hover:text-ink"
+                            className="-my-1 ml-0.5 grid size-6 place-items-center rounded-full text-ink-faint hover:text-ink"
                           >
                             ×
                           </button>
                         </span>
                       ) : null}
                       {preferSrc ? (
-                        <span className="flex items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-[11px] text-ink-soft">
+                        <span className="flex items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-xs text-ink-soft">
                           典籍 · {CATEGORY_LABELS[preferSrc]}
                           <button
                             type="button"
                             title="移除典籍偏好"
+                            aria-label="移除典籍偏好"
                             onClick={() => {
                               setPreferSrc(null);
                               setSourcesSel([]);
                             }}
-                            className="text-ink-faint hover:text-ink"
+                            className="-my-1 grid size-6 place-items-center rounded-full text-ink-faint hover:text-ink"
                           >
                             ×
                           </button>
@@ -2290,52 +2293,55 @@ function Naming() {
                       ) : null}
                       {/* 书目信号以实际勾选为准：切分组/取消类目会摘掉书目，此处同步不再显示 */}
                       {bookSignal ? (
-                        <span className="flex items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-[11px] text-ink-soft">
+                        <span className="flex items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-xs text-ink-soft">
                           书目 · 《{preferBook}》
                           <button
                             type="button"
                             title="移除指定书目"
+                            aria-label="移除指定书目"
                             onClick={() => {
                               setBooksSel((p) => p.filter((x) => x !== preferBook));
                               setPreferBook(null);
                             }}
-                            className="text-ink-faint hover:text-ink"
+                            className="-my-1 grid size-6 place-items-center rounded-full text-ink-faint hover:text-ink"
                           >
                             ×
                           </button>
                         </span>
                       ) : null}
                       {preferGender ? (
-                        <span className="flex items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-[11px] text-ink-soft">
+                        <span className="flex items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-xs text-ink-soft">
                           性别 · {preferGender === "M" ? "男" : "女"}
                           <button
                             type="button"
                             title="移除性别预选"
+                            aria-label="移除性别预选"
                             onClick={() => setPreferGender(null)}
-                            className="text-ink-faint hover:text-ink"
+                            className="-my-1 grid size-6 place-items-center rounded-full text-ink-faint hover:text-ink"
                           >
                             ×
                           </button>
                         </span>
                       ) : null}
                       {preferExpect ? (
-                        <span className="flex items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-[11px] text-ink-soft">
+                        <span className="flex items-center gap-1 rounded-full bg-paper-2 px-2 py-0.5 text-xs text-ink-soft">
                           期望 · {preferExpect}
                           <button
                             type="button"
                             title="移除期望预选"
+                            aria-label="移除期望预选"
                             onClick={() => {
                               setPreferExpect(null);
                               setExpectSel((p) => p.filter((x) => x !== preferExpect));
                             }}
-                            className="text-ink-faint hover:text-ink"
+                            className="-my-1 grid size-6 place-items-center rounded-full text-ink-faint hover:text-ink"
                           >
                             ×
                           </button>
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-1.5 text-[11px] text-ink-faint">
+                    <p className="mt-1.5 text-xs text-ink-faint">
                       {preferChars.length || preferSrc || preferGender || preferExpect
                         ? "按选定名字的风格生成：偏好字优先成卡"
                         : "本次起名的偏好："}
@@ -2357,7 +2363,7 @@ function Naming() {
                   </span>
                   <span className="flex items-center gap-2">
                     {advancedCount > 0 ? (
-                      <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-semibold text-vermilion-deep">
+                      <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-semibold text-vermilion-deep">
                         已选 {advancedCount}
                       </span>
                     ) : null}
@@ -2392,7 +2398,7 @@ function Naming() {
                           </button>
                         ))}
                       </div>
-                      <p className="mt-1.5 text-[11px] text-ink-soft">
+                      <p className="mt-1.5 text-xs text-ink-soft">
                         {generationChar.trim()
                           ? "已按字辈固定为双字名（字辈+单字，三字名）"
                           : nameLength === "DOUBLE"
@@ -2417,7 +2423,7 @@ function Naming() {
                           </button>
                         ))}
                       </div>
-                      <p className="mt-1.5 text-[11px] text-ink-soft">
+                      <p className="mt-1.5 text-xs text-ink-soft">
                         {wuxingMatch
                           ? "用字优先补益宝宝八字喜用五行，五行维度得分更高"
                           : "不限五行取全量字库，双字名优先取典故原文中的词（如 望舒），有典籍出处的名字更多、更雅"}
@@ -2440,7 +2446,7 @@ function Naming() {
                           </button>
                         ))}
                       </div>
-                      <p className="mt-1.5 text-[11px] text-ink-soft">
+                      <p className="mt-1.5 text-xs text-ink-soft">
                         {zodiacMatch
                           ? "按出生年生肖剔除忌用部首、优先宜用部首（如马年宜艹/禾/木），选字会明显收窄"
                           : "不按生肖筛字，可避开花草等集中用字，名字风格更分散"}
@@ -2458,7 +2464,7 @@ function Naming() {
                           />
                         </Field>
                         {generationChar.trim() ? (
-                          <p className="mt-1 text-[11px] text-vermilion-deep">
+                          <p className="mt-1 text-xs text-vermilion-deep">
                             {`名字将为 ${surname.trim() || "□"}${generationChar.trim()}□（三字名 · 字辈居首，辈分字与名字同典故优先）`}
                           </p>
                         ) : null}
@@ -2555,7 +2561,7 @@ function Naming() {
                           </button>
                         ))}
                       </div>
-                      <p className="mt-1.5 text-[11px] text-ink-soft">
+                      <p className="mt-1.5 text-xs text-ink-soft">
                         可多选类目；切换分组会更换可选类目并清空已选
                       </p>
 
@@ -2564,7 +2570,7 @@ function Naming() {
                         <div className="mt-3 space-y-2.5 rounded-xl bg-paper-3 p-3">
                           {bookRows.map(({ code, name, books }) => (
                             <div key={code}>
-                              <p className="text-[11px] font-medium text-ink-soft">
+                              <p className="text-xs font-medium text-ink-soft">
                                 {name} · 指定书目
                                 <span className="ml-1 font-normal text-ink-faint">
                                   （可多选，选定后只从这些典籍出典）
@@ -2599,7 +2605,7 @@ function Naming() {
                               </div>
                             </div>
                           ))}
-                          <p className="text-[11px] text-ink-faint">
+                          <p className="text-xs text-ink-faint">
                             {booksSel.length
                               ? `已选 ${booksSel.length} 部：名字出处只来自所选书目，可在《典籍馆》看每部书的名句`
                               : "不选书目 = 在所选类目（或全部语料）里自由取典"}
@@ -2630,7 +2636,7 @@ function Naming() {
                 ) : null}
 
                 {/* P2 提交摘要条 */}
-                <div className="flex items-center justify-between gap-2 rounded-xl bg-paper-3 px-3 py-2 text-[11px] text-ink-soft">
+                <div className="flex items-center justify-between gap-2 rounded-xl bg-paper-3 px-3 py-2 text-xs text-ink-soft">
                   <span className="min-w-0 truncate">
                     {surname.trim() || "＿"}家{genderSuffix(gender)} · {birthLabel}
                     {placeName ? ` · ${shortPlace(placeName)}` : ""}
@@ -2643,7 +2649,7 @@ function Naming() {
                 {draftRestored ? (
                   <p className="text-xs text-ink-soft">已恢复你上次填写的信息，确认后点「开始推演」。</p>
                 ) : null}
-                {formErr ? <p className="text-xs text-vermilion-deep">{formErr}</p> : null}
+                {formErr ? <p role="alert" className="text-xs text-vermilion-deep">{formErr}</p> : null}
                 <button
                   onClick={handleStartClick}
                   className="hidden w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99] md:block"
@@ -2652,7 +2658,7 @@ function Naming() {
                     ? `开始推演 · 消耗 ${namingPrice} 点 · 单次 10 个名字`
                     : "免费预览 3 个方向 · 登录看完整方案"}
                 </button>
-                <p className="hidden text-center text-[11px] text-ink-soft md:block">
+                <p className="hidden text-center text-xs text-ink-soft md:block">
                   {loggedIn
                     ? "未充值新用户首次免费体验（展示 3 个精选名字，充值解锁全部）"
                     : "免登录先看 3 个方向预览，不扣点；登录后出完整 10 个方案（新用户首次体验仍免费展示 3 张）"}
@@ -2661,6 +2667,11 @@ function Naming() {
 
               {/* P1 移动端吸底提交（含安全区适配） */}
               <div className="fixed inset-x-0 bottom-0 z-30 bg-paper-2 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
+                {formErr ? (
+                  <p role="alert" className="mb-1 text-center text-xs text-vermilion-deep">
+                    {formErr}
+                  </p>
+                ) : null}
                 <button
                   onClick={handleStartClick}
                   className="w-full rounded-xl bg-vermilion py-3 text-sm font-semibold text-paper transition-transform active:scale-[0.99]"
@@ -2669,7 +2680,7 @@ function Naming() {
                     ? `开始推演 · 消耗 ${namingPrice} 点 · 单次 10 个名字`
                     : "免费预览 3 个方向 · 登录看完整方案"}
                 </button>
-                <p className="mt-1 text-center text-[10px] text-ink-soft">
+                <p className="mt-1 text-center text-xs text-ink-soft">
                   {loggedIn ? "未充值新用户首次免费（展示 3 个精选名字）" : "免登录可先预览 3 个方向，不扣点"}
                 </p>
               </div>
@@ -2688,7 +2699,7 @@ function Naming() {
                 {STAGES.map((s, i) => (
                   <li key={s} className="flex items-center gap-2.5 text-sm">
                     <span
-                      className={`grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold ${
+                      className={`grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-semibold ${
                         i < stageIdx
                           ? "bg-ink text-paper"
                           : i === stageIdx
@@ -2704,14 +2715,14 @@ function Naming() {
               </ol>
               {diagnosis?.pillars?.length ? (
                 <div className="mt-4 rounded-xl bg-paper-3 p-3">
-                  <p className="text-[11px] text-ink-soft">真太阳时四柱排定</p>
+                  <p className="text-xs text-ink-soft">真太阳时四柱排定</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {["年柱", "月柱", "日柱", "时柱"].map((l, i) => (
                       <span
                         key={l}
                         className="rounded-lg bg-paper px-2.5 py-1 text-sm font-medium tracking-widest"
                       >
-                        <span className="mr-1 text-[10px] text-ink-soft">{l}</span>
+                        <span className="mr-1 text-xs text-ink-soft">{l}</span>
                         {diagnosis.pillars?.[i] || "-"}
                       </span>
                     ))}
@@ -2719,7 +2730,7 @@ function Naming() {
                 </div>
               ) : null}
               {stageIdx >= 1 && diagnosis?.primaryElement ? (
-                <div className="mt-3 rounded-xl bg-paper-3 p-3 text-xs leading-relaxed text-ink-soft">
+                <div className="mt-3 rounded-xl bg-paper-3 p-3 text-sm leading-relaxed text-ink-soft">
                   喜用判定：日主{ELEMENT_ZH[diagnosis.dayMasterElement || ""]}·
                   {STRENGTH_ZH[diagnosis.strength || ""]}，取{ELEMENT_ZH[diagnosis.primaryElement]}
                   为主、
@@ -2739,12 +2750,12 @@ function Naming() {
               ) : null}
               {aiDelta ? (
                 <div className="mt-4 rounded-xl bg-paper-3 p-3">
-                  <p className="text-[11px] text-ink-soft">AI 典籍推演</p>
+                  <p className="text-xs text-ink-soft">AI 典籍推演</p>
                   <p className="mt-1 truncate text-xs text-ink-faint">{aiDelta}</p>
                 </div>
               ) : null}
               {slowHint ? (
-                <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
                   推演仍在进行（典籍配对较耗时，通常 1~3 分钟）——可以先喝口水，结果出来会自动展示
                 </p>
               ) : null}
@@ -2788,12 +2799,12 @@ function Naming() {
                         : genderSuffix(gender)}
                     </h2>
                     {!born && !manualMode ? (
-                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
                         预产期推演
                       </span>
                     ) : null}
                     {manualMode ? (
-                      <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-medium text-vermilion-deep">
+                      <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-medium text-vermilion-deep">
                         按喜用神取名
                       </span>
                     ) : null}
@@ -2809,7 +2820,7 @@ function Naming() {
                     {!manualMode && placeName ? ` · ${shortPlace(placeName)}` : ""}
                   </p>
                   {!born && !manualMode ? (
-                    <p className="mt-1 max-w-md text-[11px] leading-relaxed text-ink-faint">
+                    <p className="mt-1 max-w-md text-sm leading-relaxed text-ink-faint">
                       时柱按当日午时（12:00）推演，宝宝出生后建议用实际生辰重新生成精算
                     </p>
                   ) : null}
@@ -2823,24 +2834,24 @@ function Naming() {
                     const el = BRANCH_ELEMENT[pl[pl.length - 1]];
                     return (
                       <div key={i} className="rounded-xl bg-paper-3 px-1 py-1.5 text-center">
-                        <p className="flex items-center justify-center gap-1 text-[10px] text-ink-faint">
+                        <p className="flex items-center justify-center gap-1 text-xs text-ink-faint">
                           <span
                             className={`size-1.5 rounded-full ${ELEMENT_DOT[el] || "bg-ink-faint"}`}
                           />
                           {["年柱", "月柱", "日柱", "时柱"][i]}
                         </p>
-                        <p className="mt-0.5 font-seal text-lg leading-relaxed tracking-[0.2em] text-ink">
+                        <p className="mt-0.5 font-seal text-lg leading-none tracking-[0.2em] text-ink">
                           {pl}
                         </p>
                         {/* 年柱即生肖（立春为界），点名生肖名便于与下面的宜忌板块对上 */}
                         {i === 0 && zodiacInfo ? (
-                          <p className="mt-0.5 text-[10px] text-ink-faint">
+                          <p className="mt-0.5 text-xs text-ink-faint">
                             属{zodiacInfo.animal}
                           </p>
                         ) : null}
                         {/* 时柱点名时辰（取名与时辰相关的可见化：时支定十二时辰） */}
                         {i === 3 ? (
-                          <p className="mt-0.5 text-[10px] text-ink-faint">
+                          <p className="mt-0.5 text-xs text-ink-faint">
                             {pl[pl.length - 1]}时
                           </p>
                         ) : null}
@@ -2849,7 +2860,7 @@ function Naming() {
                   })}
                 </div>
               ) : manualMode ? (
-                <p className="mt-3 rounded-xl bg-paper-3 px-3 py-2 text-[11px] leading-relaxed text-ink-soft">
+                <p className="mt-3 rounded-xl bg-paper-3 px-3 py-2 text-sm leading-relaxed text-ink-soft">
                   按指定喜用神取名：未提供生辰，已跳过八字排盘与生肖/时辰分析——选字与数理仍按喜用五行全面校验
                 </p>
               ) : null}
@@ -2881,7 +2892,7 @@ function Naming() {
                             style={{ width: `${pct}%` }}
                           />
                         </span>
-                        <span className="tabular-nums text-[11px] text-ink-faint">{pct}%</span>
+                        <span className="tabular-nums text-xs text-ink-faint">{pct}%</span>
                       </>
                     );
                   })()}
@@ -2914,19 +2925,19 @@ function Naming() {
               </div>
 
               {diagnosis.criticalBoundary?.note ? (
-                <p className="mt-3 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800">
+                <p className="mt-3 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-sm leading-relaxed text-amber-800">
                   <Clock3 aria-hidden className="mt-0.5 size-3.5 shrink-0" />
                   {diagnosis.criticalBoundary.note}
                 </p>
               ) : null}
               {diagnosis.avoidSummary ? (
-                <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-ink-soft">
+                <p className="mt-2 flex items-start gap-1.5 text-sm leading-relaxed text-ink-soft">
                   <Users aria-hidden className="mt-0.5 size-3.5 shrink-0" />
                   {diagnosis.avoidSummary}
                 </p>
               ) : null}
               {diagnosis.reason ? (
-                <p className="mt-3 pt-2.5 text-[11px] leading-relaxed text-ink-faint">
+                <p className="mt-3 pt-2.5 text-sm leading-relaxed text-ink-faint">
                   {diagnosis.reason}
                 </p>
               ) : null}
@@ -2944,7 +2955,7 @@ function Naming() {
                 <ZodiacYearHeadline info={zodiacInfo} />
                 <ZodiacRadicalChips info={zodiacInfo} />
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-ink-faint">
+              <p className="mt-3 text-sm leading-relaxed text-ink-faint">
                 名字卡的「生肖契合」按用字部首是否命中宜用、是否踩到忌用综合计分（展开名字卡可见逐个名字的命中说明）。
                 <Link
                   to="/zodiac/$animal"
@@ -2971,7 +2982,7 @@ function Naming() {
                           ? "包月畅享：30 天内生成与换一批不限次"
                           : "畅享中：24 小时内生成与换一批不限次"
                       }
-                      className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800"
+                      className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800"
                     >
                       {passInfo.passType === "MONTH"
                         ? `包月畅享 · 至 ${new Date(passInfo.expiresAtEpochMs || 0).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}`
@@ -2996,9 +3007,10 @@ function Naming() {
                   ) : (
                     <>
                       <select
+                        aria-label="排序方式"
                         value={sortKey}
                         onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
-                        className="rounded-lg bg-paper-3 px-2 py-1 text-base md:text-xs"
+                        className="rounded-lg bg-paper-3 px-2 py-1 text-base md:text-sm"
                       >
                         <option value="recommend">按推荐指数</option>
                         <option value="phonetics">按音律韵味</option>
@@ -3090,7 +3102,7 @@ function Naming() {
                         </div>
                       </div>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
+                        <table className="w-full text-left text-xs tabular-nums">
                           <tbody>
                             {[
                               ["推荐指数", (c: NameCardData) => c.recommendScore ?? "-"],
@@ -3139,7 +3151,7 @@ function Naming() {
               {twinPairs ? (
                 <div className="mt-3 space-y-5">
                   {twinPairs.pairs.length === 0 && twinPairs.singles.length > 0 ? (
-                    <p className="rounded-xl bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-800">
+                    <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm leading-relaxed text-amber-800">
                       本轮同典配对供给不足（近期生成较多，可选名字受限），以下为独立推荐、未按对分组；
                       点「换一批」可再次尝试成对推荐。
                     </p>
@@ -3185,7 +3197,7 @@ function Naming() {
                             <p className="text-sm font-semibold text-vermilion-deep">
                               登录后生成完整 {cards.length + (diagnosis?.lockedCount ?? 0)} 个方案
                             </p>
-                            <p className="px-6 text-center text-[11px] leading-relaxed text-ink-soft">
+                            <p className="px-6 text-center text-sm leading-relaxed text-ink-soft">
                               免登录仅展示 3 个方向预览；登录后逐字解读、五格音律、生肖契合与亲友投票全部解锁
                             </p>
                             <button
@@ -3201,7 +3213,7 @@ function Naming() {
                             <p className="text-sm font-semibold text-vermilion-deep">
                               剩余 {diagnosis?.lockedCount} 个名字已生成
                             </p>
-                            <p className="px-6 text-center text-[11px] leading-relaxed text-ink-soft">
+                            <p className="px-6 text-center text-sm leading-relaxed text-ink-soft">
                               同一份报告直接取回，不必重新生成
                               <br />
                               {passInfo?.active
@@ -3224,23 +3236,23 @@ function Naming() {
                             <button
                               onClick={() => setPicking(true)}
                               disabled={!!passInfo?.active}
-                              className="text-[11px] font-medium text-vermilion-deep underline underline-offset-2 disabled:opacity-60"
+                              className="rounded px-2 py-1 text-xs font-medium text-vermilion-deep underline underline-offset-2 disabled:opacity-60"
                             >
                               或发起亲友投票 · 满 {voteThreshold || 3} 票免费解锁
                             </button>
                             {unlockErr ? (
-                              <p className="px-6 text-center text-[11px] text-vermilion-deep">
+                              <p role="alert" className="px-6 text-center text-xs text-vermilion-deep">
                                 {unlockErr}
                               </p>
                             ) : null}
-                            <p className="px-6 text-center text-[10px] leading-relaxed text-ink-soft">
+                            <p className="px-6 text-center text-sm leading-relaxed text-ink-soft">
                               {QR_HINT_LOCK[qrEnv]}
                             </p>
                           </>
                         ) : (
                           <>
                             <Lock aria-hidden className="size-5 text-ink-soft/70" />
-                            <p className="text-[11px] text-ink-soft">解锁后可见</p>
+                            <p className="text-xs text-ink-soft">解锁后可见</p>
                           </>
                         )}
                       </div>
@@ -3304,7 +3316,7 @@ function Naming() {
                   <p className="text-sm font-semibold text-vermilion-deep">
                     登录后生成完整 {cards.length + (diagnosis?.lockedCount ?? 0)} 个方案
                   </p>
-                  <p className="text-xs leading-relaxed text-ink-soft">
+                  <p className="text-sm leading-relaxed text-ink-soft">
                     免登录预览只有 3 个方向、且不含逐字解读与五格音律；
                     登录后完整生成，新用户首次体验仍免费展示 3 张、充值解锁全部。
                   </p>
@@ -3314,7 +3326,7 @@ function Naming() {
                   >
                     登录看完整方案
                   </button>
-                  <p className="text-[11px] text-ink-faint">手机号或微信登录 · 网页与小程序同账号互通</p>
+                  <p className="text-xs text-ink-faint">手机号或微信登录 · 网页与小程序同账号互通</p>
                 </div>
               ) : !trial ? (
                 <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl bg-white p-5 text-center transition-colors hover:bg-vermilion-wash">
@@ -3377,7 +3389,7 @@ function Naming() {
                   <p className="text-sm font-semibold text-vermilion-deep">
                     还有 {diagnosis?.lockedCount ?? 0} 个好名字已生成
                   </p>
-                  <p className="text-xs leading-relaxed text-ink-soft">
+                  <p className="text-sm leading-relaxed text-ink-soft">
                     解锁后可「换一批」继续推演；点数网页与小程序通用
                   </p>
                   <button
@@ -3392,9 +3404,9 @@ function Naming() {
                         : `解锁全部 · ${namingPrice} 点`}
                   </button>
                   {unlockErr ? (
-                    <p className="text-[11px] text-vermilion-deep">{unlockErr}</p>
+                    <p role="alert" className="text-xs text-vermilion-deep">{unlockErr}</p>
                   ) : null}
-                  <p className="text-[11px] leading-relaxed text-ink-faint">
+                  <p className="text-xs leading-relaxed text-ink-faint">
                     点不够？前往「对脉名鉴」微信小程序 → 我的 → 点数充值
                   </p>
                 </div>
@@ -3451,7 +3463,8 @@ function Naming() {
                   </div>
                   <button
                     onClick={() => setUpgradeOpen(false)}
-                    className="text-ink-soft hover:text-ink"
+                    aria-label="关闭"
+                    className="grid size-9 place-items-center rounded-full text-ink-soft hover:bg-paper-3 hover:text-ink"
                     title="关闭"
                   >
                     <X className="size-4" />
@@ -3459,27 +3472,27 @@ function Naming() {
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 text-left">
                   <div className="rounded-xl bg-amber-50 p-3">
-                    <p className="text-[11px] font-medium text-amber-800">24 小时畅享</p>
+                    <p className="text-xs font-medium text-amber-800">24 小时畅享</p>
                     <p className="mt-0.5 text-xl font-bold text-amber-900">
                       {passInfo?.dayPricePoints ?? 40} 点
                     </p>
-                    <p className="mt-1 text-[11px] leading-snug text-ink-soft">
+                    <p className="mt-1 text-xs leading-snug text-ink-soft">
                       当日不限次生成与换批
                     </p>
                     <button
                       onClick={() => purchasePass("DAY")}
                       disabled={purchasingPass !== ""}
-                      className="mt-2 w-full rounded-lg bg-amber-600 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+                      className="mt-2 w-full rounded-lg bg-amber-700 py-2 text-xs font-semibold text-white transition-colors hover:bg-amber-800 disabled:opacity-50"
                     >
                       {purchasingPass === "DAY" ? "开通中..." : "用点数开通"}
                     </button>
                   </div>
                   <div className="rounded-xl bg-paper-3 p-3">
-                    <p className="text-[11px] font-medium text-ink-soft">包月畅享</p>
+                    <p className="text-xs font-medium text-ink-soft">包月畅享</p>
                     <p className="mt-0.5 text-xl font-bold text-ink">
                       {passInfo?.monthPricePoints ?? 100} 点
                     </p>
-                    <p className="mt-1 text-[11px] leading-snug text-ink-soft">
+                    <p className="mt-1 text-xs leading-snug text-ink-soft">
                       30 天不限次，适合慢慢挑
                     </p>
                     <button
@@ -3492,12 +3505,12 @@ function Naming() {
                   </div>
                 </div>
                 {passErr ? (
-                  <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                  <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs leading-relaxed text-red-700">
                     {passErr}
                   </p>
                 ) : null}
                 <div className="mt-4">
-                  <p className="mb-1.5 text-[11px] font-medium text-ink-faint">
+                  <p className="mb-1.5 text-xs leading-relaxed font-medium text-ink-faint">
                     {QR_HINT_BUY[qrEnv]}
                   </p>
                   <ScanBuyPanel trackWhere="naming_paywall" />
@@ -3537,7 +3550,8 @@ function Naming() {
                   </div>
                   <button
                     onClick={() => setPrecheckOpen(false)}
-                    className="text-ink-soft hover:text-ink"
+                    aria-label="关闭"
+                    className="grid size-9 place-items-center rounded-full text-ink-soft hover:bg-paper-3 hover:text-ink"
                     title="关闭"
                   >
                     <X className="size-4" />
@@ -3547,7 +3561,7 @@ function Naming() {
                   <button
                     onClick={() => purchasePass("DAY", true)}
                     disabled={purchasingPass !== ""}
-                    className="w-full rounded-xl bg-amber-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+                    className="w-full rounded-xl bg-amber-700 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-800 disabled:opacity-50"
                   >
                     {purchasingPass === "DAY"
                       ? "开通中..."
@@ -3573,7 +3587,7 @@ function Naming() {
                   </button>
                 </div>
                 {passErr ? (
-                  <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                  <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs leading-relaxed text-red-700">
                     {passErr}
                   </p>
                 ) : null}
@@ -3594,7 +3608,8 @@ function Naming() {
                   <p className="text-sm font-semibold">起名海报 · {poster.name}</p>
                   <button
                     onClick={() => setPoster(null)}
-                    className="text-ink-soft hover:text-ink"
+                    aria-label="关闭"
+                    className="grid size-9 place-items-center rounded-full text-ink-soft hover:bg-paper-3 hover:text-ink"
                     title="关闭"
                   >
                     <X className="size-4" />
@@ -3651,7 +3666,7 @@ function Naming() {
                     </button>
                   ) : null}
                 </div>
-                <p className="mt-2 text-center text-[11px] text-ink-soft">
+                <p className="mt-2 text-center text-xs text-ink-soft">
                   长按图片也可保存或转发（手机端）
                 </p>
               </div>
@@ -3798,33 +3813,43 @@ function NameCardView({
 
   return (
     <section
-      className={`group relative rounded-2xl p-5 transition-colors ${c.recommended ? "border-t-4 border-amber-600 bg-white" : "bg-white hover:bg-vermilion-wash"}`}
+      className={`group relative rounded-2xl p-5 transition-colors ${c.recommended ? "border-t-4 border-amber-600 bg-white" : "bg-white"} ${picking ? "cursor-pointer hover:bg-vermilion-wash" : ""}`}
       onClick={picking ? onPick : undefined}
     >
       {c.recommended ? (
-        <span className="absolute -top-2.5 left-4 rounded-full bg-amber-700 px-2.5 py-0.5 text-[10px] font-semibold text-amber-50">
+        <span className="absolute -top-2.5 left-4 rounded-full bg-amber-700 px-2.5 py-0.5 text-[11px] font-semibold text-amber-50">
           首选方案
         </span>
       ) : null}
       {compareMode ? (
         <button
+          type="button"
+          aria-label={compareChecked ? "取消对比" : "加入对比"}
+          aria-pressed={!!compareChecked}
           onClick={(e) => {
             e.stopPropagation();
             onCompare?.();
           }}
-          className={`absolute right-4 top-4 z-10 grid size-5 place-items-center rounded-full text-[10px] ${compareChecked ? "bg-ink text-paper" : "bg-paper-3 text-ink-soft"}`}
+          className={`absolute right-3.5 top-3.5 z-10 grid size-6 place-items-center rounded-full text-[11px] ${compareChecked ? "bg-ink text-paper" : "bg-paper-3 text-ink-soft"}`}
         >
           {compareChecked ? "✓" : ""}
         </button>
       ) : null}
       {picking ? (
-        <span
-          className={`absolute top-4 left-4 grid size-6 place-items-center rounded-full text-xs ${
-            picked ? "bg-vermilion text-paper" : "bg-paper-3 text-transparent"
+        <button
+          type="button"
+          aria-label={picked ? "取消选择这个名字" : "选择这个名字"}
+          aria-pressed={!!picked}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPick?.();
+          }}
+          className={`absolute top-3 left-3 grid size-8 place-items-center rounded-full text-xs ${
+            picked ? "bg-vermilion text-paper" : "bg-paper-3 text-ink-soft"
           }`}
         >
-          ✓
-        </span>
+          {picked ? "✓" : ""}
+        </button>
       ) : null}
 
       <div className={`flex flex-wrap items-center gap-3 ${picking ? "pl-8" : ""}`}>
@@ -3837,7 +3862,7 @@ function NameCardView({
                 <span className="font-seal text-4xl leading-none text-ink">{ch}</span>
                 {el ? (
                   <span
-                    className={`absolute -top-1 -right-2.5 rounded px-1 text-[9px] leading-4 ${
+                    className={`absolute -top-1 -right-2.5 rounded px-1 text-[11px] leading-4 ${
                       c.recommended
                         ? ELEMENT_CLS[el] || "bg-ink text-paper"
                         : ELEMENT_SOFT[el] || "bg-paper-3 text-ink-soft"
@@ -3856,14 +3881,14 @@ function NameCardView({
         <p className="text-xs tracking-wide text-ink-soft">
           {c.pinyin}
           {pingzeOf(c.tones) ? (
-            <span className="ml-1.5 rounded bg-paper-3 px-1.5 py-0.5 text-[10px] text-ink-faint">
+            <span className="ml-1.5 rounded bg-paper-3 px-1.5 py-0.5 text-xs text-ink-faint">
               {pingzeOf(c.tones)}
             </span>
           ) : null}
         </p>
         {c.twinGender ? (
           <span
-            className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${c.twinGender === "M" ? "bg-sky-50 text-sky-700" : c.twinGender === "F" ? "bg-rose-50 text-rose-700" : "bg-paper-3 text-ink-soft"}`}
+            className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${c.twinGender === "M" ? "bg-sky-50 text-sky-700" : c.twinGender === "F" ? "bg-rose-50 text-rose-700" : "bg-paper-3 text-ink-soft"}`}
           >
             {c.twinGender === "M" ? "男宝" : c.twinGender === "F" ? "女宝" : "宝宝"}
           </span>
@@ -3871,7 +3896,7 @@ function NameCardView({
         {c.commonNameIndex ? (
           <span
             title={`该名在近年常见名榜单中的估算档位（${c.commonNameIndex}）：同班同学撞名概率偏高。基于公开榜单估算，非户籍重名实数`}
-            className="rounded bg-paper-3 px-1.5 py-0.5 text-[10px] text-ink-soft"
+            className="rounded bg-paper-3 px-1.5 py-0.5 text-xs text-ink-soft"
           >
             高频重名 · 估算
           </span>
@@ -3881,7 +3906,7 @@ function NameCardView({
             {c.clicheChars?.length ? (
               <span
                 title={`近年高频用字：${c.clicheChars.join("、")}（撞名率偏高，可斟酌）`}
-                className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-800"
+                className="rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-800"
               >
                 高频字 {c.clicheChars.join("、")}
               </span>
@@ -3889,7 +3914,7 @@ function NameCardView({
             {c.rareChars?.length ? (
               <span
                 title={`低频（生僻倾向）用字：${c.rareChars.join("、")}（可能常被念错、打不出）`}
-                className="rounded bg-paper-3 px-1.5 py-0.5 text-[10px] text-ink-soft"
+                className="rounded bg-paper-3 px-1.5 py-0.5 text-xs text-ink-soft"
               >
                 生僻倾向 {c.rareChars.join("、")}
               </span>
@@ -3897,7 +3922,7 @@ function NameCardView({
           </span>
         ) : null}
         {c.polyphoneNotes?.length ? (
-          <p className="w-full text-[10px] leading-relaxed text-ink-faint">
+          <p className="w-full text-xs leading-relaxed text-ink-faint">
             {c.polyphoneNotes.join("；")}
           </p>
         ) : null}
@@ -3908,14 +3933,14 @@ function NameCardView({
                   ? `姓氏与名字同出一句：「${c.surnameCitation}」`
                   : "姓氏字与名字用字同出一句典籍原文"
               }
-              className="inline-flex items-center gap-1 rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-semibold text-vermilion-deep"
+              className="inline-flex items-center gap-1 rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-semibold text-vermilion-deep"
             >
               ✧ 姓名同出一句
             </span>
           ) : c.syntaxReading ? (
           <span
             title="姓氏与名连读构成主谓/动宾诗意句式（如 叶知秋 · 一叶知秋）"
-            className="inline-flex items-center gap-1 rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-medium text-vermilion-deep"
+            className="inline-flex items-center gap-1 rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-medium text-vermilion-deep"
           >
             ✧ 诗联成句
           </span>
@@ -3967,7 +3992,7 @@ function NameCardView({
           search={{ keyword: c.name.slice(1) }}
           onClick={(e) => e.stopPropagation()}
           title="名字命中名字灵感库（人工甄别的好名字清单）"
-          className="mt-2 inline-flex items-center gap-1 rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-medium text-vermilion-deep transition-colors hover:bg-paper-3"
+          className="mt-2 inline-flex items-center gap-1 rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-medium text-vermilion-deep transition-colors hover:bg-paper-3"
         >
           ✦ 灵感库同款 · 点击查看
         </Link>
@@ -3975,7 +4000,7 @@ function NameCardView({
 
       {/* 姓+名整体搭配结论（后端姓氏融合：确定性侧算好，或用模型给的姓氏说明） */}
       {c.surnameNote ? (
-        <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
+        <p className="mt-2 text-xs leading-relaxed text-ink-faint">
           <span className="text-ink-soft">姓+名 ·</span> {c.surnameNote}
         </p>
       ) : null}
@@ -3985,7 +4010,7 @@ function NameCardView({
           {c.originalCouplet ? (
             <span
               title="两字未能同出真实典籍，已按鹤顶格原创藏名联：一字居上句之首、一字居下句之首"
-              className="inline-flex items-center gap-1 rounded-full bg-paper-3 px-2 py-0.5 text-[10px] font-medium text-ink-soft"
+              className="inline-flex items-center gap-1 rounded-full bg-paper-3 px-2 py-0.5 text-[11px] font-medium text-ink-soft"
             >
               <PenLine aria-hidden className="size-3" />
               藏名一联 · 原创嵌名
@@ -4004,7 +4029,7 @@ function NameCardView({
               return (
                 <span
                   title={badge ? badge.hint : "两字同出一典（同句或同联上下句），逐字校验通过"}
-                  className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800"
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800"
                 >
                   {badge ? `✦ ${badge.text}` : "✦ 同出一联 · 字字有典"}
                 </span>
@@ -4013,7 +4038,7 @@ function NameCardView({
           ) : (
             <span
               title="校验规则：每字引文正文均包含该字，出处核验通过"
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium bg-emerald-50 text-emerald-800"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-800"
             >
               ✓ 字字有典 · 已校验
             </span>
@@ -4031,7 +4056,7 @@ function NameCardView({
                   </span>
                 ))}
                 {c.classicMeaning ? (
-                  <span className="ml-1 text-[11px] text-ink-faint">「{c.classicMeaning}」</span>
+                  <span className="ml-1 text-xs text-ink-faint">「{c.classicMeaning}」</span>
                 ) : null}
               </div>
               {Array.from(new Set(c.charCitations.map((cc) => cc.citation))).map((t) => (
@@ -4057,7 +4082,7 @@ function NameCardView({
                 </p>
               ) : null}
               {c.originalCouplet ? (
-                <p className="mt-1 text-[10px] text-ink-faint">原创藏名联，非典籍原文</p>
+                <p className="mt-1 text-xs text-ink-faint">原创藏名联，非典籍原文</p>
               ) : null}
             </div>
           ) : (
@@ -4073,7 +4098,7 @@ function NameCardView({
                   {cc.source ? (
                     <p className="text-xs font-medium text-vermilion-deep">「{cc.source}」</p>
                   ) : null}
-                  <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
+                  <p className="mt-0.5 text-sm leading-relaxed text-ink-soft">
                     {highlightNameChars(cc.citation, [cc.char])}
                   </p>
                 </div>
@@ -4086,14 +4111,14 @@ function NameCardView({
           {c.surnameSameSource && c.surnameCitation ? (
             /* 姓名同出一句：含姓氏字的原句单独展示（姓+名字用字都在这一句里） */
             <div className="mb-2 rounded-lg border border-vermilion/20 bg-vermilion-wash/60 px-2.5 py-2">
-              <p className="text-[10px] font-medium text-vermilion-deep">姓名同出一句</p>
-              <p className="mt-0.5 text-xs leading-relaxed text-ink">「{c.surnameCitation}」</p>
+              <p className="text-[11px] font-medium text-vermilion-deep">姓名同出一句</p>
+              <p className="mt-0.5 text-sm leading-relaxed text-ink">「{c.surnameCitation}」</p>
             </div>
           ) : null}
           {c.classicVerified ? (
             <span
               title="校验规则：引文正文包含名字用字，出处核验通过"
-              className="mb-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-800"
+              className="mb-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800"
             >
               ✓ 已校验 · 引文含名
             </span>
@@ -4108,12 +4133,12 @@ function NameCardView({
               openContext(c.classicCitation!);
             }}
             title="查看出处上下文（同篇原句）"
-            className="mt-1 block w-full text-left text-xs leading-relaxed text-ink-soft hover:text-vermilion-deep"
+            className="mt-1 block w-full text-left text-sm leading-relaxed text-ink-soft hover:text-vermilion-deep"
           >
             {c.classicCitation}
           </button>
           {c.classicMeaning ? (
-            <p className="mt-1 text-[11px] text-ink-faint">「{c.classicMeaning}」</p>
+            <p className="mt-1 text-sm text-ink-faint">「{c.classicMeaning}」</p>
           ) : null}
         </div>
       ) : null}
@@ -4131,7 +4156,7 @@ function NameCardView({
                   const v = Math.min(100, Math.max(0, c.dimensionScores?.[k] ?? 60));
                   return (
                     <div key={k} className="flex items-center gap-2">
-                      <span className="w-14 shrink-0 text-[11px] text-ink-soft">{label}</span>
+                      <span className="w-14 shrink-0 text-xs text-ink-soft">{label}</span>
                       <div className="h-1.5 flex-1 overflow-hidden rounded bg-paper-3">
                         <div
                           className="h-full rounded bg-vermilion-deep"
@@ -4145,16 +4170,16 @@ function NameCardView({
                   );
                 })}
                 {c.fusionNote ? (
-                  <p className="flex items-start gap-1.5 pt-0.5 text-[11px] leading-relaxed text-ink-soft">
+                  <p className="flex items-start gap-1.5 pt-0.5 text-sm leading-relaxed text-ink-soft">
                     <Scale aria-hidden className="mt-0.5 size-3 shrink-0" />
                     {c.fusionNote}
                   </p>
                 ) : null}
                 {c.wugeWarning ? (
-                  <p className="text-[11px] leading-relaxed text-amber-700">· {c.wugeWarning}</p>
+                  <p className="text-sm leading-relaxed text-amber-700">· {c.wugeWarning}</p>
                 ) : null}
                 {c.zodiacHits?.note ? (
-                  <p className="flex items-start gap-1.5 pt-0.5 text-[11px] leading-relaxed text-ink-soft">
+                  <p className="flex items-start gap-1.5 pt-0.5 text-sm leading-relaxed text-ink-soft">
                     <PawPrint aria-hidden className="mt-0.5 size-3 shrink-0" />
                     {c.zodiacHits.note}
                   </p>
@@ -4171,15 +4196,15 @@ function NameCardView({
                     <div key={g.label} className="rounded-lg bg-paper-3 py-1.5 text-center">
                       <p className="text-sm font-semibold tabular-nums">
                         {g.value}
-                        <span className="text-[10px] font-normal text-ink-soft">画</span>
+                        <span className="text-[11px] font-normal text-ink-soft">画</span>
                       </p>
-                      <p className="text-[10px] text-ink-soft">{g.label}</p>
+                      <p className="text-xs text-ink-soft">{g.label}</p>
                     </div>
                   ))}
                 </div>
               ) : null}
               {c.sanCai ? (
-                <div className="flex items-center gap-1.5 text-[11px] text-ink-soft">
+                <div className="flex items-center gap-1.5 text-xs text-ink-soft">
                   <span>三才</span>
                   {c.sanCai.split("").map((ch, i) => (
                     <span key={i} className="rounded bg-paper-3 px-1.5 py-0.5">
@@ -4196,7 +4221,7 @@ function NameCardView({
               {c.phoneticNotes.map((n) => (
                 <span
                   key={n}
-                  className="rounded bg-vermilion-wash px-1.5 py-0.5 text-[10px] text-vermilion-deep"
+                  className="rounded bg-vermilion-wash px-1.5 py-0.5 text-[11px] text-vermilion-deep"
                 >
                   {n}
                 </span>
@@ -4212,7 +4237,7 @@ function NameCardView({
                 (d) => d.status === "blocked" || d.status === "skipped",
               );
               return (
-                <div className="text-[11px] leading-relaxed text-vermilion-deep">
+                <div className="text-xs leading-relaxed text-vermilion-deep">
                   <p>方言谐音检测存在风险提示</p>
                   {blocked.length ? (
                     <ul className="mt-0.5 list-none space-y-0.5 text-ink-soft">
@@ -4230,14 +4255,14 @@ function NameCardView({
             // 无方言数据通过（0 条）时不显示，避免「+ 0 方言」的空洞表述
             if (passedCount === 0) return null;
             return (
-              <p className="text-[11px] text-amber-700">
+              <p className="text-xs text-amber-700">
                 已通过普通话 + {passedCount} 方言谐音检测
               </p>
             );
           })()}
 
           {c.wuxingAnalysis ? (
-            <p className="pt-2 text-xs leading-relaxed text-ink-soft">
+            <p className="pt-2 text-sm leading-relaxed text-ink-soft">
               <span className="mr-1 font-medium text-ink">字义详解</span>
               {c.wuxingAnalysis}
             </p>
@@ -4248,12 +4273,12 @@ function NameCardView({
       {/* P2 操作组：图标化常驻（试听 / 海报 / 收藏 / 详情） */}
       <div className="mt-3 flex items-center justify-between gap-2">
         {c.homophoneSafe === false ? (
-          <span className="flex min-w-0 items-start gap-1 text-[11px] leading-snug text-vermilion-deep">
+          <span className="flex min-w-0 items-start gap-1 text-xs leading-snug text-vermilion-deep">
             <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
             {c.safetyNote || "谐音需留意"}
           </span>
         ) : (
-          <span className="text-[11px] text-ink-faint">✓ 谐音安全</span>
+          <span className="text-xs text-ink-faint">✓ 谐音安全</span>
         )}
         <div className="ml-auto flex items-center gap-1.5">
           <a
@@ -4262,7 +4287,8 @@ function NameCardView({
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
             title="用「名字评测」独立复核（免登录，可分享）"
-            className="grid size-8 place-items-center rounded-full bg-paper-3 text-ink-soft transition-colors hover:bg-vermilion-wash hover:text-vermilion-deep"
+            aria-label="用名字评测独立复核"
+            className="grid size-9 place-items-center rounded-full bg-paper-3 text-ink-soft transition-colors hover:bg-vermilion-wash hover:text-vermilion-deep"
           >
             <ClipboardCheck aria-hidden className="size-4" />
           </a>
@@ -4273,7 +4299,8 @@ function NameCardView({
                 onListen();
               }}
               title="读音试听（连读两遍）"
-              className="grid size-8 place-items-center rounded-full bg-paper-3 text-ink-soft transition-colors hover:bg-vermilion-wash hover:text-vermilion-deep"
+              aria-label="读音试听"
+              className="grid size-9 place-items-center rounded-full bg-paper-3 text-ink-soft transition-colors hover:bg-vermilion-wash hover:text-vermilion-deep"
             >
               <Volume2 aria-hidden className="size-4" />
             </button>
@@ -4285,7 +4312,8 @@ function NameCardView({
                 onPoster();
               }}
               title="生成海报"
-              className="grid size-8 place-items-center rounded-full bg-paper-3 text-ink-soft transition-colors hover:bg-vermilion-wash hover:text-vermilion-deep"
+              aria-label="生成海报"
+              className="grid size-9 place-items-center rounded-full bg-paper-3 text-ink-soft transition-colors hover:bg-vermilion-wash hover:text-vermilion-deep"
             >
               <ImageIcon aria-hidden className="size-4" />
             </button>
@@ -4297,7 +4325,9 @@ function NameCardView({
                 onShortlist();
               }}
               title={shortlisted ? "移出短名单" : "收藏到短名单"}
-              className={`grid size-8 place-items-center rounded-full transition-colors ${shortlisted ? "bg-vermilion text-paper" : "bg-paper-3 text-ink-soft hover:bg-vermilion-wash hover:text-vermilion-deep"}`}
+              aria-label={shortlisted ? "移出短名单" : "收藏到短名单"}
+              aria-pressed={!!shortlisted}
+              className={`grid size-9 place-items-center rounded-full transition-colors ${shortlisted ? "bg-vermilion text-paper" : "bg-paper-3 text-ink-soft hover:bg-vermilion-wash hover:text-vermilion-deep"}`}
             >
               <Heart aria-hidden className={`size-4 ${shortlisted ? "fill-current" : ""}`} />
             </button>
@@ -4308,7 +4338,7 @@ function NameCardView({
                 e.stopPropagation();
                 toggleDetails();
               }}
-              className="inline-flex h-8 items-center gap-1 rounded-full bg-paper-3 px-3 text-[11px] text-ink hover:bg-vermilion-wash transition-colors hover:text-vermilion-deep"
+              className="inline-flex h-9 items-center gap-1 rounded-full bg-paper-3 px-3 text-[11px] text-ink hover:bg-vermilion-wash transition-colors hover:text-vermilion-deep"
             >
               {open ? "收起详情 ▴" : "评分 · 数理 · 字义 ▾"}
             </button>
@@ -4320,7 +4350,8 @@ function NameCardView({
                 onDislike();
               }}
               title="不感兴趣：从本批移除，之后生成也不再推荐这个名"
-              className="grid size-8 place-items-center rounded-full bg-paper-3 text-ink-faint transition-colors hover:bg-paper-3 hover:text-ink-soft"
+              aria-label="不感兴趣"
+              className="grid size-9 place-items-center rounded-full bg-paper-3 text-ink-faint transition-colors hover:bg-paper-3 hover:text-ink-soft"
             >
               <ThumbsDown aria-hidden className="size-4" />
             </button>
@@ -4342,7 +4373,7 @@ function NameCardView({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2">
-              <p className="font-seal text-lg text-ink">
+              <p className="font-seal text-lg leading-none text-ink">
                 {ctxData?.book
                   ? `${ctxData.book}${ctxData.chapter ? ` · ${ctxData.chapter}` : ""}`
                   : "出处上下文"}
@@ -4369,7 +4400,7 @@ function NameCardView({
                     {s.text}
                   </p>
                 ))}
-                <p className="pt-1 text-center text-[10px] text-ink-faint">
+                <p className="pt-1 text-center text-xs text-ink-faint">
                   同书同篇 · 句序前后各二句
                 </p>
               </div>

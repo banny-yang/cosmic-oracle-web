@@ -144,7 +144,7 @@ export function BirthplaceInput({
           )}
         </div>
       ) : null}
-      <p className="mt-1 text-[11px] text-ink-faint">
+      <p className="mt-1 text-xs text-ink-faint">
         {place ? `${place} · ${lat.toFixed(2)}, ${lng.toFixed(2)}` : "用于出生时刻的地点校正"}
       </p>
     </div>

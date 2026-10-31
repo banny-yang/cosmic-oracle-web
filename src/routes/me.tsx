@@ -16,10 +16,11 @@ import { useQrEnv, type QrEnv } from "@/lib/qr-env";
 
 /** 充值与解锁的引导语：按打开环境分档（小程序内点按钮 / 微信内直付 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT: Record<QrEnv, string> = {
-  mp: "选择点数后点「去小程序支付」在小程序内完成（也可长按二维码），点数直接充入当前账号，到账后自动提示。",
-  "wechat-h5": "选择点数后可微信内直接支付，点数直接充入当前账号，到账后自动提示；也可长按二维码前往小程序支付。",
-  mobile: "选择点数后微信扫码支付，点数直接充入当前账号，到账后自动提示。",
-  desktop: "选择点数后用手机微信扫一扫二维码支付，点数直接充入当前账号，到账后自动提示。",
+  mp: "点数档点「去小程序支付」完成充值；畅享档直接用点数开通。到账后自动提示。",
+  "wechat-h5":
+    "点数档可微信内直接支付，也可长按二维码前往小程序；畅享档直接用点数开通。到账后自动提示。",
+  mobile: "点数档用微信扫码支付；畅享档直接用点数开通。到账后自动提示。",
+  desktop: "点数档用手机微信扫一扫二维码支付；畅享档直接用点数开通。到账后自动提示。",
 };
 
 export const Route = createFileRoute("/me")({
@@ -134,6 +135,16 @@ function MePage() {
   const [plans, setPlans] = useState<MyPlan[] | null>(null);
   const [passLine, setPassLine] = useState<{ active: boolean; text: string } | null>(null);
   const [plansErr, setPlansErr] = useState("");
+
+  // 上方充值面板用点数开通畅享后，清掉套餐缓存，展开时重新拉取
+  useEffect(() => {
+    const onPassChanged = () => {
+      setPlans(null);
+      setPassLine(null);
+    };
+    window.addEventListener("dm:pass-changed", onPassChanged);
+    return () => window.removeEventListener("dm:pass-changed", onPassChanged);
+  }, []);
 
   // 意见反馈
   const [showFeedback, setShowFeedback] = useState(false);
@@ -357,7 +368,7 @@ function MePage() {
           const label = pass.passType === "MONTH" ? "包月畅享" : "24 小时畅享";
           setPassLine({ active: true, text: `${label} · 至 ${fmtDate(pass.expiresAtEpochMs)}` });
         } else {
-          setPassLine({ active: false, text: "未开通（取名页升级弹窗可用点数开通）" });
+          setPassLine({ active: false, text: "未开通（可在上方充值与解锁或取名页用点数开通）" });
         }
       })
       .catch((e) => setPlansErr(e instanceof Error ? e.message : "加载失败"));
@@ -414,12 +425,12 @@ function MePage() {
       <PageHeader eyebrow="账号" title="我的" desc="昵称、出生信息与登录状态管理。" />
 
       {/* 资料卡 */}
-      <section className="ink-in d1 mt-7 overflow-hidden rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
+      <section className="ink-in d1 mt-7 overflow-hidden rounded-2xl bg-white transition-colors">
         <div className="flex items-center gap-4 p-5">
         {user?.avatarUrl ? (
           <img src={user.avatarUrl} alt="头像" className="size-14 rounded-full object-cover" />
         ) : (
-          <span className="grid size-14 place-items-center rounded-full bg-paper-3 font-seal text-xl text-ink">
+          <span className="grid size-14 place-items-center rounded-full bg-paper-3 font-seal text-xl leading-none text-ink">
             {(user?.displayName || "客")[0]}
           </span>
         )}
@@ -462,6 +473,7 @@ function MePage() {
             <p className="text-xs text-ink-faint">用户 ID（客服报号用）</p>
             <button
               onClick={copyShortId}
+              aria-label={`复制用户 ID ${profile.shortId}`}
               className="flex items-center gap-1.5 rounded-full bg-paper-3 px-2.5 py-1 font-mono text-xs font-medium text-ink"
               title="点击复制"
             >
@@ -473,7 +485,7 @@ function MePage() {
       </section>
 
       {editingName ? (
-        <section className="ink-in mt-4 space-y-3 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+        <section className="ink-in mt-4 space-y-3 rounded-2xl bg-white p-5">
           <Field label="昵称">
             <input className={inputCls} maxLength={24} value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
@@ -486,11 +498,26 @@ function MePage() {
               {savingName ? "保存中…" : "保存"}
             </button>
           </div>
-          <p className="text-[11px] text-ink-faint">头像请在「对脉名鉴」小程序里设置（微信头像一键选取）</p>
+          <p className="text-xs text-ink-faint">头像请在「对脉名鉴」小程序里设置（微信头像一键选取）</p>
         </section>
       ) : null}
 
-      {/* 解析记录：原页头的入口迁入这里（页头只留身份，点数余额见下方「点数余额」） */}
+      {/* 充值与余额：贴着资料卡，进「我的」第一屏就能看到 */}
+      <section className="ink-in d2 mt-4 overflow-hidden rounded-2xl bg-white transition-colors">
+        <div className="flex items-center justify-between px-5 py-4">
+          <p className="text-sm font-medium">点数余额</p>
+          <p className="text-sm font-semibold tabular-nums text-vermilion-deep">{user?.tokenBalance ?? 0} 点</p>
+        </div>
+        <div className="px-5 py-4">
+          <p className="text-sm font-medium">充值与解锁</p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">{QR_HINT[qrEnv]}</p>
+          <div className="mt-3">
+            <ScanBuyPanel trackWhere="me" includePasses />
+          </div>
+        </div>
+      </section>
+
+      {/* 解析记录：原页头的入口迁入这里（页头只留身份，点数余额见资料卡下方） */}
       <Link
         to="/records"
         className="ink-in d2 mt-4 flex items-center justify-between rounded-2xl bg-white px-5 py-4 transition-colors hover:bg-vermilion-wash"
@@ -506,7 +533,7 @@ function MePage() {
         <span className="flex items-center gap-2 text-sm font-medium">
           消息中心
           {unread > 0 ? (
-            <span className="rounded-full bg-vermilion px-1.5 py-0.5 text-[10px] font-semibold text-paper">
+            <span className="rounded-full bg-vermilion px-1.5 py-0.5 text-[11px] font-semibold text-paper">
               {unread > 99 ? "99+" : unread}
             </span>
           ) : null}
@@ -531,7 +558,7 @@ function MePage() {
       </Link>
 
       {/* 出生信息 */}
-      <section className="ink-in d2 mt-4 rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
+      <section className="ink-in d2 mt-4 rounded-2xl bg-white">
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-sm font-medium">我的出生信息</p>
@@ -579,11 +606,11 @@ function MePage() {
       </section>
 
       {/* 免费得点：分享 / 投票 / 邀请 / 签到——价格不动，只把「不花钱也能解锁」的路径摆出来 */}
-      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
+      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-white transition-colors">
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <p className="text-sm font-medium">免费得点</p>
-            <p className="mt-0.5 text-[11px] text-ink-faint">
+            <p className="mt-0.5 text-xs text-ink-faint">
               一次起名 10 点 · 做任务攒点，不花钱也能解锁
             </p>
           </div>
@@ -604,10 +631,10 @@ function MePage() {
                     {t.label}
                     <span className="ml-1.5 font-semibold text-vermilion-deep">+{t.tokens} 点</span>
                   </p>
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">{t.desc}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-ink-faint">{t.desc}</p>
                 </div>
                 <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${TASK_STATE_CLS[t.state] ?? "bg-paper-3 text-ink-soft"}`}
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${TASK_STATE_CLS[t.state] ?? "bg-paper-3 text-ink-soft"}`}
                 >
                   {TASK_STATE_LABEL[t.state] ?? ""}
                 </span>
@@ -619,11 +646,11 @@ function MePage() {
                   邀请好友使用
                   <span className="ml-1.5 font-semibold text-vermilion-deep">+点数</span>
                 </p>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
+                <p className="mt-0.5 text-xs leading-relaxed text-ink-faint">
                   好友通过你的链接完成首次起名，奖励自动到账
                 </p>
               </div>
-              <Link to="/invite" className="shrink-0 rounded-full bg-paper-3 px-2.5 py-0.5 text-[10px] font-medium text-ink">
+              <Link to="/invite" className="shrink-0 rounded-full bg-paper-3 px-3 py-1.5 text-xs font-medium text-ink">
                 去邀请
               </Link>
             </li>
@@ -637,11 +664,11 @@ function MePage() {
         <div className="flex items-center justify-between gap-3 border-t border-paper-3 px-5 py-4">
           <div className="min-w-0">
             <p className="text-xs font-medium text-ink">每日签到 +1 点</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
+            <p className="mt-0.5 text-xs leading-relaxed text-ink-faint">
               连续签到满 7 天追加 3 点；一周签到攒 10 点，正好够再起一次名
             </p>
             {checkinMsg ? (
-              <p className="mt-1 text-[11px] font-medium text-vermilion-deep">{checkinMsg}</p>
+              <p role="status" className="mt-1 text-xs font-medium text-vermilion-deep">{checkinMsg}</p>
             ) : null}
           </div>
           <button
@@ -656,11 +683,11 @@ function MePage() {
         <div className="flex items-center justify-between gap-3 border-t border-paper-3 px-5 py-4">
           <div className="min-w-0">
             <p className="text-xs font-medium text-ink">把起名工具分享给朋友</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
+            <p className="mt-0.5 text-xs leading-relaxed text-ink-faint">
               每日首次分享 +{tasks?.tasks.find((t) => t.key === "SHARE_RESULT")?.tokens ?? 2} 点
             </p>
             {shareMsg ? (
-              <p className="mt-1 text-[11px] font-medium text-vermilion-deep">{shareMsg}</p>
+              <p role="status" className="mt-1 text-xs font-medium text-vermilion-deep">{shareMsg}</p>
             ) : null}
           </div>
           <button
@@ -672,20 +699,11 @@ function MePage() {
         </div>
       </section>
 
-      {/* 余额与支付 */}
-      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
-        <div className="flex items-center justify-between px-5 py-4">
-          <p className="text-sm font-medium">点数余额</p>
-          <p className="text-sm font-semibold tabular-nums text-vermilion-deep">{user?.tokenBalance ?? 0} 点</p>
-        </div>
-        <div className="px-5 py-4">
-          <p className="text-sm font-medium">充值与解锁</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-soft">{QR_HINT[qrEnv]}</p>
-          <div className="mt-3">
-            <ScanBuyPanel trackWhere="me" />
-          </div>
-        </div>
+      {/* 套餐、订单与退出 */}
+      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-white transition-colors">
         <button
+          aria-expanded={showPlans}
+          aria-controls="me-plans"
           onClick={() => {
             const next = !showPlans;
             setShowPlans(next);
@@ -697,7 +715,7 @@ function MePage() {
           <span className="text-xs text-ink-faint">{showPlans ? "收起" : "查看"}</span>
         </button>
         {showPlans ? (
-          <div className="px-5 py-4">
+          <div id="me-plans" className="px-5 py-4">
             {plansErr ? <p className="text-xs text-vermilion-deep">{plansErr}</p> : null}
             {!plans && !plansErr ? <p className="text-xs text-ink-faint">加载中…</p> : null}
             {plans ? (
@@ -707,7 +725,7 @@ function MePage() {
                   const history = plans.filter((p) => !p.active);
                   return (
                     <>
-                      <p className="text-[11px] font-medium text-ink">有效套餐</p>
+                      <p className="text-xs font-medium text-ink">有效套餐</p>
                       {active.length === 0 ? (
                         <p className="mt-1 text-xs text-ink-faint">暂无有效套餐</p>
                       ) : (
@@ -725,7 +743,7 @@ function MePage() {
                                     {days != null ? ` · 剩余 ${days} 天` : ""}
                                   </span>
                                 </p>
-                                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
+                                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
                                   生效中
                                 </span>
                               </li>
@@ -733,11 +751,11 @@ function MePage() {
                           })}
                         </ul>
                       )}
-                      <p className="mt-3 text-[11px] font-medium text-ink">起名畅享</p>
+                      <p className="mt-3 text-xs font-medium text-ink">起名畅享</p>
                       <p className="mt-1 text-xs text-ink-faint">{passLine?.text ?? "未开通"}</p>
                       {history.length ? (
                         <>
-                          <p className="mt-3 text-[11px] font-medium text-ink">历史</p>
+                          <p className="mt-3 text-xs font-medium text-ink">历史</p>
                           <ul className="mt-1">
                             {history.map((p) => (
                               <li key={p.planId} className="flex items-center gap-3 py-1.5 first:pt-0">
@@ -745,7 +763,7 @@ function MePage() {
                                   {p.planNameZh}
                                   <span className="ml-2">至 {fmtDate(p.expiresAt)}</span>
                                 </p>
-                                <span className="shrink-0 text-[10px] text-ink-faint">
+                                <span className="shrink-0 text-xs text-ink-faint">
                                   {p.status === "CANCELLED" ? "已取消" : "已到期"}
                                 </span>
                               </li>
@@ -761,6 +779,8 @@ function MePage() {
           </div>
         ) : null}
         <button
+          aria-expanded={showOrders}
+          aria-controls="me-orders"
           onClick={() => {
             const next = !showOrders;
             setShowOrders(next);
@@ -772,7 +792,7 @@ function MePage() {
           <span className="text-xs text-ink-faint">{showOrders ? "收起" : "查看"}</span>
         </button>
         {showOrders ? (
-          <div className="px-5 py-4">
+          <div id="me-orders" className="px-5 py-4">
             {ordersErr ? <p className="text-xs text-vermilion-deep">{ordersErr}</p> : null}
             {!orders && !ordersErr ? <p className="text-xs text-ink-faint">加载中…</p> : null}
             {orders?.length === 0 ? (
@@ -789,12 +809,12 @@ function MePage() {
                           +{o.credits} 点
                           <span className="ml-2 font-normal text-ink-faint">{CHANNEL_LABEL[o.channel] || o.channel}</span>
                         </p>
-                        <p className="mt-0.5 text-[11px] text-ink-faint">
+                        <p className="mt-0.5 text-xs text-ink-faint">
                           {(o.createdAt || "").replace("T", " ").slice(0, 16)}
                         </p>
                       </div>
                       <span className="text-xs font-semibold tabular-nums text-ink">¥{(o.priceFen / 100).toFixed(2)}</span>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${st.cls}`}>{st.label}</span>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${st.cls}`}>{st.label}</span>
                     </li>
                   );
                 })}
@@ -808,8 +828,9 @@ function MePage() {
       </section>
 
       {/* 反馈与客服 */}
-      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-white transition-colors hover:bg-vermilion-wash">
+      <section className="ink-in d3 mt-4 overflow-hidden rounded-2xl bg-white transition-colors">
         <button
+          aria-expanded={showFeedback}
           onClick={() => {
             setShowFeedback(!showFeedback);
             setShowService(false);
@@ -853,6 +874,7 @@ function MePage() {
           </div>
         ) : null}
         <button
+          aria-expanded={showService}
           onClick={() => {
             setShowService(!showService);
             setShowFeedback(false);
@@ -867,7 +889,7 @@ function MePage() {
             <div className="flex items-center justify-between gap-3 rounded-xl bg-paper-3 px-3.5 py-3">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-ink">客服微信：duimaikefu</p>
-                <p className="mt-0.5 text-[11px] text-ink-faint">工作日 9:00–18:00</p>
+                <p className="mt-0.5 text-xs text-ink-faint">工作日 9:00–18:00</p>
               </div>
               <button onClick={copyWechat} className="shrink-0 rounded-full bg-ink px-3.5 py-1.5 text-xs font-medium text-paper">
                 {copied ? "已复制" : "复制"}
@@ -879,7 +901,7 @@ function MePage() {
                 support@duimai.net
               </a>
             </p>
-            <p className="text-[11px] text-ink-faint">也可在微信小程序「对脉名鉴」内使用联系客服入口。</p>
+            <p className="text-xs text-ink-faint">也可在微信小程序「对脉名鉴」内使用联系客服入口。</p>
           </div>
         ) : null}
       </section>

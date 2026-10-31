@@ -36,7 +36,7 @@ export function SurnameNoteBlock({
           在口语里容易被听成别的词。
         </p>
       ) : null}
-      <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
+      <p className="mt-2 text-xs leading-relaxed text-ink-faint">
         谐音提示为姓名文化参考，不作吉凶判断；最终以字义、读音与书写综合取舍。
       </p>
     </section>

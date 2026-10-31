@@ -63,7 +63,7 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
       <div className="absolute inset-0 grid place-items-center">
         <div className="text-center leading-none">
           <p className="text-4xl font-bold tabular-nums text-ink">{score}</p>
-          <p className="mt-1 text-[9px] tracking-[0.18em] text-ink-faint">{label}</p>
+          <p className="mt-1 text-[11px] tracking-[0.18em] text-ink-faint">{label}</p>
         </div>
       </div>
     </div>
@@ -73,7 +73,7 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
 function QuoteBox({ title, text }: { title: string; text: string }) {
   return (
     <div className="mt-4 rounded-xl bg-paper-2 px-4 py-3">
-      <p className="flex items-center gap-1.5 text-[11px] font-medium tracking-widest text-vermilion-deep">
+      <p className="flex items-center gap-1.5 text-xs font-medium tracking-widest text-vermilion-deep">
         <Quote className="size-3" />{title}
       </p>
       <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{text}</p>
@@ -84,7 +84,7 @@ function QuoteBox({ title, text }: { title: string; text: string }) {
 function MetricTile({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
     <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tone}`}>
-      <p className="text-[11px] text-ink-soft">{label}</p>
+      <p className="text-xs text-ink-soft">{label}</p>
       <p className="mt-0.5 text-base font-bold">{value}</p>
     </div>
   );
@@ -158,14 +158,14 @@ export function NameSummaryCard({ detail }: { detail: ReportDetail | null }) {
             <p key={i} className="mt-1 text-center text-xl font-semibold text-ink first:mt-0">{n}</p>
           ))}
           {multi && best ? (
-            <p className="mt-2 text-center text-[13px] text-ink-soft">最佳匹配：{best}</p>
+            <p className="mt-2 text-center text-xs text-ink-soft">最佳匹配：{best}</p>
           ) : null}
         </div>
       </div>
       {chinese && threeTalents ? (
         <p className="mt-4 text-center text-sm text-ink-soft">
           <span className="text-ink-faint">三才配置</span>
-          <span className="mx-2 font-seal text-base tracking-widest text-ink">{threeTalents}</span>
+          <span className="mx-2 font-seal text-base leading-none tracking-widest text-ink">{threeTalents}</span>
         </p>
       ) : destiny != null || soul != null || personality != null ? (
         <div className="mt-4 flex gap-2">

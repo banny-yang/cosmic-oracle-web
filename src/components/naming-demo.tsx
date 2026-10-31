@@ -126,7 +126,7 @@ export function NamingDemo() {
             ))}
           </ol>
 
-          <p className="mt-3 hidden text-[11px] text-ink-faint md:block">
+          <p className="mt-3 hidden text-xs text-ink-faint md:block">
             {paused ? "已暂停（鼠标移开继续）" : "自动播放中 · 点击任一步可跳转"}
           </p>
         </div>
@@ -165,7 +165,7 @@ function SceneForm() {
         </div>
       ))}
       <div className="demo-step flex items-center gap-2 rounded-xl bg-vermilion-wash px-4 py-3" style={{ animationDelay: "820ms" }}>
-        <span className="grid size-6 place-items-center rounded-full bg-vermilion font-seal text-xs text-paper">时</span>
+        <span className="grid size-6 place-items-center rounded-full bg-vermilion text-xs font-semibold text-paper">时</span>
         <p className="text-xs leading-relaxed text-ink-soft">
           真太阳时校正：<span className="font-semibold text-ink">02:00 → 01:46</span>（按经度 116.4°E 与时区差修正）
         </p>
@@ -205,7 +205,7 @@ function ScenePool() {
         {POOL.map((c, i) => (
           <span
             key={i}
-            className={`demo-tile grid aspect-square place-items-center rounded-xl font-seal text-2xl ${
+            className={`demo-tile grid aspect-square place-items-center rounded-xl font-seal text-2xl leading-none ${
               c.hit ? "bg-vermilion-wash text-ink" : "bg-paper-3 text-ink-faint opacity-45"
             }`}
             style={{ animationDelay: `${i * 90}ms` }}
@@ -230,7 +230,7 @@ function SceneClassic({ typed }: { typed: number }) {
         {!done ? <span className="animate-pulse text-vermilion">▍</span> : null}
       </p>
       <div className={`demo-step flex items-center gap-3 transition-opacity duration-500 ${done ? "opacity-100" : "opacity-0"}`}>
-        <span className="grid size-7 place-items-center rounded-lg bg-vermilion font-seal text-sm text-paper">典</span>
+        <span className="grid size-7 place-items-center rounded-lg bg-vermilion font-seal text-base leading-none text-paper">典</span>
         <p className="text-xs text-ink-soft">
           出处已附：<span className="font-medium text-ink">{CLASSIC_SOURCE}</span>
         </p>
@@ -249,7 +249,7 @@ function SceneResult() {
   ];
   return (
     <div className="relative rounded-2xl bg-paper-3 p-5">
-      <span className="absolute top-0 right-5 flex flex-col items-center rounded-b-lg bg-vermilion px-2 py-1.5 font-seal text-xs leading-tight text-paper">
+      <span className="absolute top-0 right-5 flex flex-col items-center rounded-b-lg bg-vermilion px-2 py-1.5 text-[11px] font-semibold leading-tight text-paper">
         <span>推</span>
         <span>荐</span>
       </span>
@@ -271,22 +271,22 @@ function SceneResult() {
           <div key={g.label} className="rounded-lg bg-paper-3 py-1.5 text-center">
             <p className="text-sm font-semibold tabular-nums">
               {g.value}
-              <span className="text-[10px] font-normal text-ink-soft">画</span>
+              <span className="text-[11px] font-normal text-ink-soft">画</span>
             </p>
-            <p className="text-[10px] text-ink-soft">{g.label}</p>
+            <p className="text-xs text-ink-soft">{g.label}</p>
           </div>
         ))}
       </div>
       <div className="mt-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[11px] text-ink-soft">
+        <div className="flex items-center gap-1.5 text-xs text-ink-soft">
           <span>三才</span>
           {["土", "木", "金"].map((ch, i) => (
             <span key={i} className="rounded bg-paper-3 px-1.5 py-0.5">{ch}</span>
           ))}
         </div>
-        <span className="text-[11px] text-ink-faint">✓ 谐音安全</span>
+        <span className="text-xs text-ink-faint">✓ 谐音安全</span>
       </div>
-      <p className="mt-3 text-[11px] text-ink-faint">以上为演示数据；真实生成一次产出 10 个方案并附完整理由。</p>
+      <p className="mt-3 text-xs text-ink-faint">以上为演示数据；真实生成一次产出 10 个方案并附完整理由。</p>
     </div>
   );
 }

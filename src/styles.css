@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "./noto-serif-sc.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -55,10 +56,23 @@
 }
 
 @theme {
-  --font-song: "Songti SC", "STSong", "SimSun", "Noto Serif SC", serif;
+  /* 默认走系统宋体；自托管思源宋体只在桌面端接管（见下面 media query）。
+     移动端不引用 "Noto Serif SC"，浏览器就不会下载任何分片 */
+  --font-song: "Songti SC", "STSong", "Source Han Serif SC", "SimSun", serif;
   /* 回退先楷体再宋体：Ma Shan Zheng 全字库也缺的少数字（玥/芃/燊等 20 字）落到楷体，
      比直接落宋体更接近毛笔风格，避免一个名字里字体突兀混排 */
   --font-seal: "Ma Shan Zheng", "KaiTi", "STKaiti", "Songti SC", "SimSun", serif;
+  /* 中文长文行高：默认 leading-relaxed(1.625) 对宋体偏紧 */
+  --leading-reading: 1.8;
+}
+
+/* 桌面端才启用自托管思源宋体（101 个 unicode-range 分片）：修 Windows 落到 SimSun 的问题。
+   pointer: fine 把手机/平板排除在外——即使横屏宽度超过 768px 也不触发，
+   移动端字体栈和字体下载量保持原样 */
+@media (min-width: 768px) and (pointer: fine) {
+  :root {
+    --font-song: "Noto Serif SC", "Songti SC", "STSong", "Source Han Serif SC", "SimSun", serif;
+  }
 }
 
 :root {
@@ -67,8 +81,10 @@
   --paper-2: oklch(0.928 0.03 90);
   --paper-3: oklch(0.898 0.036 88);
   --ink: oklch(0.28 0.02 70);
-  --ink-soft: oklch(0.47 0.022 75);
-  --ink-faint: oklch(0.63 0.024 80);
+  /* soft / faint 按 WCAG AA 4.5:1 反推：faint 需在 paper-3(#e6dfd2 一档) 上也过线，
+     故最深只能到 L=0.49（paper 5.5:1 / paper-3 4.6:1）；soft 再压到 0.42 保住三级层次 */
+  --ink-soft: oklch(0.42 0.022 75);
+  --ink-faint: oklch(0.49 0.024 80);
   --vermilion: oklch(0.54 0.155 38);
   --vermilion-deep: oklch(0.45 0.13 35);
 }
@@ -78,10 +94,27 @@
     border-color: var(--color-border);
   }
 
+  html {
+    /* 防止 iOS 横屏/双击自动放大字号 */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-song);
+  }
+
+  /* 马善政只有 400 字重，禁止浏览器伪粗体（笔锋会糊） */
+  .font-seal {
+    font-synthesis: none;
+  }
+
+  /* 键盘可达性：统一可见焦点环（鼠标点击不出现，输入框自带的 ring 不受影响） */
+  :where(a, button, [role="button"], summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
   }
 }
 
@@ -158,7 +191,9 @@
 @media (prefers-reduced-motion: reduce) {
   .demo-step,
   .demo-tile,
-  .demo-card {
+  .demo-card,
+  .ink-in,
+  .bar-grow {
     animation: none;
   }
   .banner-zoom {
@@ -318,68 +353,79 @@
   animation: line-grow 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
-/* 文章正文排版（/articles/$slug，服务端白名单标签：h2/h3/p/ul/ol/li/blockquote/hr/a/strong/em） */
-.article-prose {
+/* 长文阅读排版（/articles/$slug 与生成报告共用；白名单标签：h2/h3/h4/p/ul/ol/li/blockquote/hr/a/strong/em） */
+.prose-reading {
   font-size: 0.95rem;
-  line-height: 1.9;
+  line-height: 1.85;
   color: var(--ink-soft);
+  /* 长链接/连续英文不撑破版心（移动端 360px 也安全） */
+  overflow-wrap: anywhere;
+  /* 中文禁则：标点不落行首 */
+  line-break: strict;
 }
-.article-prose h2 {
+.prose-reading h2 {
   margin: 1.6em 0 0.6em;
-  font-size: 1.15rem;
+  font-size: 1.125rem;
+  line-height: 1.45;
   font-weight: 600;
   color: var(--ink);
 }
-.article-prose h3 {
+.prose-reading h3 {
   margin: 1.4em 0 0.5em;
-  font-size: 1.03rem;
+  font-size: 1rem;
+  line-height: 1.5;
   font-weight: 600;
   color: var(--ink);
 }
-.article-prose h4 {
+.prose-reading h4 {
   margin: 1.2em 0 0.4em;
-  font-size: 0.97rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
   font-weight: 600;
   color: var(--ink);
 }
-.article-prose p {
+.prose-reading p {
   margin: 0.9em 0;
+  text-wrap: pretty;
+}
+/* 文章正文两端对齐；生成报告保持左对齐，避免窄屏出现大字距 */
+.prose-reading.article-prose p {
   text-align: justify;
 }
-.article-prose ul,
-.article-prose ol {
+.prose-reading ul,
+.prose-reading ol {
   margin: 0.9em 0;
   padding-left: 1.4em;
 }
-.article-prose ul {
+.prose-reading ul {
   list-style: disc;
 }
-.article-prose ol {
+.prose-reading ol {
   list-style: decimal;
 }
-.article-prose li {
+.prose-reading li {
   margin: 0.35em 0;
 }
-.article-prose blockquote {
+.prose-reading blockquote {
   margin: 1.1em 0;
   padding: 0.6em 1em;
   border-left: 3px solid var(--vermilion);
   background: rgba(176, 58, 46, 0.05);
   border-radius: 0.5rem;
 }
-.article-prose blockquote p {
+.prose-reading blockquote p {
   margin: 0.2em 0;
 }
-.article-prose hr {
+.prose-reading hr {
   margin: 1.6em 0;
   border: none;
   border-top: 1px solid rgba(43, 38, 32, 0.12);
 }
-.article-prose a {
+.prose-reading a {
   color: var(--vermilion-deep);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.article-prose strong {
+.prose-reading strong {
   color: var(--ink);
 }

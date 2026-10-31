@@ -87,7 +87,7 @@ export function ZodiacCharChips({ chars }: { chars: ZodiacChar[] }) {
           className="inline-flex items-baseline gap-1.5 rounded-xl bg-paper-2 px-3 py-1.5 transition-colors hover:bg-vermilion-wash"
         >
           <span className="font-seal text-lg leading-none text-ink">{c.char}</span>
-          <span className="text-[10px] text-ink-faint">
+          <span className="text-xs text-ink-faint">
             {c.radical}部{c.element ? ` · ${c.element}` : ""}
           </span>
         </Link>
@@ -160,11 +160,11 @@ export function ZodiacNameGrid({ names, empty }: { names: ZodiacName[]; empty: s
               </div>
               <div className="flex flex-wrap items-center justify-end gap-1.5">
                 {n.gender === "M" ? (
-                  <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] font-medium text-paper">
+                  <span className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-medium text-paper">
                     男
                   </span>
                 ) : n.gender === "F" ? (
-                  <span className="rounded-full bg-vermilion px-2 py-0.5 text-[10px] font-medium text-paper">
+                  <span className="rounded-full bg-vermilion px-2 py-0.5 text-[11px] font-medium text-paper">
                     女
                   </span>
                 ) : null}
@@ -172,14 +172,14 @@ export function ZodiacNameGrid({ names, empty }: { names: ZodiacName[]; empty: s
                   ELEMENT_ZH[e] ? (
                     <span
                       key={e}
-                      className="rounded-full bg-paper-3 px-2 py-0.5 text-[10px] text-ink-soft"
+                      className="rounded-full bg-paper-3 px-2 py-0.5 text-xs text-ink-soft"
                     >
                       {ELEMENT_ZH[e]}
                     </span>
                   ) : null,
                 )}
                 {typeof n.score === "number" ? (
-                  <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-semibold text-vermilion-deep">
+                  <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-semibold text-vermilion-deep">
                     {n.score} 分
                   </span>
                 ) : null}
@@ -187,7 +187,7 @@ export function ZodiacNameGrid({ names, empty }: { names: ZodiacName[]; empty: s
             </div>
 
             {hits.length > 0 ? (
-              <p className="mt-2.5 text-[11px] text-vermilion-deep">
+              <p className="mt-2.5 text-xs text-vermilion-deep">
                 喜用部首命中 {hits.join("／")}
                 {radicals.length > 0 ? `（全字部首 ${radicals.join("／")}）` : ""}
               </p>
@@ -202,9 +202,9 @@ export function ZodiacNameGrid({ names, empty }: { names: ZodiacName[]; empty: s
             {n.text || n.source ? (
               <div className="mt-3 rounded-xl bg-paper-2 p-3">
                 {n.text ? (
-                  <p className="text-xs leading-relaxed text-ink-soft text-pretty">{n.text}</p>
+                  <p className="text-sm leading-relaxed text-ink-soft text-pretty">{n.text}</p>
                 ) : null}
-                {n.source ? <p className="mt-1 text-[11px] text-ink-faint">—— {n.source}</p> : null}
+                {n.source ? <p className="mt-1 text-xs text-ink-faint">—— {n.source}</p> : null}
               </div>
             ) : null}
           </div>
@@ -253,11 +253,11 @@ export function ZodiacAnimalGrid({ animals }: { animals: ZodiacAnimalEntry[] }) 
           ].join(" ")}
         >
           <p className="font-seal text-2xl leading-none text-ink">{a.animal}</p>
-          <p className="mt-1.5 text-[10px] text-ink-faint">
+          <p className="mt-1.5 text-xs text-ink-faint">
             {a.branchCn} · {a.year}
           </p>
           {a.current ? (
-            <p className="mt-1 text-[10px] font-medium text-vermilion-deep">当年</p>
+            <p className="mt-1 text-[11px] font-medium text-vermilion-deep">当年</p>
           ) : null}
         </Link>
       ))}

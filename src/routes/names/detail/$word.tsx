@@ -268,7 +268,7 @@ function NameDetailPage() {
             。
           </p>
         ) : null}
-        <p className="mt-1.5 break-all text-[11px] text-ink-faint">
+        <p className="mt-1.5 break-all text-xs text-ink-faint">
           引用时请保留本页链接：https://name.duimai.net{nameDetailPath(word)}
         </p>
       </section>
@@ -278,12 +278,12 @@ function NameDetailPage() {
         <h2 className={sectionTitle}>出处与字义</h2>
         <div className="mt-3 rounded-xl bg-paper-2 p-4">
           <p className="text-sm leading-relaxed text-ink text-pretty">「{quote}」</p>
-          <p className="mt-1.5 text-[11px] text-ink-faint">—— {source}</p>
+          <p className="mt-1.5 text-xs text-ink-faint">—— {source}</p>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-ink-soft text-pretty">{meaning}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {detail.category ? (
-            <span className="rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] text-ink-soft">
+            <span className="rounded-full bg-paper-3 px-2.5 py-0.5 text-xs text-ink-soft">
               风格 · {detail.category}
             </span>
           ) : null}
@@ -291,14 +291,14 @@ function NameDetailPage() {
             e.zh ? (
               <span
                 key={e.code}
-                className="rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] text-ink-soft"
+                className="rounded-full bg-paper-3 px-2.5 py-0.5 text-xs text-ink-soft"
               >
                 五行 · {e.zh}
               </span>
             ) : null,
           )}
           {pingze ? (
-            <span className="rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] text-ink-soft">
+            <span className="rounded-full bg-paper-3 px-2.5 py-0.5 text-xs text-ink-soft">
               平仄 · {pingze}
             </span>
           ) : null}
@@ -324,12 +324,12 @@ function NameDetailPage() {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {typeof c.strokes === "number" ? (
-                    <span className="rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] text-ink-soft">
+                    <span className="rounded-full bg-paper-3 px-2.5 py-0.5 text-xs text-ink-soft">
                       康熙 {c.strokes} 画
                     </span>
                   ) : null}
                   {c.radical ? (
-                    <span className="rounded-full bg-paper-3 px-2.5 py-0.5 text-[11px] text-ink-soft">
+                    <span className="rounded-full bg-paper-3 px-2.5 py-0.5 text-xs text-ink-soft">
                       部首 {c.radical}
                     </span>
                   ) : null}
@@ -398,7 +398,7 @@ function NameDetailPage() {
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="font-seal text-2xl leading-none text-ink">{r.word}</span>
                   {typeof r.score === "number" ? (
-                    <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[10px] font-semibold text-vermilion-deep">
+                    <span className="rounded-full bg-vermilion-wash px-2 py-0.5 text-[11px] font-semibold text-vermilion-deep">
                       {r.score} 分
                     </span>
                   ) : null}

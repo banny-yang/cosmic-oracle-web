@@ -93,7 +93,7 @@ function MessagesPage() {
         </div>
       ) : null}
 
-      {err ? <p className="mt-4 text-xs text-vermilion-deep">{err}</p> : null}
+      {err ? <p role="alert" className="mt-4 text-xs text-vermilion-deep">{err}</p> : null}
 
       {!loaded ? (
         <div className="mt-6 space-y-3">
@@ -102,8 +102,8 @@ function MessagesPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="mt-6 rounded-2xl bg-white p-10 text-center transition-colors hover:bg-vermilion-wash">
-          <p className="font-seal text-3xl text-ink-faint">信</p>
+        <div className="mt-6 rounded-2xl bg-white p-10 text-center">
+          <p className="font-seal text-3xl leading-none text-ink-faint">信</p>
           <p className="mt-3 text-sm font-medium">暂无消息</p>
           <p className="mt-1 text-xs text-ink-faint">活动奖励、券到账后会在这里通知你</p>
           <Link to="/" className="mt-5 inline-block rounded-xl bg-vermilion px-6 py-2.5 text-sm font-semibold text-paper">
@@ -117,21 +117,26 @@ function MessagesPage() {
               <button
                 key={m.id}
                 onClick={() => setExpanded(expanded === m.id ? null : m.id)}
+                aria-expanded={expanded === m.id}
                 className="ink-in block w-full rounded-2xl bg-white p-4 text-left transition-colors hover:bg-vermilion-wash"
               >
                 <div className="flex items-start gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-paper-3 font-seal text-base text-ink">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-paper-3 font-seal text-base leading-none text-ink">
                     {TYPE_LABEL[m.type] || "信"}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      {!m.read ? <span className="size-1.5 shrink-0 rounded-full bg-vermilion" /> : null}
+                      {!m.read ? (
+                        <span className="size-1.5 shrink-0 rounded-full bg-vermilion">
+                          <span className="sr-only">未读</span>
+                        </span>
+                      ) : null}
                       <p className={`truncate text-sm ${m.read ? "font-medium" : "font-semibold"}`}>{m.title}</p>
                     </div>
                     <p className={`mt-1 text-xs text-ink-soft ${expanded === m.id ? "" : "line-clamp-2"}`}>
                       {m.body}
                     </p>
-                    <p className="mt-1.5 text-[11px] text-ink-faint">{time(m.createdAt)}</p>
+                    <p className="mt-1.5 text-xs text-ink-faint">{time(m.createdAt)}</p>
                   </div>
                 </div>
               </button>

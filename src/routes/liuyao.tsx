@@ -78,7 +78,7 @@ function YaoLine({ type, visible }: { type: LineType; visible: boolean }) {
           </>
         )}
       </div>
-      <span className="w-4 shrink-0 text-center text-sm font-bold leading-none text-[#A97B1F]">
+      <span className="w-4 shrink-0 text-center text-sm font-bold leading-none text-[#8A5A1E]">
         {moving ? (type === "oldYang" ? "○" : "×") : ""}
       </span>
     </div>
@@ -154,7 +154,7 @@ function CoinArena({
     <button
       type="button"
       onClick={onTap}
-      className="relative mx-auto block h-[280px] w-[280px] max-w-full cursor-pointer"
+      className="relative mx-auto block aspect-square w-full max-w-[280px] cursor-pointer"
       aria-label="掷币起卦"
     >
       {/* 擂台底盘（实色圆盘）+ 循环涟漪（实色淡盘缩放淡出） */}
@@ -218,7 +218,7 @@ function HexagramBlock({
   // 后端 name 为英文，按文王卦序取中文展示（表外回退原名）
   const displayName = hexagramZh(id, name);
   return (
-    <div className="rounded-2xl bg-white p-4 transition-colors hover:bg-vermilion-wash">
+    <div className="rounded-2xl bg-white p-4">
       <p className="text-xs font-semibold tracking-widest text-vermilion-deep">{title}</p>
       {displayName ? (
         <p className="mt-1 text-center text-lg font-bold text-ink">{displayName}</p>
@@ -430,7 +430,7 @@ function Liuyao() {
           />
 
           {phase === "form" ? (
-            <section className="mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+            <section className="mt-7 rounded-2xl bg-white p-5">
               <Field label="所问之事" required>
                 <textarea
                   className={inputCls + " min-h-28 resize-none"}
@@ -440,8 +440,8 @@ function Liuyao() {
                   onChange={(e) => setQuestion(e.target.value)}
                 />
               </Field>
-              <p className="mt-2 text-[11px] text-ink-faint">一卦一事，问得越具体，解得越明白。</p>
-              {err ? <p className="mt-2 text-xs text-vermilion-deep">{err}</p> : null}
+              <p className="mt-2 text-xs text-ink-faint">一卦一事，问得越具体，解得越明白。</p>
+              {err ? <p role="alert" className="mt-2 text-xs text-vermilion-deep">{err}</p> : null}
               <button
                 onClick={() => startToss(false)}
                 disabled={submitting}
@@ -458,9 +458,9 @@ function Liuyao() {
               </button>
             </section>
           ) : phase === "toss" ? (
-            <section className="mt-7 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+            <section className="mt-7 rounded-2xl bg-white p-5">
               {/* 已掷 N 爻 + 提示（App 端 castProgress / tapHint 同款版式） */}
-              <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+              <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-ink-faint">
                 已掷 {tossed} 爻
               </p>
               <p className="mt-1.5 text-center text-base italic text-ink">
@@ -482,7 +482,7 @@ function Liuyao() {
                   onTap={tossNext}
                 />
               </div>
-              <p className="text-center text-[13px] tracking-[0.25em] text-ink-faint">
+              <p className="text-center text-xs tracking-[0.25em] text-ink-faint">
                 {tossed} / 6
               </p>
 
@@ -580,7 +580,7 @@ function Liuyao() {
                 ) : null}
               </div>
               {phase === "reading" && !stream.visible && !stream.thinkLive ? (
-                <div className="flex items-center gap-3 rounded-xl bg-paper-2 p-4 transition-colors hover:bg-vermilion-wash">
+                <div className="flex items-center gap-3 rounded-xl bg-paper-2 p-4">
                   <span className="size-2 animate-pulse rounded-full bg-vermilion" />
                   <p className="text-sm font-medium">正在推演卦意…</p>
                 </div>
@@ -591,7 +591,7 @@ function Liuyao() {
                 visible={stream.visible}
                 placeholder="凝神推演中…"
               />
-              {err ? <p className="text-xs text-vermilion-deep">{err}</p> : null}
+              {err ? <p role="alert" className="text-xs text-vermilion-deep">{err}</p> : null}
               {phase === "done" ? (
                 <button
                   onClick={reset}
@@ -607,13 +607,14 @@ function Liuyao() {
             <section className="mt-10">
               <button
                 onClick={() => (history === null ? loadHistory() : setHistory(null))}
-                className="text-sm font-semibold text-ink"
+                aria-expanded={history !== null}
+                className="-mx-2 inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-ink"
               >
                 {history === null ? "▸ 我的卦象记录" : "▾ 我的卦象记录"}
               </button>
               {history !== null ? (
                 history.length === 0 ? (
-                  <p className="mt-3 rounded-2xl bg-white p-5 text-center text-xs text-ink-faint transition-colors hover:bg-vermilion-wash">
+                  <p className="mt-3 rounded-2xl bg-white p-5 text-center text-xs text-ink-faint">
                     还没有卦象记录，起第一卦吧。
                   </p>
                 ) : (
@@ -626,7 +627,7 @@ function Liuyao() {
                         >
                           <div className="min-w-0">
                             <p className="truncate text-sm text-ink">{h.question}</p>
-                            <p className="mt-0.5 text-[11px] text-ink-faint">
+                            <p className="mt-0.5 text-xs text-ink-faint">
                               {hexagramZh(h.hexagramOriginId, h.hexagramOriginName)}
                               {h.hexagramChangeId
                                 ? ` → ${hexagramZh(h.hexagramChangeId, h.hexagramChangeName)}`

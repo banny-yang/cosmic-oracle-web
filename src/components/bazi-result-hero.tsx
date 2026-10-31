@@ -47,7 +47,7 @@ function dayMasterDot(dm?: string | null): string {
 function PillarColumn({ pillar }: { pillar: string }) {
   const [stem, branch] = [pillar.slice(0, 1), pillar.slice(1, 2)];
   return (
-    <span className="flex w-10 flex-col items-center rounded-md bg-paper-2 py-1 font-seal text-[14px] leading-snug text-ink">
+    <span className="flex w-10 flex-col items-center rounded-md bg-paper-2 py-1 font-seal text-base leading-none text-ink">
       <span>{stem}</span>
       <span>{branch}</span>
     </span>
@@ -62,7 +62,7 @@ function PersonCard({ person, side }: { person?: BaziPerson | undefined; side: "
       <div className="flex items-center gap-1.5">
         <span className={`size-1.5 shrink-0 rounded-full ${dayMasterDot(person?.dayMaster)}`} />
         <p className="truncate text-sm font-semibold text-ink">{person?.name || label}</p>
-        <span className="shrink-0 rounded-full bg-paper-3 px-1.5 text-[10px] text-ink-soft">{label}</span>
+        <span className="shrink-0 rounded-full bg-paper-3 px-1.5 text-xs text-ink-soft">{label}</span>
       </div>
       <div className="mt-2 flex justify-center gap-2">
         {(person?.pillars ?? ["——", "——", "——", "——"]).slice(0, 4).map((p, i) => (
@@ -70,8 +70,8 @@ function PersonCard({ person, side }: { person?: BaziPerson | undefined; side: "
         ))}
       </div>
       {dm ? (
-        <p className="mt-2 text-center text-[10px] text-ink-soft">
-          日主 <span className="font-seal text-ink">{dm.slice(0, 1)}</span>
+        <p className="mt-2 text-center text-xs text-ink-soft">
+          日主 <span className="font-seal text-base leading-none text-ink">{dm.slice(0, 1)}</span>
           <span className="mx-0.5 text-ink-faint">·</span>属{dm.slice(1, 2)}
         </p>
       ) : null}
@@ -107,7 +107,7 @@ export function BaziResultHero({
       <div className="relative flex items-center gap-2">
         <PersonCard person={persons?.[0]} side="male" />
         <div className="grid shrink-0 place-items-center self-center px-0.5">
-          <span className="grid size-9 place-items-center rounded-lg bg-vermilion font-seal text-lg text-paper">
+          <span className="grid size-9 place-items-center rounded-lg bg-vermilion font-seal text-lg leading-none text-paper">
             合
           </span>
         </div>
@@ -129,7 +129,7 @@ export function BaziResultHero({
           <div className="absolute inset-0 grid place-items-center">
             <div className="text-center leading-none">
               <p className={`text-5xl font-bold tabular-nums ${style.number}`}>{data.total}</p>
-              <p className="mt-1.5 text-[10px] tracking-[0.2em] text-ink-faint">综合合婚指数</p>
+              <p className="mt-1.5 text-xs tracking-[0.2em] text-ink-faint">综合合婚指数</p>
             </div>
           </div>
         </div>
@@ -152,7 +152,7 @@ export function BaziResultHero({
           最需关注 · {worst?.label} {worst?.score}
         </span>
       </div>
-      <p className="relative mt-3 text-center text-[10px] text-ink-faint">
+      <p className="relative mt-3 text-center text-xs text-ink-faint">
         评分为产品量化模型，仅供文化参考
       </p>
     </section>

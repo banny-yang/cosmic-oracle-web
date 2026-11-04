@@ -6,7 +6,7 @@
  * canonical 硬编码正式域名，和站内其他程序化页面保持一致。
  */
 import type { PlaceInfo } from "./places";
-import { isPlaceIndexable } from "./rollout";
+import { DEFAULT_PLACE_ROLLOUT_STAGE, isPlaceIndexable } from "./rollout";
 
 export const PLACE_SITE_ORIGIN = "https://name.duimai.net";
 
@@ -42,7 +42,10 @@ export const QIMING_HUB_CONTENT = {
  * 地名页的 head：title/description/keywords/canonical 带地名，未放量批次加 noindex, follow。
  * canonical 始终指向自己——未放量页面也保留规范地址，放量后无需改页面。
  */
-export function placeHead(place: PlaceInfo | null | undefined) {
+export function placeHead(
+  place: PlaceInfo | null | undefined,
+  stage: number = DEFAULT_PLACE_ROLLOUT_STAGE,
+) {
   if (!place) {
     return {
       meta: [{ title: "小孩取名 · 对脉名鉴" }, { name: "robots", content: "noindex" }],
@@ -54,7 +57,9 @@ export function placeHead(place: PlaceInfo | null | undefined) {
     meta: [
       { title: content.title },
       { name: "description", content: content.description },
-      ...(isPlaceIndexable(place.group) ? [] : [{ name: "robots", content: "noindex, follow" }]),
+      ...(isPlaceIndexable(place.group, stage)
+        ? []
+        : [{ name: "robots", content: "noindex, follow" }]),
       { name: "keywords", content: content.keywords },
       { property: "og:url", content: content.canonical },
       { property: "og:title", content: content.title },

@@ -9,6 +9,7 @@ import {
   loadProvince,
   toPlaceInfo,
 } from "@/lib/qiming/places";
+import { getPlaceRolloutStage } from "@/lib/qiming/rollout-runtime";
 
 /**
  * 县级地名页：/qiming/{省}/{市}/{县}；直辖市的区为 /qiming/{省}/{区}（走上一级路由）。
@@ -30,10 +31,13 @@ export const Route = createFileRoute("/qiming/$province/$place/$county")({
     }
 
     const place = toPlaceInfo(node);
-    const samples = await fetchPlaceNameSamples(place.adcode);
-    return { place, ...samples };
+    const [samples, stage] = await Promise.all([
+      fetchPlaceNameSamples(place.adcode),
+      getPlaceRolloutStage(),
+    ]);
+    return { place, ...samples, stage };
   },
-  head: ({ loaderData }) => placeHead(loaderData?.place),
+  head: ({ loaderData }) => placeHead(loaderData?.place, loaderData?.stage),
 });
 
 function CountyPlacePage() {

@@ -55,7 +55,7 @@ function withDocumentCacheHeaders(response: Response, request: Request): Respons
 // 私有路径、查询串、重复 URL 交给后端判定——过滤名单只在后端维护一份。
 // HEAD 会被 Nitro 链路归一成 GET（实测），真实方法由 nginx 用 X-Original-Method 透传；
 // 直连容器（无该头）时退回 request.method。
-function notifyBaiduOfPage(response: Response, request: Request): void {
+async function notifyBaiduOfPage(response: Response, request: Request): Promise<void> {
   const method = request.headers.get("x-original-method") ?? request.method;
   if (method !== "GET") return;
   if (response.status >= 400) return;
@@ -64,7 +64,7 @@ function notifyBaiduOfPage(response: Response, request: Request): void {
   try {
     const pathname = new URL(request.url).pathname;
     // 地名页未到放量批次时页面是 noindex，不能主动推给百度；跳过时不进推送去重集合。
-    if (!shouldPushQimingPath(pathname)) return;
+    if (!(await shouldPushQimingPath(pathname))) return;
     pushUrlToBaidu(pathname);
   } catch {
     /* 上报是尽力而为，绝不影响页面返回 */
@@ -197,7 +197,8 @@ export default {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response);
-      notifyBaiduOfPage(normalized, request);
+      // 推送是尽力而为的后台动作：异步读放量批次，不阻塞页面响应
+      void notifyBaiduOfPage(normalized, request);
       return withDocumentCacheHeaders(withNoindexHeader(normalized, request), request);
     } catch (error) {
       console.error(error);

@@ -12,6 +12,7 @@
  */
 import placeSitemap from "../../data/places/sitemap.json";
 import { isPlaceIndexable } from "./rollout";
+import { getPlaceRolloutStage } from "./rollout-runtime";
 
 interface PlaceSitemapRow {
   loc: string;
@@ -34,9 +35,9 @@ function placeGroupIndex(): Map<string, number> {
   return pathGroups;
 }
 
-export function shouldPushQimingPath(pathname: string): boolean {
+export async function shouldPushQimingPath(pathname: string): Promise<boolean> {
   if (!pathname.startsWith("/qiming/")) return true;
   const group = placeGroupIndex().get(pathname);
   if (group === undefined) return false;
-  return isPlaceIndexable(group);
+  return isPlaceIndexable(group, await getPlaceRolloutStage());
 }

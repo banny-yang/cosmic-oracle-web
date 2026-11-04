@@ -10,6 +10,7 @@
  */
 import { nameDetailPath } from "./name-detail";
 import { isPlaceIndexable } from "./qiming/rollout";
+import { getPlaceRolloutStage } from "./qiming/rollout-runtime";
 import { runtimeApiBaseUrl } from "./runtime-env";
 import { STATIC_SITEMAP, type SitemapEntry } from "./sitemap-static";
 import { TOP_SURNAMES, ZODIAC_SLUGS } from "./surnames";
@@ -18,12 +19,12 @@ import placeSitemap from "../data/places/sitemap.json";
 /** sitemap 里名字详情页的条数上限（放量前先过收录闸门）。 */
 const NAME_DETAIL_SITEMAP_LIMIT = 200;
 
-/** 地名页条目：与页面 head 的 noindex 共用 PLACE_ROLLOUT_STAGE，未放量批次不进 sitemap。 */
-const PLACE_SITEMAP: SitemapEntry[] = (
-  placeSitemap as { loc: string; lastmod: string; group: number }[]
-)
-  .filter((p) => isPlaceIndexable(p.group))
-  .map((p) => ({ loc: p.loc, lastmod: p.lastmod, changefreq: "monthly" }));
+/** 地名页条目：与页面 head 的 noindex、百度推送共用运行时放量批次，未放量批次不进 sitemap。 */
+function placeSitemapEntries(stage: number): SitemapEntry[] {
+  return (placeSitemap as { loc: string; lastmod: string; group: number }[])
+    .filter((p) => isPlaceIndexable(p.group, stage))
+    .map((p) => ({ loc: p.loc, lastmod: p.lastmod, changefreq: "monthly" }));
+}
 
 /** 姓氏×生肖取名长尾页（50 姓 × 12 生肖 = 600 条，SSR 动态渲染，路由校验同源常量）。 */
 const SURNAME_ZODIAC_SITEMAP: SitemapEntry[] = TOP_SURNAMES.flatMap((s) =>
@@ -112,10 +113,14 @@ function entryXml(e: SitemapEntry): string {
 }
 
 export async function sitemapXml(): Promise<string> {
-  const [details, articles] = await Promise.all([fetchNameDetailEntries(), fetchArticleEntries()]);
+  const [details, articles, stage] = await Promise.all([
+    fetchNameDetailEntries(),
+    fetchArticleEntries(),
+    getPlaceRolloutStage(),
+  ]);
   const entries = [
     ...STATIC_SITEMAP,
-    ...PLACE_SITEMAP,
+    ...placeSitemapEntries(stage),
     ...SURNAME_ZODIAC_SITEMAP,
     ...details,
     ...articles,

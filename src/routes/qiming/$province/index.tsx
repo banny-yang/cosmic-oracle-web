@@ -4,6 +4,7 @@ import { PlacePageView } from "@/components/qiming/place-page-view";
 import { placeHead } from "@/lib/qiming/content";
 import { fetchPlaceNameSamples } from "@/lib/qiming/name-samples";
 import { loadProvince, toPlaceInfo } from "@/lib/qiming/places";
+import { getPlaceRolloutStage } from "@/lib/qiming/rollout-runtime";
 
 /** 省级地名页：/qiming/{省}（直辖市同页兼作城市页）。 */
 export const Route = createFileRoute("/qiming/$province/")({
@@ -12,10 +13,13 @@ export const Route = createFileRoute("/qiming/$province/")({
     const tree = await loadProvince(params.province);
     if (!tree) throw notFound();
     const place = toPlaceInfo(tree);
-    const samples = await fetchPlaceNameSamples(place.adcode);
-    return { place, ...samples };
+    const [samples, stage] = await Promise.all([
+      fetchPlaceNameSamples(place.adcode),
+      getPlaceRolloutStage(),
+    ]);
+    return { place, ...samples, stage };
   },
-  head: ({ loaderData }) => placeHead(loaderData?.place),
+  head: ({ loaderData }) => placeHead(loaderData?.place, loaderData?.stage),
 });
 
 function ProvincePlacePage() {

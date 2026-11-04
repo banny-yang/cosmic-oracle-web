@@ -37,6 +37,7 @@ export const LLMS_TXT = `# 对脉名鉴（name.duimai.net）
 - [首页](https://name.duimai.net/): 产品介绍、起名过程演示、点数说明与常见问题
 - [宝宝起名](https://name.duimai.net/naming): 五阶段流式生成（真太阳时排盘 → 喜用神 → 字库筛选 → AI 推演 → 荐名），支持指定用字、避用字与亲友投票
 - [名字灵感库](https://name.duimai.net/names): 2900 多个典籍好名字，按风格/性别/五行/关键词筛选，每个名字附拼音、出处原句与意蕴
+- [地区取名](https://name.duimai.net/qiming): 按省份进入的小孩取名页，每页含通用选字要点、男宝女宝名字参考、常见姓氏入口与常见问题；总入口列 31 个省级入口，省/市/县页之间不互链，靠 sitemap 发现
 - [典籍馆](https://name.duimai.net/dianji): 系统收录的典籍书目，逐部列出简介、原文句数与代表名句，可指定其中一部为宝宝取名
 - [生肖取名](https://name.duimai.net/zodiac): 十二生肖的传统用字宜忌与逐年流转（生肖年以立春为界），可看当年与次年、以及任意年份的干支与宜用部首；每个生肖另有常青页（/zodiac/ma、/zodiac/she 等）与年份页（/zodiac/ma/2026）；年份页覆盖过去十年、当前年与次年（十二生肖各一轮），更远年份会转到对应生肖常青页
 - [姓氏×生肖取名](https://name.duimai.net/names/wang/ma): 50 个大姓 × 十二生肖的取名专页（如「王姓马年」「陈姓蛇年」），每页含该生肖宜用部首、该姓专属候选名字（按该姓谐音与连读做避坑筛选，附拼音、典籍出处原句与意蕴）、该姓谐音提示与常见问答
@@ -110,6 +111,7 @@ export const LLMS_FULL_TXT = `# 对脉名鉴 · 完整信息（llms-full.txt）
 - 首页 https://name.duimai.net/ ：产品介绍、起名过程演示、点数说明、常见问题
 - 宝宝起名 https://name.duimai.net/naming ：核心功能，五阶段流式生成，支持指定用字、避用字（长辈名讳）与亲友投票
 - 名字灵感库 https://name.duimai.net/names ：免费好名字库，按风格 / 性别 / 五行 / 关键词筛选，每个名字附拼音、出处原句与意蕴
+- 地区取名 https://name.duimai.net/qiming ：按省份进入的小孩取名页（/qiming/{省}、/qiming/{省}/{市}、/qiming/{省}/{市}/{县}），每页含通用选字要点、男宝女宝名字参考、常见姓氏入口与常见问题；总入口列 31 个省级入口，省/市/县页之间不互链，靠 sitemap 发现
 - 典籍馆 https://name.duimai.net/dianji ：系统收录的典籍书目，逐部列出简介、原文句数与代表名句，可指定其中一部为宝宝取名
 - 深度洞察 https://name.duimai.net/articles ：编辑组文章栏目（生肖宜忌/字辈/诗词典籍/五行/双胞胎等长文），文章页 /articles/{slug} 全文直出，相关工具入口见文内链接
 - 生肖取名 https://name.duimai.net/zodiac ：十二生肖用字宜忌总览（含当年与次年）；每个生肖有常青页（/zodiac/ma、/zodiac/she 等）与年份页（/zodiac/ma/2026）；年份页覆盖过去十年、当前年与次年（十二生肖各一轮），更远年份会转到对应生肖常青页

@@ -347,6 +347,22 @@ function NameGallery() {
         </div>
       </section>
 
+      {/* 地区取名入口：只链总入口；具体省市县页靠 sitemap 发现（按产品口径页面不列地区） */}
+      <section className="mt-5 rounded-2xl bg-white p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-base font-semibold">按地区找取名</h2>
+          <Link
+            to="/qiming"
+            className="text-xs text-vermilion-deep transition-colors hover:text-vermilion"
+          >
+            地区取名总入口 →
+          </Link>
+        </div>
+        <p className="mt-1 text-xs text-ink-faint">
+          按省份进入对应的小孩取名页：通用选字要点、男宝女宝名字参考与常见问题。
+        </p>
+      </section>
+
       {/* 名字卡网格 */}
       {loading ? (
         <div className="mt-5 grid gap-4 lg:grid-cols-2">

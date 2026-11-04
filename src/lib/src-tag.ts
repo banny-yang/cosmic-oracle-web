@@ -28,6 +28,8 @@ export const SRC_VALUES = [
   "weibo",
   /* 站内文章 → 工具的深链（文章页 CTA 自动带），用来量「读完文章去生成」的转化 */
   "article",
+  /* 地区取名页 → 起名/评测的深链（/qiming/* 页 CTA 自动带） */
+  "qiming",
 ] as const;
 export type SrcTag = (typeof SRC_VALUES)[number];
 
@@ -106,8 +108,7 @@ export function pageLoadSrcTag(): SrcTag | "" {
 export function withSrc(url: string, src: SrcTag): string {
   try {
     const absolute = /^https?:\/\//i.test(url);
-    const base =
-      typeof window === "undefined" ? "https://name.duimai.net" : window.location.origin;
+    const base = typeof window === "undefined" ? "https://name.duimai.net" : window.location.origin;
     const u = new URL(url, base);
     u.searchParams.set("src", src);
     // 传进来是相对路径就还回相对路径，避免首屏/客户端渲染出不同字符串
@@ -129,8 +130,7 @@ export function withRef(url: string, ref: string): string {
   if (!code) return url;
   try {
     const absolute = /^https?:\/\//i.test(url);
-    const base =
-      typeof window === "undefined" ? "https://name.duimai.net" : window.location.origin;
+    const base = typeof window === "undefined" ? "https://name.duimai.net" : window.location.origin;
     const u = new URL(url, base);
     u.searchParams.set("ref", code);
     return absolute ? u.toString() : u.pathname + u.search + u.hash;

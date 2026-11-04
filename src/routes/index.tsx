@@ -551,6 +551,28 @@ function Index() {
         </div>
       </section>
 
+      {/* 地区取名入口：只链总入口；具体省市县页靠 sitemap 发现（按产品口径首页不列地区） */}
+      <section className="mt-12">
+        <div className="rounded-2xl bg-white p-6 transition-colors hover:bg-vermilion-wash">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold">全国地区取名</h2>
+          </div>
+          <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+            按省份查找小孩取名页：每页提供通用选字要点、男宝女宝名字参考、常见姓氏入口与常见问题，
+            换一个地区也能看到同一套方法的完整说明。
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              to="/qiming"
+              onClick={() => track("home_cta_click", { where: "qiming" })}
+              className="rounded-xl bg-ink px-5 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
+            >
+              地区取名 · 按省份查看 →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* 点数与价格 */}
       <section className="mt-12">
         <h2 className="text-lg font-semibold">点数怎么算，先说清楚</h2>

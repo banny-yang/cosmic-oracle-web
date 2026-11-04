@@ -30,14 +30,18 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ArticlesIndexRouteImport } from './routes/articles/index'
 import { Route as ArticlesSlugRouteImport } from './routes/articles/$slug'
 import { Route as NamesIndexRouteImport } from './routes/names/index'
+import { Route as QimingIndexRouteImport } from './routes/qiming/index'
 import { Route as RecordsIndexRouteImport } from './routes/records.index'
 import { Route as RecordsIdRouteImport } from './routes/records.$id'
 import { Route as VoteTokenRouteImport } from './routes/vote.$token'
 import { Route as ZodiacIndexRouteImport } from './routes/zodiac/index'
 import { Route as NamesSurnameAnimalRouteImport } from './routes/names/$surname.$animal'
 import { Route as NamesDetailWordRouteImport } from './routes/names/detail/$word'
+import { Route as QimingProvinceIndexRouteImport } from './routes/qiming/$province/index'
 import { Route as ZodiacAnimalIndexRouteImport } from './routes/zodiac/$animal/index'
 import { Route as ZodiacAnimalYearRouteImport } from './routes/zodiac/$animal/$year'
+import { Route as QimingProvincePlaceIndexRouteImport } from './routes/qiming/$province/$place/index'
+import { Route as QimingProvincePlaceCountyRouteImport } from './routes/qiming/$province/$place/$county'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -144,6 +148,11 @@ const NamesIndexRoute = NamesIndexRouteImport.update({
   path: '/names/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QimingIndexRoute = QimingIndexRouteImport.update({
+  id: '/qiming/',
+  path: '/qiming/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecordsIndexRoute = RecordsIndexRouteImport.update({
   id: '/records/',
   path: '/records/',
@@ -174,6 +183,11 @@ const NamesDetailWordRoute = NamesDetailWordRouteImport.update({
   path: '/names/detail/$word',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QimingProvinceIndexRoute = QimingProvinceIndexRouteImport.update({
+  id: '/qiming/$province/',
+  path: '/qiming/$province/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ZodiacAnimalIndexRoute = ZodiacAnimalIndexRouteImport.update({
   id: '/zodiac/$animal/',
   path: '/zodiac/$animal/',
@@ -184,6 +198,18 @@ const ZodiacAnimalYearRoute = ZodiacAnimalYearRouteImport.update({
   path: '/zodiac/$animal/$year',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QimingProvincePlaceIndexRoute =
+  QimingProvincePlaceIndexRouteImport.update({
+    id: '/qiming/$province/$place/',
+    path: '/qiming/$province/$place/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const QimingProvincePlaceCountyRoute =
+  QimingProvincePlaceCountyRouteImport.update({
+    id: '/qiming/$province/$place/$county',
+    path: '/qiming/$province/$place/$county',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -209,12 +235,16 @@ export interface FileRoutesByFullPath {
   '/vote/$token': typeof VoteTokenRoute
   '/articles/': typeof ArticlesIndexRoute
   '/names/': typeof NamesIndexRoute
+  '/qiming/': typeof QimingIndexRoute
   '/records/': typeof RecordsIndexRoute
   '/zodiac/': typeof ZodiacIndexRoute
   '/names/$surname/$animal': typeof NamesSurnameAnimalRoute
   '/names/detail/$word': typeof NamesDetailWordRoute
   '/zodiac/$animal/$year': typeof ZodiacAnimalYearRoute
+  '/qiming/$province/': typeof QimingProvinceIndexRoute
   '/zodiac/$animal/': typeof ZodiacAnimalIndexRoute
+  '/qiming/$province/$place/$county': typeof QimingProvincePlaceCountyRoute
+  '/qiming/$province/$place/': typeof QimingProvincePlaceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -240,12 +270,16 @@ export interface FileRoutesByTo {
   '/vote/$token': typeof VoteTokenRoute
   '/articles': typeof ArticlesIndexRoute
   '/names': typeof NamesIndexRoute
+  '/qiming': typeof QimingIndexRoute
   '/records': typeof RecordsIndexRoute
   '/zodiac': typeof ZodiacIndexRoute
   '/names/$surname/$animal': typeof NamesSurnameAnimalRoute
   '/names/detail/$word': typeof NamesDetailWordRoute
   '/zodiac/$animal/$year': typeof ZodiacAnimalYearRoute
+  '/qiming/$province': typeof QimingProvinceIndexRoute
   '/zodiac/$animal': typeof ZodiacAnimalIndexRoute
+  '/qiming/$province/$place/$county': typeof QimingProvincePlaceCountyRoute
+  '/qiming/$province/$place': typeof QimingProvincePlaceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -272,12 +306,16 @@ export interface FileRoutesById {
   '/vote/$token': typeof VoteTokenRoute
   '/articles/': typeof ArticlesIndexRoute
   '/names/': typeof NamesIndexRoute
+  '/qiming/': typeof QimingIndexRoute
   '/records/': typeof RecordsIndexRoute
   '/zodiac/': typeof ZodiacIndexRoute
   '/names/$surname/$animal': typeof NamesSurnameAnimalRoute
   '/names/detail/$word': typeof NamesDetailWordRoute
   '/zodiac/$animal/$year': typeof ZodiacAnimalYearRoute
+  '/qiming/$province/': typeof QimingProvinceIndexRoute
   '/zodiac/$animal/': typeof ZodiacAnimalIndexRoute
+  '/qiming/$province/$place/$county': typeof QimingProvincePlaceCountyRoute
+  '/qiming/$province/$place/': typeof QimingProvincePlaceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -305,12 +343,16 @@ export interface FileRouteTypes {
     | '/vote/$token'
     | '/articles/'
     | '/names/'
+    | '/qiming/'
     | '/records/'
     | '/zodiac/'
     | '/names/$surname/$animal'
     | '/names/detail/$word'
     | '/zodiac/$animal/$year'
+    | '/qiming/$province/'
     | '/zodiac/$animal/'
+    | '/qiming/$province/$place/$county'
+    | '/qiming/$province/$place/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -336,12 +378,16 @@ export interface FileRouteTypes {
     | '/vote/$token'
     | '/articles'
     | '/names'
+    | '/qiming'
     | '/records'
     | '/zodiac'
     | '/names/$surname/$animal'
     | '/names/detail/$word'
     | '/zodiac/$animal/$year'
+    | '/qiming/$province'
     | '/zodiac/$animal'
+    | '/qiming/$province/$place/$county'
+    | '/qiming/$province/$place'
   id:
     | '__root__'
     | '/'
@@ -367,12 +413,16 @@ export interface FileRouteTypes {
     | '/vote/$token'
     | '/articles/'
     | '/names/'
+    | '/qiming/'
     | '/records/'
     | '/zodiac/'
     | '/names/$surname/$animal'
     | '/names/detail/$word'
     | '/zodiac/$animal/$year'
+    | '/qiming/$province/'
     | '/zodiac/$animal/'
+    | '/qiming/$province/$place/$county'
+    | '/qiming/$province/$place/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -399,12 +449,16 @@ export interface RootRouteChildren {
   VoteTokenRoute: typeof VoteTokenRoute
   ArticlesIndexRoute: typeof ArticlesIndexRoute
   NamesIndexRoute: typeof NamesIndexRoute
+  QimingIndexRoute: typeof QimingIndexRoute
   RecordsIndexRoute: typeof RecordsIndexRoute
   ZodiacIndexRoute: typeof ZodiacIndexRoute
   NamesSurnameAnimalRoute: typeof NamesSurnameAnimalRoute
   NamesDetailWordRoute: typeof NamesDetailWordRoute
   ZodiacAnimalYearRoute: typeof ZodiacAnimalYearRoute
+  QimingProvinceIndexRoute: typeof QimingProvinceIndexRoute
   ZodiacAnimalIndexRoute: typeof ZodiacAnimalIndexRoute
+  QimingProvincePlaceCountyRoute: typeof QimingProvincePlaceCountyRoute
+  QimingProvincePlaceIndexRoute: typeof QimingProvincePlaceIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -556,6 +610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NamesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qiming/': {
+      id: '/qiming/'
+      path: '/qiming'
+      fullPath: '/qiming/'
+      preLoaderRoute: typeof QimingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/records/': {
       id: '/records/'
       path: '/records'
@@ -598,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NamesDetailWordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/qiming/$province/': {
+      id: '/qiming/$province/'
+      path: '/qiming/$province'
+      fullPath: '/qiming/$province/'
+      preLoaderRoute: typeof QimingProvinceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/zodiac/$animal/': {
       id: '/zodiac/$animal/'
       path: '/zodiac/$animal'
@@ -610,6 +678,20 @@ declare module '@tanstack/react-router' {
       path: '/zodiac/$animal/$year'
       fullPath: '/zodiac/$animal/$year'
       preLoaderRoute: typeof ZodiacAnimalYearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qiming/$province/$place/': {
+      id: '/qiming/$province/$place/'
+      path: '/qiming/$province/$place'
+      fullPath: '/qiming/$province/$place/'
+      preLoaderRoute: typeof QimingProvincePlaceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qiming/$province/$place/$county': {
+      id: '/qiming/$province/$place/$county'
+      path: '/qiming/$province/$place/$county'
+      fullPath: '/qiming/$province/$place/$county'
+      preLoaderRoute: typeof QimingProvincePlaceCountyRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -639,12 +721,16 @@ const rootRouteChildren: RootRouteChildren = {
   VoteTokenRoute: VoteTokenRoute,
   ArticlesIndexRoute: ArticlesIndexRoute,
   NamesIndexRoute: NamesIndexRoute,
+  QimingIndexRoute: QimingIndexRoute,
   RecordsIndexRoute: RecordsIndexRoute,
   ZodiacIndexRoute: ZodiacIndexRoute,
   NamesSurnameAnimalRoute: NamesSurnameAnimalRoute,
   NamesDetailWordRoute: NamesDetailWordRoute,
   ZodiacAnimalYearRoute: ZodiacAnimalYearRoute,
+  QimingProvinceIndexRoute: QimingProvinceIndexRoute,
   ZodiacAnimalIndexRoute: ZodiacAnimalIndexRoute,
+  QimingProvincePlaceCountyRoute: QimingProvincePlaceCountyRoute,
+  QimingProvincePlaceIndexRoute: QimingProvincePlaceIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

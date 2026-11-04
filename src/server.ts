@@ -5,6 +5,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { feedXml } from "./lib/feed-xml";
 import { llmsFullTxt, llmsTxt } from "./lib/llms-content";
+import { shouldPushQimingPath } from "./lib/qiming/push-gate";
 import { sitemapXml } from "./lib/sitemap-xml";
 
 type ServerEntry = {
@@ -61,7 +62,10 @@ function notifyBaiduOfPage(response: Response, request: Request): void {
   if (!(response.headers.get("content-type") ?? "").includes("text/html")) return;
 
   try {
-    pushUrlToBaidu(new URL(request.url).pathname);
+    const pathname = new URL(request.url).pathname;
+    // 地名页未到放量批次时页面是 noindex，不能主动推给百度；跳过时不进推送去重集合。
+    if (!shouldPushQimingPath(pathname)) return;
+    pushUrlToBaidu(pathname);
   } catch {
     /* 上报是尽力而为，绝不影响页面返回 */
   }

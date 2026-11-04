@@ -1,0 +1,219 @@
+[
+  {
+    "adcode": "11",
+    "name": "北京市",
+    "displayName": "北京",
+    "slug": "beijing",
+    "path": "/qiming/beijing"
+  },
+  {
+    "adcode": "12",
+    "name": "天津市",
+    "displayName": "天津",
+    "slug": "tianjin",
+    "path": "/qiming/tianjin"
+  },
+  {
+    "adcode": "13",
+    "name": "河北省",
+    "displayName": "河北",
+    "slug": "hebei",
+    "path": "/qiming/hebei"
+  },
+  {
+    "adcode": "14",
+    "name": "山西省",
+    "displayName": "山西",
+    "slug": "shanxi",
+    "path": "/qiming/shanxi"
+  },
+  {
+    "adcode": "15",
+    "name": "内蒙古自治区",
+    "displayName": "内蒙古",
+    "slug": "neimenggu",
+    "path": "/qiming/neimenggu"
+  },
+  {
+    "adcode": "21",
+    "name": "辽宁省",
+    "displayName": "辽宁",
+    "slug": "liaoning",
+    "path": "/qiming/liaoning"
+  },
+  {
+    "adcode": "22",
+    "name": "吉林省",
+    "displayName": "吉林",
+    "slug": "jilin",
+    "path": "/qiming/jilin"
+  },
+  {
+    "adcode": "23",
+    "name": "黑龙江省",
+    "displayName": "黑龙江",
+    "slug": "heilongjiang",
+    "path": "/qiming/heilongjiang"
+  },
+  {
+    "adcode": "31",
+    "name": "上海市",
+    "displayName": "上海",
+    "slug": "shanghai",
+    "path": "/qiming/shanghai"
+  },
+  {
+    "adcode": "32",
+    "name": "江苏省",
+    "displayName": "江苏",
+    "slug": "jiangsu",
+    "path": "/qiming/jiangsu"
+  },
+  {
+    "adcode": "33",
+    "name": "浙江省",
+    "displayName": "浙江",
+    "slug": "zhejiang",
+    "path": "/qiming/zhejiang"
+  },
+  {
+    "adcode": "34",
+    "name": "安徽省",
+    "displayName": "安徽",
+    "slug": "anhui",
+    "path": "/qiming/anhui"
+  },
+  {
+    "adcode": "35",
+    "name": "福建省",
+    "displayName": "福建",
+    "slug": "fujian",
+    "path": "/qiming/fujian"
+  },
+  {
+    "adcode": "36",
+    "name": "江西省",
+    "displayName": "江西",
+    "slug": "jiangxi",
+    "path": "/qiming/jiangxi"
+  },
+  {
+    "adcode": "37",
+    "name": "山东省",
+    "displayName": "山东",
+    "slug": "shandong",
+    "path": "/qiming/shandong"
+  },
+  {
+    "adcode": "41",
+    "name": "河南省",
+    "displayName": "河南",
+    "slug": "henan",
+    "path": "/qiming/henan"
+  },
+  {
+    "adcode": "42",
+    "name": "湖北省",
+    "displayName": "湖北",
+    "slug": "hubei",
+    "path": "/qiming/hubei"
+  },
+  {
+    "adcode": "43",
+    "name": "湖南省",
+    "displayName": "湖南",
+    "slug": "hunan",
+    "path": "/qiming/hunan"
+  },
+  {
+    "adcode": "44",
+    "name": "广东省",
+    "displayName": "广东",
+    "slug": "guangdong",
+    "path": "/qiming/guangdong"
+  },
+  {
+    "adcode": "45",
+    "name": "广西壮族自治区",
+    "displayName": "广西",
+    "slug": "guangxi",
+    "path": "/qiming/guangxi"
+  },
+  {
+    "adcode": "46",
+    "name": "海南省",
+    "displayName": "海南",
+    "slug": "hainan",
+    "path": "/qiming/hainan"
+  },
+  {
+    "adcode": "50",
+    "name": "重庆市",
+    "displayName": "重庆",
+    "slug": "chongqing",
+    "path": "/qiming/chongqing"
+  },
+  {
+    "adcode": "51",
+    "name": "四川省",
+    "displayName": "四川",
+    "slug": "sichuan",
+    "path": "/qiming/sichuan"
+  },
+  {
+    "adcode": "52",
+    "name": "贵州省",
+    "displayName": "贵州",
+    "slug": "guizhou",
+    "path": "/qiming/guizhou"
+  },
+  {
+    "adcode": "53",
+    "name": "云南省",
+    "displayName": "云南",
+    "slug": "yunnan",
+    "path": "/qiming/yunnan"
+  },
+  {
+    "adcode": "54",
+    "name": "西藏自治区",
+    "displayName": "西藏",
+    "slug": "xizang",
+    "path": "/qiming/xizang"
+  },
+  {
+    "adcode": "61",
+    "name": "陕西省",
+    "displayName": "陕西",
+    "slug": "shaanxi",
+    "path": "/qiming/shaanxi"
+  },
+  {
+    "adcode": "62",
+    "name": "甘肃省",
+    "displayName": "甘肃",
+    "slug": "gansu",
+    "path": "/qiming/gansu"
+  },
+  {
+    "adcode": "63",
+    "name": "青海省",
+    "displayName": "青海",
+    "slug": "qinghai",
+    "path": "/qiming/qinghai"
+  },
+  {
+    "adcode": "64",
+    "name": "宁夏回族自治区",
+    "displayName": "宁夏",
+    "slug": "ningxia",
+    "path": "/qiming/ningxia"
+  },
+  {
+    "adcode": "65",
+    "name": "新疆维吾尔自治区",
+    "displayName": "新疆",
+    "slug": "xinjiang",
+    "path": "/qiming/xinjiang"
+  }
+]

@@ -4,6 +4,7 @@ node_modules/
 .tanstack/
 .zcode/
 .wrangler/
+scripts/.cache/
 dist/
 *.local
 *.tgz

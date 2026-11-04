@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "build:prod": "vite build",
     "build:deploy": "node scripts/build-deploy.mjs",
+    "gen:places": "node scripts/build-places.mjs",
     "start": "node .output/server/index.mjs"
   },
   "overrides": {
@@ -88,6 +89,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "nitro": "3.0.260603-beta",
+    "pinyin-pro": "^3.29.5",
     "postcss": "^8.5.28",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",

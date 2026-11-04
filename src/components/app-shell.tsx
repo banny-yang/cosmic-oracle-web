@@ -379,6 +379,10 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
             <Link to="/help" className="hover:text-ink-soft">
               帮助中心
             </Link>
+            <span className="mx-1.5">·</span>
+            <Link to="/qiming" className="hover:text-ink-soft">
+              地区取名
+            </Link>
           </p>
           <p className="text-xs leading-relaxed text-ink-faint">
             © 2026

@@ -29,11 +29,16 @@ import { Route as QimenRouteImport } from './routes/qimen'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ArticlesIndexRouteImport } from './routes/articles/index'
 import { Route as ArticlesSlugRouteImport } from './routes/articles/$slug'
+import { Route as ClassicIndexRouteImport } from './routes/classic/index'
+import { Route as ClassicCodeRouteImport } from './routes/classic/$code'
 import { Route as NamesIndexRouteImport } from './routes/names/index'
+import { Route as NamesSurnameRouteImport } from './routes/names/$surname'
 import { Route as QimingIndexRouteImport } from './routes/qiming/index'
 import { Route as RecordsIndexRouteImport } from './routes/records.index'
 import { Route as RecordsIdRouteImport } from './routes/records.$id'
 import { Route as VoteTokenRouteImport } from './routes/vote.$token'
+import { Route as WuxingIndexRouteImport } from './routes/wuxing/index'
+import { Route as WuxingElementRouteImport } from './routes/wuxing/$element'
 import { Route as ZodiacIndexRouteImport } from './routes/zodiac/index'
 import { Route as NamesSurnameAnimalRouteImport } from './routes/names/$surname.$animal'
 import { Route as NamesDetailWordRouteImport } from './routes/names/detail/$word'
@@ -143,9 +148,24 @@ const ArticlesSlugRoute = ArticlesSlugRouteImport.update({
   path: '/articles/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClassicIndexRoute = ClassicIndexRouteImport.update({
+  id: '/classic/',
+  path: '/classic/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClassicCodeRoute = ClassicCodeRouteImport.update({
+  id: '/classic/$code',
+  path: '/classic/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NamesIndexRoute = NamesIndexRouteImport.update({
   id: '/names/',
   path: '/names/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NamesSurnameRoute = NamesSurnameRouteImport.update({
+  id: '/names/$surname',
+  path: '/names/$surname',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QimingIndexRoute = QimingIndexRouteImport.update({
@@ -168,15 +188,25 @@ const VoteTokenRoute = VoteTokenRouteImport.update({
   path: '/vote/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WuxingIndexRoute = WuxingIndexRouteImport.update({
+  id: '/wuxing/',
+  path: '/wuxing/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WuxingElementRoute = WuxingElementRouteImport.update({
+  id: '/wuxing/$element',
+  path: '/wuxing/$element',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ZodiacIndexRoute = ZodiacIndexRouteImport.update({
   id: '/zodiac/',
   path: '/zodiac/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NamesSurnameAnimalRoute = NamesSurnameAnimalRouteImport.update({
-  id: '/names/$surname/$animal',
-  path: '/names/$surname/$animal',
-  getParentRoute: () => rootRouteImport,
+  id: '/$animal',
+  path: '/$animal',
+  getParentRoute: () => NamesSurnameRoute,
 } as any)
 const NamesDetailWordRoute = NamesDetailWordRouteImport.update({
   id: '/names/detail/$word',
@@ -231,12 +261,17 @@ export interface FileRoutesByFullPath {
   '/qimen': typeof QimenRoute
   '/terms': typeof TermsRoute
   '/articles/$slug': typeof ArticlesSlugRoute
+  '/classic/$code': typeof ClassicCodeRoute
+  '/names/$surname': typeof NamesSurnameRouteWithChildren
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
+  '/wuxing/$element': typeof WuxingElementRoute
   '/articles/': typeof ArticlesIndexRoute
+  '/classic/': typeof ClassicIndexRoute
   '/names/': typeof NamesIndexRoute
   '/qiming/': typeof QimingIndexRoute
   '/records/': typeof RecordsIndexRoute
+  '/wuxing/': typeof WuxingIndexRoute
   '/zodiac/': typeof ZodiacIndexRoute
   '/names/$surname/$animal': typeof NamesSurnameAnimalRoute
   '/names/detail/$word': typeof NamesDetailWordRoute
@@ -266,12 +301,17 @@ export interface FileRoutesByTo {
   '/qimen': typeof QimenRoute
   '/terms': typeof TermsRoute
   '/articles/$slug': typeof ArticlesSlugRoute
+  '/classic/$code': typeof ClassicCodeRoute
+  '/names/$surname': typeof NamesSurnameRouteWithChildren
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
+  '/wuxing/$element': typeof WuxingElementRoute
   '/articles': typeof ArticlesIndexRoute
+  '/classic': typeof ClassicIndexRoute
   '/names': typeof NamesIndexRoute
   '/qiming': typeof QimingIndexRoute
   '/records': typeof RecordsIndexRoute
+  '/wuxing': typeof WuxingIndexRoute
   '/zodiac': typeof ZodiacIndexRoute
   '/names/$surname/$animal': typeof NamesSurnameAnimalRoute
   '/names/detail/$word': typeof NamesDetailWordRoute
@@ -302,12 +342,17 @@ export interface FileRoutesById {
   '/qimen': typeof QimenRoute
   '/terms': typeof TermsRoute
   '/articles/$slug': typeof ArticlesSlugRoute
+  '/classic/$code': typeof ClassicCodeRoute
+  '/names/$surname': typeof NamesSurnameRouteWithChildren
   '/records/$id': typeof RecordsIdRoute
   '/vote/$token': typeof VoteTokenRoute
+  '/wuxing/$element': typeof WuxingElementRoute
   '/articles/': typeof ArticlesIndexRoute
+  '/classic/': typeof ClassicIndexRoute
   '/names/': typeof NamesIndexRoute
   '/qiming/': typeof QimingIndexRoute
   '/records/': typeof RecordsIndexRoute
+  '/wuxing/': typeof WuxingIndexRoute
   '/zodiac/': typeof ZodiacIndexRoute
   '/names/$surname/$animal': typeof NamesSurnameAnimalRoute
   '/names/detail/$word': typeof NamesDetailWordRoute
@@ -339,12 +384,17 @@ export interface FileRouteTypes {
     | '/qimen'
     | '/terms'
     | '/articles/$slug'
+    | '/classic/$code'
+    | '/names/$surname'
     | '/records/$id'
     | '/vote/$token'
+    | '/wuxing/$element'
     | '/articles/'
+    | '/classic/'
     | '/names/'
     | '/qiming/'
     | '/records/'
+    | '/wuxing/'
     | '/zodiac/'
     | '/names/$surname/$animal'
     | '/names/detail/$word'
@@ -374,12 +424,17 @@ export interface FileRouteTypes {
     | '/qimen'
     | '/terms'
     | '/articles/$slug'
+    | '/classic/$code'
+    | '/names/$surname'
     | '/records/$id'
     | '/vote/$token'
+    | '/wuxing/$element'
     | '/articles'
+    | '/classic'
     | '/names'
     | '/qiming'
     | '/records'
+    | '/wuxing'
     | '/zodiac'
     | '/names/$surname/$animal'
     | '/names/detail/$word'
@@ -409,12 +464,17 @@ export interface FileRouteTypes {
     | '/qimen'
     | '/terms'
     | '/articles/$slug'
+    | '/classic/$code'
+    | '/names/$surname'
     | '/records/$id'
     | '/vote/$token'
+    | '/wuxing/$element'
     | '/articles/'
+    | '/classic/'
     | '/names/'
     | '/qiming/'
     | '/records/'
+    | '/wuxing/'
     | '/zodiac/'
     | '/names/$surname/$animal'
     | '/names/detail/$word'
@@ -445,14 +505,18 @@ export interface RootRouteChildren {
   QimenRoute: typeof QimenRoute
   TermsRoute: typeof TermsRoute
   ArticlesSlugRoute: typeof ArticlesSlugRoute
+  ClassicCodeRoute: typeof ClassicCodeRoute
+  NamesSurnameRoute: typeof NamesSurnameRouteWithChildren
   RecordsIdRoute: typeof RecordsIdRoute
   VoteTokenRoute: typeof VoteTokenRoute
+  WuxingElementRoute: typeof WuxingElementRoute
   ArticlesIndexRoute: typeof ArticlesIndexRoute
+  ClassicIndexRoute: typeof ClassicIndexRoute
   NamesIndexRoute: typeof NamesIndexRoute
   QimingIndexRoute: typeof QimingIndexRoute
   RecordsIndexRoute: typeof RecordsIndexRoute
+  WuxingIndexRoute: typeof WuxingIndexRoute
   ZodiacIndexRoute: typeof ZodiacIndexRoute
-  NamesSurnameAnimalRoute: typeof NamesSurnameAnimalRoute
   NamesDetailWordRoute: typeof NamesDetailWordRoute
   ZodiacAnimalYearRoute: typeof ZodiacAnimalYearRoute
   QimingProvinceIndexRoute: typeof QimingProvinceIndexRoute
@@ -603,11 +667,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArticlesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/classic/': {
+      id: '/classic/'
+      path: '/classic'
+      fullPath: '/classic/'
+      preLoaderRoute: typeof ClassicIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/classic/$code': {
+      id: '/classic/$code'
+      path: '/classic/$code'
+      fullPath: '/classic/$code'
+      preLoaderRoute: typeof ClassicCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/names/': {
       id: '/names/'
       path: '/names'
       fullPath: '/names/'
       preLoaderRoute: typeof NamesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/names/$surname': {
+      id: '/names/$surname'
+      path: '/names/$surname'
+      fullPath: '/names/$surname'
+      preLoaderRoute: typeof NamesSurnameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qiming/': {
@@ -638,6 +723,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VoteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/wuxing/': {
+      id: '/wuxing/'
+      path: '/wuxing'
+      fullPath: '/wuxing/'
+      preLoaderRoute: typeof WuxingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wuxing/$element': {
+      id: '/wuxing/$element'
+      path: '/wuxing/$element'
+      fullPath: '/wuxing/$element'
+      preLoaderRoute: typeof WuxingElementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/zodiac/': {
       id: '/zodiac/'
       path: '/zodiac'
@@ -647,10 +746,10 @@ declare module '@tanstack/react-router' {
     }
     '/names/$surname/$animal': {
       id: '/names/$surname/$animal'
-      path: '/names/$surname/$animal'
+      path: '/$animal'
       fullPath: '/names/$surname/$animal'
       preLoaderRoute: typeof NamesSurnameAnimalRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof NamesSurnameRoute
     }
     '/names/detail/$word': {
       id: '/names/detail/$word'
@@ -697,6 +796,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface NamesSurnameRouteChildren {
+  NamesSurnameAnimalRoute: typeof NamesSurnameAnimalRoute
+}
+
+const NamesSurnameRouteChildren: NamesSurnameRouteChildren = {
+  NamesSurnameAnimalRoute: NamesSurnameAnimalRoute,
+}
+
+const NamesSurnameRouteWithChildren = NamesSurnameRoute._addFileChildren(
+  NamesSurnameRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysisRoute: AnalysisRoute,
@@ -717,14 +828,18 @@ const rootRouteChildren: RootRouteChildren = {
   QimenRoute: QimenRoute,
   TermsRoute: TermsRoute,
   ArticlesSlugRoute: ArticlesSlugRoute,
+  ClassicCodeRoute: ClassicCodeRoute,
+  NamesSurnameRoute: NamesSurnameRouteWithChildren,
   RecordsIdRoute: RecordsIdRoute,
   VoteTokenRoute: VoteTokenRoute,
+  WuxingElementRoute: WuxingElementRoute,
   ArticlesIndexRoute: ArticlesIndexRoute,
+  ClassicIndexRoute: ClassicIndexRoute,
   NamesIndexRoute: NamesIndexRoute,
   QimingIndexRoute: QimingIndexRoute,
   RecordsIndexRoute: RecordsIndexRoute,
+  WuxingIndexRoute: WuxingIndexRoute,
   ZodiacIndexRoute: ZodiacIndexRoute,
-  NamesSurnameAnimalRoute: NamesSurnameAnimalRoute,
   NamesDetailWordRoute: NamesDetailWordRoute,
   ZodiacAnimalYearRoute: ZodiacAnimalYearRoute,
   QimingProvinceIndexRoute: QimingProvinceIndexRoute,

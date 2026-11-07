@@ -1,0 +1,350 @@
+[
+  {
+    "provinceSlug": "beijing",
+    "display": "北京",
+    "level": "city",
+    "path": "/qiming/beijing"
+  },
+  {
+    "provinceSlug": "tianjin",
+    "display": "天津",
+    "level": "city",
+    "path": "/qiming/tianjin"
+  },
+  {
+    "provinceSlug": "hebei",
+    "display": "河北",
+    "level": "province",
+    "path": "/qiming/hebei"
+  },
+  {
+    "provinceSlug": "hebei",
+    "display": "石家庄",
+    "level": "city",
+    "path": "/qiming/hebei/shijiazhuang"
+  },
+  {
+    "provinceSlug": "shanxi",
+    "display": "山西",
+    "level": "province",
+    "path": "/qiming/shanxi"
+  },
+  {
+    "provinceSlug": "shanxi",
+    "display": "太原",
+    "level": "city",
+    "path": "/qiming/shanxi/taiyuan"
+  },
+  {
+    "provinceSlug": "neimenggu",
+    "display": "内蒙古",
+    "level": "province",
+    "path": "/qiming/neimenggu"
+  },
+  {
+    "provinceSlug": "neimenggu",
+    "display": "呼和浩特",
+    "level": "city",
+    "path": "/qiming/neimenggu/huhehaote"
+  },
+  {
+    "provinceSlug": "liaoning",
+    "display": "辽宁",
+    "level": "province",
+    "path": "/qiming/liaoning"
+  },
+  {
+    "provinceSlug": "liaoning",
+    "display": "沈阳",
+    "level": "city",
+    "path": "/qiming/liaoning/shenyang"
+  },
+  {
+    "provinceSlug": "jilin",
+    "display": "吉林",
+    "level": "province",
+    "path": "/qiming/jilin"
+  },
+  {
+    "provinceSlug": "jilin",
+    "display": "长春",
+    "level": "city",
+    "path": "/qiming/jilin/changchun"
+  },
+  {
+    "provinceSlug": "heilongjiang",
+    "display": "黑龙江",
+    "level": "province",
+    "path": "/qiming/heilongjiang"
+  },
+  {
+    "provinceSlug": "heilongjiang",
+    "display": "哈尔滨",
+    "level": "city",
+    "path": "/qiming/heilongjiang/haerbin"
+  },
+  {
+    "provinceSlug": "shanghai",
+    "display": "上海",
+    "level": "city",
+    "path": "/qiming/shanghai"
+  },
+  {
+    "provinceSlug": "jiangsu",
+    "display": "江苏",
+    "level": "province",
+    "path": "/qiming/jiangsu"
+  },
+  {
+    "provinceSlug": "jiangsu",
+    "display": "南京",
+    "level": "city",
+    "path": "/qiming/jiangsu/nanjing"
+  },
+  {
+    "provinceSlug": "zhejiang",
+    "display": "浙江",
+    "level": "province",
+    "path": "/qiming/zhejiang"
+  },
+  {
+    "provinceSlug": "zhejiang",
+    "display": "杭州",
+    "level": "city",
+    "path": "/qiming/zhejiang/hangzhou"
+  },
+  {
+    "provinceSlug": "anhui",
+    "display": "安徽",
+    "level": "province",
+    "path": "/qiming/anhui"
+  },
+  {
+    "provinceSlug": "anhui",
+    "display": "合肥",
+    "level": "city",
+    "path": "/qiming/anhui/hefei"
+  },
+  {
+    "provinceSlug": "fujian",
+    "display": "福建",
+    "level": "province",
+    "path": "/qiming/fujian"
+  },
+  {
+    "provinceSlug": "fujian",
+    "display": "福州",
+    "level": "city",
+    "path": "/qiming/fujian/fuzhou"
+  },
+  {
+    "provinceSlug": "jiangxi",
+    "display": "江西",
+    "level": "province",
+    "path": "/qiming/jiangxi"
+  },
+  {
+    "provinceSlug": "jiangxi",
+    "display": "南昌",
+    "level": "city",
+    "path": "/qiming/jiangxi/nanchang"
+  },
+  {
+    "provinceSlug": "shandong",
+    "display": "山东",
+    "level": "province",
+    "path": "/qiming/shandong"
+  },
+  {
+    "provinceSlug": "shandong",
+    "display": "济南",
+    "level": "city",
+    "path": "/qiming/shandong/jinan"
+  },
+  {
+    "provinceSlug": "henan",
+    "display": "河南",
+    "level": "province",
+    "path": "/qiming/henan"
+  },
+  {
+    "provinceSlug": "henan",
+    "display": "郑州",
+    "level": "city",
+    "path": "/qiming/henan/zhengzhou"
+  },
+  {
+    "provinceSlug": "hubei",
+    "display": "湖北",
+    "level": "province",
+    "path": "/qiming/hubei"
+  },
+  {
+    "provinceSlug": "hubei",
+    "display": "武汉",
+    "level": "city",
+    "path": "/qiming/hubei/wuhan"
+  },
+  {
+    "provinceSlug": "hunan",
+    "display": "湖南",
+    "level": "province",
+    "path": "/qiming/hunan"
+  },
+  {
+    "provinceSlug": "hunan",
+    "display": "长沙",
+    "level": "city",
+    "path": "/qiming/hunan/changsha"
+  },
+  {
+    "provinceSlug": "guangdong",
+    "display": "广东",
+    "level": "province",
+    "path": "/qiming/guangdong"
+  },
+  {
+    "provinceSlug": "guangdong",
+    "display": "广州",
+    "level": "city",
+    "path": "/qiming/guangdong/guangzhou"
+  },
+  {
+    "provinceSlug": "guangxi",
+    "display": "广西",
+    "level": "province",
+    "path": "/qiming/guangxi"
+  },
+  {
+    "provinceSlug": "guangxi",
+    "display": "南宁",
+    "level": "city",
+    "path": "/qiming/guangxi/nanning"
+  },
+  {
+    "provinceSlug": "hainan",
+    "display": "海南",
+    "level": "province",
+    "path": "/qiming/hainan"
+  },
+  {
+    "provinceSlug": "hainan",
+    "display": "海口",
+    "level": "city",
+    "path": "/qiming/hainan/haikou"
+  },
+  {
+    "provinceSlug": "chongqing",
+    "display": "重庆",
+    "level": "city",
+    "path": "/qiming/chongqing"
+  },
+  {
+    "provinceSlug": "sichuan",
+    "display": "四川",
+    "level": "province",
+    "path": "/qiming/sichuan"
+  },
+  {
+    "provinceSlug": "sichuan",
+    "display": "成都",
+    "level": "city",
+    "path": "/qiming/sichuan/chengdu"
+  },
+  {
+    "provinceSlug": "guizhou",
+    "display": "贵州",
+    "level": "province",
+    "path": "/qiming/guizhou"
+  },
+  {
+    "provinceSlug": "guizhou",
+    "display": "贵阳",
+    "level": "city",
+    "path": "/qiming/guizhou/guiyang"
+  },
+  {
+    "provinceSlug": "yunnan",
+    "display": "云南",
+    "level": "province",
+    "path": "/qiming/yunnan"
+  },
+  {
+    "provinceSlug": "yunnan",
+    "display": "昆明",
+    "level": "city",
+    "path": "/qiming/yunnan/kunming"
+  },
+  {
+    "provinceSlug": "xizang",
+    "display": "西藏",
+    "level": "province",
+    "path": "/qiming/xizang"
+  },
+  {
+    "provinceSlug": "xizang",
+    "display": "拉萨",
+    "level": "city",
+    "path": "/qiming/xizang/lasa"
+  },
+  {
+    "provinceSlug": "shaanxi",
+    "display": "陕西",
+    "level": "province",
+    "path": "/qiming/shaanxi"
+  },
+  {
+    "provinceSlug": "shaanxi",
+    "display": "西安",
+    "level": "city",
+    "path": "/qiming/shaanxi/xian"
+  },
+  {
+    "provinceSlug": "gansu",
+    "display": "甘肃",
+    "level": "province",
+    "path": "/qiming/gansu"
+  },
+  {
+    "provinceSlug": "gansu",
+    "display": "兰州",
+    "level": "city",
+    "path": "/qiming/gansu/lanzhou"
+  },
+  {
+    "provinceSlug": "qinghai",
+    "display": "青海",
+    "level": "province",
+    "path": "/qiming/qinghai"
+  },
+  {
+    "provinceSlug": "qinghai",
+    "display": "西宁",
+    "level": "city",
+    "path": "/qiming/qinghai/xining"
+  },
+  {
+    "provinceSlug": "ningxia",
+    "display": "宁夏",
+    "level": "province",
+    "path": "/qiming/ningxia"
+  },
+  {
+    "provinceSlug": "ningxia",
+    "display": "银川",
+    "level": "city",
+    "path": "/qiming/ningxia/yinchuan"
+  },
+  {
+    "provinceSlug": "xinjiang",
+    "display": "新疆",
+    "level": "province",
+    "path": "/qiming/xinjiang"
+  },
+  {
+    "provinceSlug": "xinjiang",
+    "display": "乌鲁木齐",
+    "level": "city",
+    "path": "/qiming/xinjiang/wulumuqi"
+  }
+]

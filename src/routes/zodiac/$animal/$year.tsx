@@ -11,6 +11,10 @@ import {
   ZodiacYearHeadline,
   ZodiacYearNav,
 } from "@/components/zodiac-blocks";
+import { ZodiacGenderPage, zodiacGenderHead } from "@/components/seo/zodiac-gender";
+import { fetchGalleryNames } from "@/lib/seo/data";
+import { getLongtailStages } from "@/lib/seo/rollout-runtime";
+import { zodiacBySlug } from "@/lib/surnames";
 import {
   animalPath,
   animalYearPath,
@@ -23,13 +27,29 @@ import {
 } from "@/lib/zodiac-guide";
 
 /**
- * 生肖年份页：/zodiac/{slug}/{year}。年份唯一确定生肖年（干支/立春起止由服务端现算），
- * slug 只作 URL 归属。收录窗口（过去十年+当前年+次年）外的年份 301 到生肖常青页——
- * 窗口外地址永远不会有内容，301 比长期 404 对收录友好（旧链接权重归并到常青页）。
+ * 生肖二级分发路由：/zodiac/{slug}/{第二段}。
+ *
+ * 第二段三种去向，按序判定：
+ * 1. boy/girl → 生肖×性别页（M5，放量由 longtail.zodiac-gender.stage 控制）；
+ * 2. 4 位年份且在收录窗口内 → 生肖年份页（原有行为；窗口外 301 到常青页）；
+ * 3. 其它 → 404。
  */
 export const Route = createFileRoute("/zodiac/$animal/$year")({
-  component: ZodiacYearPage,
+  component: ZodiacSubRoutePage,
   loader: async ({ params }) => {
+    // 生肖×性别页：/zodiac/{slug}/boy|girl
+    if (params.year === "boy" || params.year === "girl") {
+      const zodiac = zodiacBySlug(params.animal);
+      if (!zodiac) throw notFound();
+      const gender = params.year === "boy" ? ("M" as const) : ("F" as const);
+      const [guide, stages, names] = await Promise.all([
+        lookupZodiacGuide({ animal: params.animal, limit: 10 }),
+        getLongtailStages(),
+        fetchGalleryNames({ gender, zodiac: params.animal, size: 18 }),
+      ]);
+      return { kind: "gender" as const, gender, zodiac, view: guide.view, stages, names };
+    }
+
     const year = /^\d{4}$/.test(params.year) ? Number(params.year) : null;
     if (year === null) throw notFound();
     // 窗口外年份：301 到生肖常青页（内容常年有效，随当年流转）
@@ -43,9 +63,7 @@ export const Route = createFileRoute("/zodiac/$animal/$year")({
       year - 1 >= win.start
         ? fetchZodiacGuide({ year: year - 1, limit: 1 })
         : Promise.resolve(null),
-      year + 1 <= win.end
-        ? fetchZodiacGuide({ year: year + 1, limit: 1 })
-        : Promise.resolve(null),
+      year + 1 <= win.end ? fetchZodiacGuide({ year: year + 1, limit: 1 }) : Promise.resolve(null),
     ]);
     // 服务端判定年份超范围（400）→ 404：这种地址永远不会有内容，兜底空页不该被收录
     if (main.invalid) throw notFound();
@@ -58,6 +76,7 @@ export const Route = createFileRoute("/zodiac/$animal/$year")({
       });
     }
     return {
+      kind: "year" as const,
       view: main.view,
       prev: prev?.info ?? null,
       next: next?.info ?? null,
@@ -66,6 +85,14 @@ export const Route = createFileRoute("/zodiac/$animal/$year")({
     };
   },
   head: ({ loaderData }) => {
+    if (loaderData?.kind === "gender") {
+      return zodiacGenderHead({
+        gender: loaderData.gender,
+        zodiac: loaderData.zodiac,
+        view: loaderData.view,
+        stages: loaderData.stages,
+      });
+    }
     const info = loaderData?.view?.info ?? null;
     const slug = loaderData?.slug ?? "";
     const raw = loaderData?.raw ?? "";
@@ -103,6 +130,23 @@ export const Route = createFileRoute("/zodiac/$animal/$year")({
 const sectionTitle = "text-lg font-semibold";
 const ghostCls =
   "rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash";
+
+function ZodiacSubRoutePage() {
+  const data = Route.useLoaderData();
+  if (data.kind === "gender") {
+    return (
+      <AppShell>
+        <ZodiacGenderPage
+          gender={data.gender}
+          zodiac={data.zodiac}
+          view={data.view}
+          names={data.names}
+        />
+      </AppShell>
+    );
+  }
+  return <ZodiacYearPage />;
+}
 
 function ZodiacYearPage() {
   const { view, prev, next, raw } = Route.useLoaderData() as {

@@ -31,6 +31,8 @@ export interface PlacePageViewProps {
   place: PlaceInfo;
   male: ZodiacName[];
   female: ZodiacName[];
+  /** 城市×姓氏页放开的大姓数量（0=未放开，隐藏本页姓氏子页入口）。 */
+  surnamePlaceStage?: number;
 }
 
 /** 按 adcode 轮换 12 个常见姓，避免每个地名页的姓氏入口完全一样。 */
@@ -42,7 +44,7 @@ function rotatedSurnames(adcode: string) {
   ).filter((s): s is (typeof TOP_SURNAMES)[number] => Boolean(s));
 }
 
-export function PlacePageView({ place, male, female }: PlacePageViewProps) {
+export function PlacePageView({ place, male, female, surnamePlaceStage = 0 }: PlacePageViewProps) {
   const content = buildPlaceContent(place);
   const zodiacSlug = currentZodiacSlug();
   const zodiacAnimal = ZODIAC_SLUGS.find((z) => z.slug === zodiacSlug)?.animal ?? "";
@@ -154,6 +156,27 @@ export function PlacePageView({ place, male, female }: PlacePageViewProps) {
           </Link>
         </div>
       </section>
+
+      {place.group === 1 && surnamePlaceStage > 0 ? (
+        <section className="mt-11">
+          <h2 className={sectionTitle}>在{place.displayName}按姓氏取名</h2>
+          <p className="mt-1.5 text-xs text-ink-faint">
+            按「{place.displayName}＋姓氏」查看名字参考；姓氏为按人口排序的常见大姓。
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {TOP_SURNAMES.slice(0, surnamePlaceStage).map((s) => (
+              <Link
+                key={s.pinyin}
+                to={`${place.path}/${s.pinyin}` as string}
+                className="rounded-full bg-paper-3 px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:bg-vermilion-wash hover:text-vermilion-deep"
+              >
+                {place.displayName}
+                {s.han}姓取名
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-11">
         <h2 className={sectionTitle}>常见问题</h2>

@@ -60,6 +60,10 @@ async function notifyBaiduOfPage(response: Response, request: Request): Promise<
   if (method !== "GET") return;
   if (response.status >= 400) return;
   if (!(response.headers.get("content-type") ?? "").includes("text/html")) return;
+  // 百度配额只有 10 条/天且按天整站共用：真人访问（含我们自己的验证）不该消耗它，
+  // 只有爬虫抓取才值得回报。去重集合是进程内存，重启即清空，不加这道门等于
+  // 每次发版后头 10 个访客就把当天配额领光，按优先级排队的脚本永远推不出去。
+  if (!isCrawler(request)) return;
 
   try {
     const pathname = new URL(request.url).pathname;

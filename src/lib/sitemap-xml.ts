@@ -101,7 +101,8 @@ function zodiacGenderEntries(stages: LongtailStages): SitemapEntry[] {
 const SURNAME_ZODIAC_SITEMAP: SitemapEntry[] = TOP_SURNAMES.flatMap((s) =>
   ZODIAC_SLUGS.map((z) => ({
     loc: `https://name.duimai.net/names/${s.pinyin}/${z.slug}`,
-    lastmod: "2026-10-22",
+    // 2026-11-09 修复：此前渲染成姓氏父页，600 条正文全部重写，需让引擎重抓
+    lastmod: "2026-11-09",
     changefreq: "monthly",
   })),
 );

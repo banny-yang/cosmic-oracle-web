@@ -40,7 +40,7 @@ import {
  * （t_surname_note）+ 按姓氏避让过滤后的真实名字参考 + 通用选字方法。
  * 放量由 longtail.surname.stage 控制（0=全矩阵 noindex）。
  */
-export const Route = createFileRoute("/names/$surname")({
+export const Route = createFileRoute("/names/$surname/")({
   component: SurnamePage,
   loader: async ({ params }) => {
     const surname = surnameByPinyin(params.surname);

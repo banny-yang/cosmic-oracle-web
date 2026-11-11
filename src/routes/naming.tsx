@@ -1244,6 +1244,20 @@ function Naming() {
     }
   };
 
+  // 撞墙弹窗里的免费路径（P0-3，2026-11-12）：0 点用户解锁弹窗原来只有「用点数开卡」
+  // 和「扫码充值」，亲友投票免费解锁这条已建好的路没露出来，撞墙即断头
+  //（本周 5 人撞墙、3 人点解锁、0 人付款）。收起弹窗、进入勾选态、滚到结果区，
+  // 勾 3~5 个名字发起投票后亲友投票达标即服务端免费解锁（复用 createVote 轮询链路）。
+  const wallVoteClick = () => {
+    track("naming_wall_vote_click", { locked: diagnosis?.lockedCount ?? 0 });
+    setUpgradeOpen(false);
+    setPicking(true);
+    setTimeout(
+      () => document.getElementById("naming-result")?.scrollIntoView({ behavior: "smooth" }),
+      80,
+    );
+  };
+
   // 回站刷新：小程序里充值/开卡后切回网页，点数与畅享状态自动更新
   useEffect(() => {
     const onWake = () => {
@@ -2972,7 +2986,7 @@ function Naming() {
           {/* 名字卡 */}
           {hasResult ? (
             <>
-              <div className="mt-8 flex flex-wrap items-baseline justify-between gap-2">
+              <div id="naming-result" className="mt-8 flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="flex items-center gap-2 text-lg font-semibold">
                   名字方案
                   {passInfo?.active ? (
@@ -3457,7 +3471,7 @@ function Naming() {
                     </h3>
                     <p className="mt-1 text-xs text-ink-soft">
                       {upgradeMode === "insufficient"
-                        ? `本次生成需 ${namingPrice} 点，可充值点数或开通畅享（期内不限次）`
+                        ? `本次需 ${namingPrice} 点。两条路都能解锁：亲友投票免费，或充值点数`
                         : "换一批继续推演需开通畅享，也可以再次付费生成新一批"}
                     </p>
                   </div>
@@ -3470,6 +3484,24 @@ function Naming() {
                     <X className="size-4" />
                   </button>
                 </div>
+                {/* 免费路径（P0-3）：有未解锁报告时，把「亲友投票达标免费解锁」放在充值前面。
+                    0 点用户在旧弹窗里只看到要钱的选项，撞墙即断头 */}
+                {upgradeMode === "insufficient" && reportId && (diagnosis?.lockedCount ?? 0) > 0 ? (
+                  <div className="mt-4 rounded-xl bg-vermilion-wash p-4 text-center">
+                    <p className="text-sm font-semibold text-vermilion-deep">
+                      免费解锁 · 亲友投票
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+                      勾选 3~5 个喜欢的名字发给亲友，满 {voteThreshold || 3} 票这份报告自动免费解锁
+                    </p>
+                    <button
+                      onClick={wallVoteClick}
+                      className="mt-2.5 w-full rounded-xl bg-vermilion py-2.5 text-sm font-semibold text-paper transition-colors hover:bg-vermilion-deep"
+                    >
+                      发起亲友投票（免费解锁全部）
+                    </button>
+                  </div>
+                ) : null}
                 <div className="mt-4 grid grid-cols-2 gap-2 text-left">
                   <div className="rounded-xl bg-amber-50 p-3">
                     <p className="text-xs font-medium text-amber-800">24 小时畅享</p>

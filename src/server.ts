@@ -1,11 +1,9 @@
 import "./lib/error-capture";
 
-import { pushUrlToBaidu } from "./lib/baidu-push";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { feedXml } from "./lib/feed-xml";
 import { llmsFullTxt, llmsTxt } from "./lib/llms-content";
-import { shouldPushPath } from "./lib/qiming/push-gate";
 import { sitemapXml } from "./lib/sitemap-xml";
 
 type ServerEntry = {
@@ -50,30 +48,11 @@ function withDocumentCacheHeaders(response: Response, request: Request): Respons
   });
 }
 
-// 渲染成功的页面回报给后端做百度主动推送（见 lib/baidu-push）。
-// 只挑「本文档可收录」这一类：非 GET、4xx/5xx、非 HTML 一律不报。
-// 私有路径、查询串、重复 URL 交给后端判定——过滤名单只在后端维护一份。
-// HEAD 会被 Nitro 链路归一成 GET（实测），真实方法由 nginx 用 X-Original-Method 透传；
-// 直连容器（无该头）时退回 request.method。
-async function notifyBaiduOfPage(response: Response, request: Request): Promise<void> {
-  const method = request.headers.get("x-original-method") ?? request.method;
-  if (method !== "GET") return;
-  if (response.status >= 400) return;
-  if (!(response.headers.get("content-type") ?? "").includes("text/html")) return;
-  // 百度配额只有 10 条/天且按天整站共用：真人访问（含我们自己的验证）不该消耗它，
-  // 只有爬虫抓取才值得回报。去重集合是进程内存，重启即清空，不加这道门等于
-  // 每次发版后头 10 个访客就把当天配额领光，按优先级排队的脚本永远推不出去。
-  if (!isCrawler(request)) return;
-
-  try {
-    const pathname = new URL(request.url).pathname;
-    // 地名页/长尾矩阵页未到放量批次时页面是 noindex，不能主动推给百度；跳过时不进推送去重集合。
-    if (!(await shouldPushPath(pathname))) return;
-    pushUrlToBaidu(pathname);
-  } catch {
-    /* 上报是尽力而为，绝不影响页面返回 */
-  }
-}
+// SSR 主动推送已于 2026-11-12 移除：百度配额只有 10 条/天且按天整站共用，
+// 渲染即推（哪怕只对爬虫触发）会在配额重置的头几分钟里抢走 00:05 优先级队列
+// 的额度（实测 4 条/天）。所有可收录 URL 都在 sitemap 里，由服务器侧脚本
+// （00:05 马年优先队列 + 04:37 全量）统一消耗配额。历史实现见
+// baidu-push.ts / qiming/push-gate.ts 的 git 历史。
 
 // /assets/** 命中时在 Nitro 静态处理器就短路了，走到这里即该哈希文件不存在。
 // 此时绝不能把 SSR 的 HTML 外壳当样式表/脚本发出去（浏览器会整页无样式且无从察觉）。
@@ -201,8 +180,6 @@ export default {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response);
-      // 推送是尽力而为的后台动作：异步读放量批次，不阻塞页面响应
-      void notifyBaiduOfPage(normalized, request);
       return withDocumentCacheHeaders(withNoindexHeader(normalized, request), request);
     } catch (error) {
       console.error(error);

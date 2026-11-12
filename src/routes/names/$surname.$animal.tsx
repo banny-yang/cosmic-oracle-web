@@ -283,6 +283,19 @@ function SurnameZodiacPage() {
         </div>
       </div>
 
+      {/* 上游回链（2026-11-12）：600 个孩子页此前没有一条链到姓氏单页，
+          /names/{姓} 只能靠 sitemap 单点被抓；补一条「按姓氏看全部」把抓取和权重往上传 */}
+      <p className="mt-3 text-xs text-ink-faint">
+        按姓氏看全部（不分生肖）：
+        <Link
+          to="/names/$surname"
+          params={{ surname: surname.pinyin }}
+          className="ml-1 text-vermilion-deep transition-colors hover:text-vermilion"
+        >
+          {surname.han}姓取名总览 →
+        </Link>
+      </p>
+
       <div className="mt-4 flex flex-wrap gap-3">
         <Link
           to="/naming"
@@ -328,6 +341,13 @@ function SurnameZodiacPage() {
           className="rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash"
         >
           {surname.han}姓女宝取名
+        </Link>
+        <Link
+          to="/name-eval"
+          search={{ x: undefined, m: undefined, src: undefined }}
+          className="rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash"
+        >
+          先评测已有的名字
         </Link>
       </div>
 

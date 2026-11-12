@@ -67,6 +67,9 @@ export const Route = createFileRoute("/zodiac/$animal/")({
 const sectionTitle = "text-lg font-semibold";
 const ghostCls =
   "rounded-xl bg-paper-3 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-vermilion-wash";
+// 50 个姓氏 chip：比 ghostCls 小一号，50 个 3~4 行排完，不把页面拉长
+const surnameChipCls =
+  "rounded-lg bg-paper-3 px-2.5 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-vermilion-wash";
 
 function ZodiacAnimalPage() {
   const { view, slug } = Route.useLoaderData() as {
@@ -190,27 +193,33 @@ function ZodiacAnimalPage() {
         />
       </section>
 
-      {/* 姓氏×生肖长尾页入口：热门姓氏的属{info.animal}取名（/names/{拼音}/{生肖}） */}
+      {/* 姓氏×生肖长尾页入口：50 个大姓的属{info.animal}取名（/names/{拼音}/{生肖}）。
+          2026-11-12 从 5 条放到 50 条：这 12 个常青页在百度已有排名，是 600 个长尾页
+          仅有的被稳定抓取的入口（百度历史只抓过 25/600），堆在这里比只挂 5 条给得多 */}
       <section className="mt-11">
         <h2 className={sectionTitle}>热门姓氏的属{info.animal}取名</h2>
         <p className="mt-1.5 text-xs text-ink-faint">
           按姓氏看宜用部首与男宝女宝名字推荐，共 50 个大姓均有属{info.animal}专页。
         </p>
-        <div className="mt-3 flex flex-wrap gap-3">
-          {TOP_SURNAMES.slice(0, 5).map((s) => (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {TOP_SURNAMES.map((s) => (
             <Link
               key={s.pinyin}
               to="/names/$surname/$animal"
               params={{ surname: s.pinyin, animal: info.slug }}
-              className={ghostCls}
+              className={surnameChipCls}
             >
-              {s.han}姓{info.animal}年取名
+              {s.han}姓{info.animal}年
             </Link>
           ))}
-          <Link to="/names" search={{ zodiac: info.slug }} className={ghostCls}>
-            更多姓氏 →
-          </Link>
         </div>
+        <Link
+          to="/names"
+          search={{ zodiac: info.slug }}
+          className="mt-3 inline-block text-xs font-medium text-vermilion-deep hover:underline"
+        >
+          按生肖看全部名字 →
+        </Link>
       </section>
 
       {showRoundsNav ? (

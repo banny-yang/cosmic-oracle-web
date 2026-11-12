@@ -1142,6 +1142,9 @@ function Naming() {
   // insufficient=余额不足引导充值/畅享；locked=换批锁定（兼容旧后端码）
   const [upgradeMode, setUpgradeMode] = useState<"insufficient" | "locked">("insufficient");
   const refreshPass = () => {
+    // 未登录不打这个受保护接口：401 会被 api.ts 直接 location.href 到 /login，
+    // 于是「免登录先看 3 个预览名」在真实路径上不可达（2026-11-12 修）
+    if (!getToken()) return;
     get<PassStatus>("/api/v1/naming/pass/status", {}, { timeoutMs: 6000 })
       .then((r) => setPassInfo(r || null))
       .catch(() => {});
@@ -3545,7 +3548,16 @@ function Naming() {
                   <p className="mb-1.5 text-xs leading-relaxed font-medium text-ink-faint">
                     {QR_HINT_BUY[qrEnv]}
                   </p>
-                  <ScanBuyPanel trackWhere="naming_paywall" />
+                  <ScanBuyPanel
+                    trackWhere="naming_paywall"
+                    onArrived={() => {
+                      // 付完钱直接开报告（2026-11-12）：原来到账只弹「已到账 +N 点」，
+                      // 锁着的 7 个名字仍锁着，用户得关弹窗再点一次解锁——付费后这一步最容易掉
+                      if (reportId && (diagnosis?.lockedCount ?? 0) > 0) {
+                        unlockReport({ auto: true });
+                      }
+                    }}
+                  />
                 </div>
                 {upgradeMode === "locked" ? (
                   <button
@@ -3558,6 +3570,16 @@ function Naming() {
                     或再付 {namingPrice} 点生成新一批（不排除已看过）
                   </button>
                 ) : null}
+                {/* 免费出口（2026-11-12）：签到/邀请/投票的「免费得点」早就做在 /me，
+                    弹窗里却没有任何链接指过去——生成前就被 402 拦住的用户（无 reportId，
+                    连投票卡都不出现）在这里只剩「充值」一条路 */}
+                <Link
+                  to="/me"
+                  onClick={() => setUpgradeOpen(false)}
+                  className="mt-3 block text-center text-xs text-ink-soft underline underline-offset-2 hover:text-ink"
+                >
+                  不想付费？去「我的」签到 / 邀请好友，免费攒够点数 →
+                </Link>
               </div>
             </div>
           ) : null}

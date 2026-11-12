@@ -59,9 +59,12 @@ function yuan(priceFen?: number): string {
 export function ScanBuyPanel({
   trackWhere = "scan_buy",
   includePasses = false,
+  onArrived,
 }: {
   trackWhere?: string;
   includePasses?: boolean;
+  /** 本次会话确认到账时回调（点数差额）；父级据此自动解锁，免去「关弹窗再点一次」 */
+  onArrived?: (delta: number) => void;
 }) {
   const qrEnv = useQrEnv();
   const { loggedIn } = useAuth();
@@ -257,6 +260,16 @@ export function ScanBuyPanel({
       }
     }, 5000);
     return () => clearInterval(timer);
+  }, [arrived]);
+
+  // 到账回调（2026-11-12）：只认本次会话「余额比进面板时多了」，代金券/退款等不算；
+  // 用 ref 存回调，避免父级内联函数每次渲染都重放
+  const arrivedCbRef = useRef(onArrived);
+  useEffect(() => {
+    arrivedCbRef.current = onArrived;
+  }, [onArrived]);
+  useEffect(() => {
+    if (arrived != null) arrivedCbRef.current?.(arrived);
   }, [arrived]);
 
   return (

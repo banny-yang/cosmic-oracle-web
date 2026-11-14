@@ -380,6 +380,10 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
               帮助中心
             </Link>
             <span className="mx-1.5">·</span>
+            <Link to="/baike" className="hover:text-ink-soft">
+              名词解释
+            </Link>
+            <span className="mx-1.5">·</span>
             <Link to="/qiming" className="hover:text-ink-soft">
               地区取名
             </Link>

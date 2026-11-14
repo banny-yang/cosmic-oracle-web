@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalysisRouteImport } from './routes/analysis'
+import { Route as BaikeRouteImport } from './routes/baike'
 import { Route as CouponsRouteImport } from './routes/coupons'
 import { Route as DianjiRouteImport } from './routes/dianji'
 import { Route as HelpRouteImport } from './routes/help'
@@ -56,6 +57,11 @@ const IndexRoute = IndexRouteImport.update({
 const AnalysisRoute = AnalysisRouteImport.update({
   id: '/analysis',
   path: '/analysis',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BaikeRoute = BaikeRouteImport.update({
+  id: '/baike',
+  path: '/baike',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CouponsRoute = CouponsRouteImport.update({
@@ -244,6 +250,7 @@ const QimingProvincePlaceCountyRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
+  '/baike': typeof BaikeRoute
   '/coupons': typeof CouponsRoute
   '/dianji': typeof DianjiRoute
   '/help': typeof HelpRoute
@@ -284,6 +291,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
+  '/baike': typeof BaikeRoute
   '/coupons': typeof CouponsRoute
   '/dianji': typeof DianjiRoute
   '/help': typeof HelpRoute
@@ -325,6 +333,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
+  '/baike': typeof BaikeRoute
   '/coupons': typeof CouponsRoute
   '/dianji': typeof DianjiRoute
   '/help': typeof HelpRoute
@@ -367,6 +376,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/analysis'
+    | '/baike'
     | '/coupons'
     | '/dianji'
     | '/help'
@@ -407,6 +417,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/analysis'
+    | '/baike'
     | '/coupons'
     | '/dianji'
     | '/help'
@@ -447,6 +458,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/analysis'
+    | '/baike'
     | '/coupons'
     | '/dianji'
     | '/help'
@@ -488,6 +500,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalysisRoute: typeof AnalysisRoute
+  BaikeRoute: typeof BaikeRoute
   CouponsRoute: typeof CouponsRoute
   DianjiRoute: typeof DianjiRoute
   HelpRoute: typeof HelpRoute
@@ -540,6 +553,13 @@ declare module '@tanstack/react-router' {
       path: '/analysis'
       fullPath: '/analysis'
       preLoaderRoute: typeof AnalysisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/baike': {
+      id: '/baike'
+      path: '/baike'
+      fullPath: '/baike'
+      preLoaderRoute: typeof BaikeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coupons': {
@@ -800,6 +820,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysisRoute: AnalysisRoute,
+  BaikeRoute: BaikeRoute,
   CouponsRoute: CouponsRoute,
   DianjiRoute: DianjiRoute,
   HelpRoute: HelpRoute,

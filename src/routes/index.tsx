@@ -32,8 +32,9 @@ export const Route = createFileRoute("/")({
   // 「典藏典籍」随 SSR HTML 直出（AI/搜索引擎不执行 JS 也能读到书目与名句）；
   // 接口慢/不可用时 4 秒兜底返回 null，板块静默隐藏，不拖累首页首字节。
   // 节日营销同理 1.5 秒兜底：窗口内且已传素材才整图替换 Hero，否则首页保持默认轮播
+  // 信任数据同口径 3 秒兜底：爬虫快照直接看到真实数字，而不是「—」占位
   loader: async () => {
-    const [classic, festival] = await Promise.all([
+    const [classic, festival, social] = await Promise.all([
       Promise.race([
         fetchClassicBookTree(),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
@@ -42,8 +43,11 @@ export const Route = createFileRoute("/")({
         fetchFestival(),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
       ]),
+      get<SocialProof>("/api/v1/stats/social-proof", {}, { auth: false, timeoutMs: 3000 }).catch(
+        () => null,
+      ),
     ]);
-    return { classic, festival };
+    return { classic, festival, social };
   },
   head: () => ({
     links: [{ rel: "canonical", href: "https://name.duimai.net/" }, SEAL_FONT_PRELOAD],
@@ -222,7 +226,7 @@ function HeroCopy() {
         好名字，有出处、有数理、有温度
       </h1>
       <p className="mt-4 max-w-[52ch] text-sm leading-relaxed text-ink-soft text-pretty md:text-base">
-        从《诗经》《楚辞》到唐宋诗词，按生辰喜用与五格数理，为宝宝拟一组经得起时间考验的名字——一次生成
+        从《诗经》《楚辞》到唐宋诗词，按生辰喜用（八字中对宝宝最有补益的五行）与五格数理（按康熙笔画核验），为宝宝拟一组经得起时间考验的名字——一次生成
         10 个方案，附推荐指数与原文出处，还能发起亲友投票一起定。
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
@@ -246,9 +250,9 @@ function HeroCopy() {
 
 function Index() {
   const { loggedIn } = useAuth();
-  const { classic, festival } = Route.useLoaderData();
+  const { classic, festival, social: socialInitial } = Route.useLoaderData();
   const qrEnv = useQrEnv();
-  const [social, setSocial] = useState<SocialProof | null>(null);
+  const [social, setSocial] = useState<SocialProof | null>(socialInitial);
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
   // 充值档位：公开只读接口动态渲染（1 点 = ¥1；接口失败回落静态兜底）
   const [pointSkus, setPointSkus] = useState<{ credits: number; priceFen: number; tag?: string }[]>(
@@ -275,10 +279,6 @@ function Index() {
 
   useEffect(() => {
     track("home_view");
-    // 匿名统计（失败静默隐藏，不展示假数字）
-    get<SocialProof>("/api/v1/stats/social-proof", {}, { auth: false, timeoutMs: 6000 })
-      .then(setSocial)
-      .catch(() => {});
     // 点数价与扣点同源（t_feature），失败回退静态文案
     get<{ featureCode: string; price: number }[]>(
       "/api/v1/plans/features",
@@ -333,12 +333,30 @@ function Index() {
       .catch(() => {});
   }, [classic]);
 
+  // 信任数据：loader 已 SSR 直出；loader 超时/失败（null）时客户端补拉一次，仍失败静默隐藏
+  useEffect(() => {
+    if (socialInitial) return;
+    get<SocialProof>("/api/v1/stats/social-proof", {}, { auth: false, timeoutMs: 6000 })
+      .then(setSocial)
+      .catch(() => {});
+  }, [socialInitial]);
+
   const fmt = (n?: number) =>
     n == null ? "" : n >= 10000 ? (n / 10000).toFixed(1) + " 万" : String(n);
 
   /** 价格卡文案 */
   const priceLabel = (code: string, fallback: string) =>
     prices && prices[code] != null ? `${prices[code]} 点 / 次` : fallback;
+
+  // 信任数字卡：有真实数据才出卡（0 与空都不展示，绝不渲染「—」占位——爬虫快照看到占位会被 GEO 审计记为不具体）
+  const trustMetrics = [
+    { label: "今日已生成", value: social?.todayCount ? fmt(social.todayCount) : null },
+    { label: "累计服务家庭", value: social?.namingFamilies ? fmt(social.namingFamilies) : null },
+    {
+      label: "平均出案分钟",
+      value: social?.avgMinutes ? String(Math.round(social.avgMinutes)) : null,
+    },
+  ].filter((m) => m.value != null);
 
   return (
     <>
@@ -382,14 +400,14 @@ function Index() {
               name: "真太阳时",
               description:
                 "真太阳时是按出生地经度修正钟表时间得到的当地真实太阳时刻；八字排盘以其定时柱，比行政区划时区时间更准确。",
-              inDefinedTermSet: { "@type": "DefinedTermSet", name: "起名与命理术语", url: "https://name.duimai.net/" },
+              inDefinedTermSet: { "@type": "DefinedTermSet", name: "起名与命理术语", url: "https://name.duimai.net/baike" },
             },
             {
               "@type": "DefinedTerm",
               name: "喜用神",
               description:
                 "喜用神指八字中对日主最有补益作用的五行，由日主旺衰与调候需求判定，是传统起名选字的五行依据。",
-              inDefinedTermSet: { "@type": "DefinedTermSet", name: "起名与命理术语", url: "https://name.duimai.net/" },
+              inDefinedTermSet: { "@type": "DefinedTermSet", name: "起名与命理术语", url: "https://name.duimai.net/baike" },
             },
           ],
         }),
@@ -437,10 +455,10 @@ function Index() {
         </section>
       ) : null}
 
-      {/* 运营数据（banner 下方的过渡条） */}
-      {social ? (
+      {/* 运营数据（banner 下方的过渡条）：有真实数字才渲染，0 值隐藏（「今日已生成 0 组」伤信任） */}
+      {social && (social.todayCount || social.namingFamilies || social.avgMinutes) ? (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-ink-faint">
-          {social.todayCount != null ? (
+          {social.todayCount ? (
             <span>今日已生成 {fmt(social.todayCount)} 组方案</span>
           ) : null}
           {social.namingFamilies ? <span>累计服务 {fmt(social.namingFamilies)} 个家庭</span> : null}
@@ -460,6 +478,28 @@ function Index() {
           ))}
         </div>
       ) : null}
+
+      {/* 要点速览（Key Takeaways）：给快速决策用户与 AI 引擎的最短结论，可直接引用 */}
+      <section className="mt-8 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
+        <h2 className="text-lg font-semibold">一分钟看懂对脉名鉴</h2>
+        <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-ink-soft">
+          <li>宝宝起名一次生成 10 个方案，附典籍出处与推荐指数，引文经原文回查校验、可逐条核对。</li>
+          <li>排盘先做真太阳时校正（按出生地经度修正钟表时间），再判喜用五行（八字中对宝宝最有补益的五行）定选字方向。</li>
+          <li>五格数理（按康熙笔画起格）与谐音安全核验后，按推荐指数排序呈现。</li>
+          <li>收录 37 部典籍、118 万句语料，可指定《诗经》《楚辞》等一部书取名；名字灵感库 2900 多个好名字免费浏览。</li>
+          <li>支持亲友投票一起定名；网页端与小程序同账号互通，1 点 = 1 元按次计费，首次起名免费体验 3 个精选名字。</li>
+        </ol>
+        <p className="mt-3 text-xs text-ink-faint">
+          「喜用五行」「五格数理」「真太阳时」等名词的完整解释见{" "}
+          <Link
+            to="/baike"
+            className="text-vermilion-deep underline underline-offset-2"
+          >
+            起名名词解释
+          </Link>
+          。
+        </p>
+      </section>
 
       {/* 功能矩阵 */}
       {/* 名字灵感库幻灯片（原功能卡网格位置，数据来自公开接口，失败静默隐藏） */}
@@ -579,7 +619,8 @@ function Index() {
         <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-ink-soft">
           各功能按次扣点，页面明示后才扣减；点数在网页端与小程序通用，充值在微信小程序内完成。
         </p>
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <h3 className="mt-5 text-base font-semibold">各功能点数</h3>
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
           {pointCosts.map((c) => (
             <div
               key={c.title}
@@ -595,6 +636,7 @@ function Index() {
         </div>
 
         {/* 充值档位（卡片化）+ 扫码引导 + 畅享双卡 CTA */}
+        <h3 className="mt-6 text-base font-semibold">充值档位与畅享卡</h3>
         <div className="mt-3 rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">
           {/* 手机端纵向堆叠：档位占满整行（三格各约 98px，价格与角标不再挤），二维码横排在下方；≥768px 回到「档位左 + 码右」 */}
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
@@ -687,7 +729,7 @@ function Index() {
       <section className="mt-12">
         <h2 className="text-lg font-semibold">六道工序，只为经得起推敲的名字</h2>
         <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-ink-soft">
-          每一批方案都按同一套流程生成，步骤透明，口径传统。
+          每一批方案都按同一套六项标准流程生成，每一步口径透明、可在生成结果里逐项核验。
         </p>
         <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
           {steps.map((s, i) => (
@@ -699,7 +741,10 @@ function Index() {
                 {s.seal}
               </span>
               <div>
-                <p className="text-sm font-semibold">{s.title}</p>
+                <p className="text-sm font-semibold">
+                  <span className="mr-1.5 tabular-nums text-ink-faint">{i + 1}.</span>
+                  {s.title}
+                </p>
                 <p className="mt-1 text-sm leading-relaxed text-ink-soft">{s.desc}</p>
               </div>
             </div>
@@ -776,7 +821,7 @@ function Index() {
               ))}
             </div>
             <p className="mt-4 text-xs leading-relaxed text-ink-faint">
-              共七维评分，此处展示四维；完整报告含相处建议。
+              共七维评分（沟通、价值、节奏、成长等），此处展示四维；评分由八字契合度模型逐维给出。示例评分仅供演示，完整报告含相处建议。
             </p>
           </div>
         </div>
@@ -788,26 +833,19 @@ function Index() {
       {/* 信任与口碑 */}
       <section className="mt-12">
         <h2 className="text-lg font-semibold">被信任的方式</h2>
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          <div className="rounded-2xl bg-white p-4 text-center transition-colors hover:bg-vermilion-wash">
-            <p className="text-xl font-semibold tabular-nums text-ink">
-              {social?.todayCount != null ? fmt(social.todayCount) : "—"}
-            </p>
-            <p className="mt-1 text-xs text-ink-soft">今日已生成</p>
+        {trustMetrics.length ? (
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+            {trustMetrics.map((m) => (
+              <div
+                key={m.label}
+                className="rounded-2xl bg-white p-4 text-center transition-colors hover:bg-vermilion-wash"
+              >
+                <p className="text-xl font-semibold tabular-nums text-ink">{m.value}</p>
+                <p className="mt-1 text-xs text-ink-soft">{m.label}</p>
+              </div>
+            ))}
           </div>
-          <div className="rounded-2xl bg-white p-4 text-center transition-colors hover:bg-vermilion-wash">
-            <p className="text-xl font-semibold tabular-nums text-ink">
-              {social?.namingFamilies ? fmt(social.namingFamilies) : "—"}
-            </p>
-            <p className="mt-1 text-xs text-ink-soft">累计服务家庭</p>
-          </div>
-          <div className="rounded-2xl bg-white p-4 text-center transition-colors hover:bg-vermilion-wash">
-            <p className="text-xl font-semibold tabular-nums text-ink">
-              {social?.avgMinutes ? Math.round(social.avgMinutes) : "—"}
-            </p>
-            <p className="mt-1 text-xs text-ink-soft">平均出案分钟</p>
-          </div>
-        </div>
+        ) : null}
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {feedbacks.map((f, i) => (
             <figure key={i} className="rounded-2xl bg-white p-5 transition-colors hover:bg-vermilion-wash">

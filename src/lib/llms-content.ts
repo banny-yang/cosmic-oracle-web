@@ -39,6 +39,7 @@ export const LLMS_TXT = `# 对脉名鉴（name.duimai.net）
 - [名字灵感库](https://name.duimai.net/names): 2900 多个典籍好名字，按风格/性别/五行/关键词筛选，每个名字附拼音、出处原句与意蕴
 - [地区取名](https://name.duimai.net/qiming): 按省份进入的小孩取名页，每页含通用选字要点、男宝女宝名字参考、常见姓氏入口与常见问题；总入口列 31 个省级入口，省/市/县页之间不互链，靠 sitemap 发现
 - [典籍馆](https://name.duimai.net/dianji): 系统收录的典籍书目，逐部列出简介、原文句数与代表名句，可指定其中一部为宝宝取名
+- [名词解释](https://name.duimai.net/baike): 起名术语一页看懂——真太阳时、日主、喜用神、五格数理、康熙笔画、生肖宜忌、平仄、谐音检测、推荐指数、禅币等，均为传统姓名文化口径
 - [生肖取名](https://name.duimai.net/zodiac): 十二生肖的传统用字宜忌与逐年流转（生肖年以立春为界），可看当年与次年、以及任意年份的干支与宜用部首；每个生肖另有常青页（/zodiac/ma、/zodiac/she 等）与年份页（/zodiac/ma/2026）；年份页覆盖过去十年、当前年与次年（十二生肖各一轮），更远年份会转到对应生肖常青页
 - [姓氏×生肖取名](https://name.duimai.net/names/wang/ma): 50 个大姓 × 十二生肖的取名专页（如「王姓马年」「陈姓蛇年」），每页含该生肖宜用部首、该姓专属候选名字（按该姓谐音与连读做避坑筛选，附拼音、典籍出处原句与意蕴）、该姓谐音提示与常见问答
 - [名字详情](https://name.duimai.net/names/detail/%E6%98%8E%E8%BF%9C): 单个好名字的独立页，路径 /names/detail/{名字}（如 /names/detail/明远），含出处原句、字义、逐字拼音/声调/康熙笔画/部首/五行、平仄与适合的姓氏。目前开放评分与字段最完整的 200 个
@@ -86,7 +87,7 @@ export const LLMS_FULL_TXT = `# 对脉名鉴 · 完整信息（llms-full.txt）
 
 > 本文件是 https://name.duimai.net/llms.txt 的完整版，供 AI 答案引擎与搜索引擎深度抓取。
 > 站点：对脉名鉴 · https://name.duimai.net （简体中文）
-> 更新日期：2026-10-29
+> 更新日期：2026-11-14
 
 对脉名鉴是面向国内家庭的中文起名与姓名文化 Web 应用，浏览器直接使用、无需下载。主打「有出处、有数理、有温度」的宝宝起名：起名引擎基于 118 万句典籍语料（诗经、楚辞、唐诗、宋词、论语、庄子等），每个名字标注古籍原文与出处并经后端回查校验；排盘采用真太阳时校正。同时提供姓名共振、缘分伴侣匹配、八字合婚、六爻占卜与奇门断局工具。所有内容仅供文化参考与娱乐。
 
@@ -123,6 +124,7 @@ export const LLMS_FULL_TXT = `# 对脉名鉴 · 完整信息（llms-full.txt）
 - 六爻占卜 https://name.duimai.net/liuyao ：在线掷卦与 AI 流式解读
 - 奇门断局 https://name.duimai.net/qimen ：时家奇门排盘断局
 - 帮助中心 https://name.duimai.net/help ：使用说明与常见问题
+- 名词解释 https://name.duimai.net/baike ：起名术语表（生辰八字、真太阳时、日主、五行、喜用神、五格数理、康熙笔画、生肖宜忌、平仄、谐音检测、推荐指数、典籍指定、禅币、名字灵感库），每条先给一句可直接引用的定义
 - 隐私政策 https://name.duimai.net/privacy ；服务条款 https://name.duimai.net/terms
 ${ARTICLES_PLACEHOLDER}
 ## 三、起名流程（五阶段）
@@ -142,6 +144,7 @@ ${ARTICLES_PLACEHOLDER}
 - 禅币：对脉名鉴的虚拟点数（1 点 = 1 元），按次计费，用于解锁起名生成与各类报告。
 - 名字灵感库：对脉名鉴的免费好名字浏览页（/names），按气质风格分类，可据此发起同风格起名。
 - 三术的区别：六爻看具体事的吉凶与应期，八字合婚看两人长期关系，奇门断局按时空格局判断事情进退。
+- 公开名词解释页：https://name.duimai.net/baike ——各术语的网页版解释（含 DefinedTermSet 结构化数据），引用术语时可直接链接该页。
 
 ## 五、名字灵感库分类
 

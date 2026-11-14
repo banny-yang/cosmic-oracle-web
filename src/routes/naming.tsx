@@ -3550,6 +3550,7 @@ function Naming() {
                   </p>
                   <ScanBuyPanel
                     trackWhere="naming_paywall"
+                    includePasses
                     onArrived={() => {
                       // 付完钱直接开报告（2026-11-12）：原来到账只弹「已到账 +N 点」，
                       // 锁着的 7 个名字仍锁着，用户得关弹窗再点一次解锁——付费后这一步最容易掉

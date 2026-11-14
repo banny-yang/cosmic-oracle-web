@@ -1,11 +1,11 @@
 /**
- * 扫码直购面板：选点数档 → 微信扫该档位专属码（bindUserId+productId 随票据携带）→
- * 小程序内支付入账当前登录账号 → 本面板轮询余额，到账自动提示。
- * 微信浏览器内（wechat-h5）优先走服务号 JSAPI 直付，无需跳小程序。
+ * 扫码直购面板：选档位（点数 / 畅享套餐）→ 微信扫该档位专属码（bindUserId+productId 随票据携带）→
+ * 小程序内支付入账当前登录账号 → 本面板轮询余额/畅享状态，到账自动提示。
+ * 微信浏览器内（wechat-h5）点数档优先走服务号 JSAPI 直付，无需跳小程序。
  *
- * includePasses=true 时额外列出两个畅享档（24 小时/包月）：它们不走现金下单，
- * 直接用点数余额开通（POST /api/v1/naming/pass/purchase-points），与起名页同一套口径。
- * 小程序原生充值页仍只卖点数档（合规口径），所以畅享档只出现在网页端充值面板。
+ * 畅享档（24 小时/包月）两条购买路径：① 微信扫专属码进小程序 ¥ 现金支付（虚拟支付道具
+ * vp_naming_day / vp_naming_month，支付成功由发货链路授予畅享）；② 直接用点数余额开通
+ * （POST /api/v1/naming/pass/purchase-points）。小程序原生充值页同样恢复售卖（中性文案口径）。
  */
 import { useEffect, useRef, useState } from "react";
 import { post, get } from "@/lib/api";
@@ -19,13 +19,12 @@ import { openMpRechargePage } from "@/lib/mp-bridge";
 
 /** 二维码旁的操作提示：按打开环境分档（小程序内点按钮 / 微信内直付 / 手机浏览器扫码 / 电脑用手机扫） */
 const QR_HINT: Record<QrEnv, string> = {
-  mp: "点击下方按钮 → 在小程序内完成支付（也可长按左侧二维码），点数直接充入当前账号，到账后这里会自动提示。",
-  "wechat-h5":
-    "长按左侧二维码前往小程序支付，点数充入当前账号，到账后这里会自动提示。",
+  mp: "点击下方按钮 → 在小程序内完成支付（也可长按左侧二维码），点数/畅享直接充入当前账号，到账后这里会自动提示。",
+  "wechat-h5": "长按左侧二维码前往小程序支付，点数/畅享直接充入当前账号，到账后这里会自动提示。",
   mobile:
-    "微信扫一扫左侧二维码支付所选点数（也可在微信里点下方链接），点数直接充入当前账号，到账后这里会自动提示。",
+    "微信扫一扫左侧二维码支付所选档位（也可在微信里点下方链接），点数/畅享直接充入当前账号，到账后这里会自动提示。",
   desktop:
-    "请用手机微信扫一扫左侧二维码支付所选点数，点数直接充入当前账号，到账后这里会自动提示。",
+    "请用手机微信扫一扫左侧二维码支付所选档位，点数/畅享直接充入当前账号，到账后这里会自动提示。",
 };
 
 /** 支付入口样式：小程序内是按钮（桥接跳原生页），其它环境是链接（URL Link），共用一份 */
@@ -83,6 +82,8 @@ export function ScanBuyPanel({
   const [passInfo, setPassInfo] = useState<PassStatus | null>(null);
   const [passBusy, setPassBusy] = useState<"" | "DAY" | "MONTH">("");
   const [passHint, setPassHint] = useState("");
+  // 选中畅享档时的到账感知：扫码 ¥ 支付成功由发货链路授予，这里轮询确认后提示
+  const [passActive, setPassActive] = useState(false);
   // 通道可用性：后端私钥不可读/未配置时压根不显示直付按钮，避免点了只报错
   const [h5Pay, setH5Pay] = useState(false);
   const baseBalanceRef = useRef<number | null>(null);
@@ -93,8 +94,7 @@ export function ScanBuyPanel({
     ? list.filter((s) => s.kind === "DAY_PASS" || s.kind === "MONTH_PASS")
     : [];
   const selectedSku = list.find((s) => s.productId === selected);
-  const selectedIsPass =
-    selectedSku?.kind === "DAY_PASS" || selectedSku?.kind === "MONTH_PASS";
+  const selectedIsPass = selectedSku?.kind === "DAY_PASS" || selectedSku?.kind === "MONTH_PASS";
 
   const passLabel = (s: Sku) => (s.kind === "MONTH_PASS" ? "包月畅享" : "24 小时畅享");
   const passDesc = (s: Sku) =>
@@ -206,7 +206,11 @@ export function ScanBuyPanel({
       if (b != null) baseBalanceRef.current = b;
     });
     // 支付通道可用性（公开只读）：私钥缺失时后端返回 false，前端据此不渲染直付入口
-    get<{ wxH5Pay?: boolean }>("/api/v1/payments/client/channels", {}, { auth: false, timeoutMs: 6000 })
+    get<{ wxH5Pay?: boolean }>(
+      "/api/v1/payments/client/channels",
+      {},
+      { auth: false, timeoutMs: 6000 },
+    )
       .then((c) => setH5Pay(!!c?.wxH5Pay))
       .catch(() => setH5Pay(false));
   }, []);
@@ -219,7 +223,7 @@ export function ScanBuyPanel({
       .catch(() => {});
   }, [includePasses, loggedIn]);
 
-  // 选中档位 → 生成专属动态码（携带账号绑定 + 套餐预选）；畅享档走点数开通，不出码
+  // 选中档位 → 生成专属动态码（携带账号绑定 + 档位预选）；畅享档同样出码（小程序 ¥ 现金购买）
   useEffect(() => {
     if (!selected) return;
     setQr("");
@@ -227,7 +231,7 @@ export function ScanBuyPanel({
     setTicket("");
     setMpHint("");
     setPassHint("");
-    if (selectedIsPass) return;
+    setPassActive(false);
     post<{ qrCodeBase64?: string; urlLink?: string; ticket?: string }>(
       "/api/v1/users/wechat/login-ticket",
       {
@@ -244,9 +248,9 @@ export function ScanBuyPanel({
         if (r?.ticket) setTicket(r.ticket);
       })
       .catch(() => {});
-  }, [selected, selectedIsPass]);
+  }, [selected]);
 
-  // 支付到账感知：轮询点数余额
+  // 支付到账感知：轮询点数余额；选中畅享档时另轮询畅享状态（扫码 ¥ 支付走发货链路授予）
   useEffect(() => {
     const timer = setInterval(async () => {
       if (arrived == null) {
@@ -258,9 +262,25 @@ export function ScanBuyPanel({
           baseBalanceRef.current = b;
         }
       }
+      if (selectedIsPass && !passActive && !passInfo?.active) {
+        get<{ active?: boolean }>("/api/v1/naming/pass/status", {}, { timeoutMs: 6000 })
+          .then((p) => {
+            if (p?.active) {
+              setPassActive(true);
+              // 页面下方的「我的套餐与畅享」可能已缓存过旧状态，通知它清缓存重拉
+              window.dispatchEvent(new Event("dm:pass-changed"));
+              track("naming_pass_purchased", {
+                passType: selectedSku?.kind === "MONTH_PASS" ? "MONTH" : "DAY",
+                where: trackWhere,
+                via: "mp_scan",
+              });
+            }
+          })
+          .catch(() => {});
+      }
     }, 5000);
     return () => clearInterval(timer);
-  }, [arrived]);
+  }, [arrived, selectedIsPass, passActive, passInfo, selectedSku, trackWhere]);
 
   // 到账回调（2026-11-12）：只认本次会话「余额比进面板时多了」，代金券/退款等不算；
   // 用 ref 存回调，避免父级内联函数每次渲染都重放
@@ -277,6 +297,11 @@ export function ScanBuyPanel({
       {arrived != null ? (
         <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
           已到账 +{arrived} 点，可直接继续使用
+        </p>
+      ) : null}
+      {passActive ? (
+        <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+          畅享已开通，关闭本弹窗即可使用
         </p>
       ) : null}
 
@@ -296,7 +321,9 @@ export function ScanBuyPanel({
                 }
               >
                 <p className="text-sm font-bold text-ink">{s.credits ?? ""} 点</p>
-                <p className="mt-0.5 text-xs font-semibold text-vermilion-deep">¥{yuan(s.priceFen)}</p>
+                <p className="mt-0.5 text-xs font-semibold text-vermilion-deep">
+                  ¥{yuan(s.priceFen)}
+                </p>
                 {s.tag ? <p className="mt-0.5 text-xs text-ink-faint">{s.tag}</p> : null}
               </button>
             ))}
@@ -306,7 +333,9 @@ export function ScanBuyPanel({
 
       {passTiers.length ? (
         <div>
-          <p className="text-[11px] font-medium text-ink-faint">畅享档位（用点数开通）</p>
+          <p className="text-[11px] font-medium text-ink-faint">
+            畅享档位（微信扫码支付 · 或用点数开通）
+          </p>
           <div className="mt-1.5 grid grid-cols-2 gap-2">
             {passTiers.map((s) => (
               <button
@@ -320,7 +349,9 @@ export function ScanBuyPanel({
                 }
               >
                 <p className="text-sm font-bold text-ink">{passLabel(s)}</p>
-                <p className="mt-0.5 text-xs font-semibold text-vermilion-deep">{passPoints(s)} 点</p>
+                <p className="mt-0.5 text-xs font-semibold text-vermilion-deep">
+                  ¥{yuan(s.priceFen)} · 或 {passPoints(s)} 点
+                </p>
                 <p className="mt-0.5 text-xs text-ink-faint">{passDesc(s)}</p>
               </button>
             ))}
@@ -328,7 +359,8 @@ export function ScanBuyPanel({
           {selectedSku && selectedIsPass ? (
             <div className="mt-2 rounded-xl bg-amber-50 p-3">
               <p className="text-xs leading-relaxed text-amber-900">
-                {passDesc(selectedSku)}，开通后立即生效，不再按次扣点。
+                {passDesc(selectedSku)}，开通后立即生效，不再按次扣点。微信扫下方二维码可 ¥
+                {yuan(selectedSku.priceFen)} 支付；也可用点数直接开通：
               </p>
               <button
                 type="button"
@@ -366,37 +398,35 @@ export function ScanBuyPanel({
         </div>
       ) : null}
 
-      {!selectedIsPass ? (
-        <div className="flex items-center gap-3 rounded-xl bg-paper-3 p-3">
-          <img
-            src={qr || "/mp-qrcode.jpg"}
-            alt="对脉名鉴小程序支付码"
-            className="size-24 shrink-0 rounded-lg bg-paper-3"
-            onClick={() => track("mp_qr_click", { where: trackWhere })}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm leading-relaxed text-ink-soft">{mpHint || QR_HINT[qrEnv]}</p>
-            {qrEnv === "mp" ? (
-              <button
-                type="button"
-                className={PAY_BTN_CLS}
-                onClick={async () => {
-                  // 站内直接用桥接跳到原生充值页：web-view 里打不开 URL Link，点链接只会卡加载
-                  if (!(await openMpRechargePage(ticket))) {
-                    setMpHint("当前小程序版本较旧：请长按左侧二维码完成支付");
-                  }
-                }}
-              >
-                去小程序支付
-              </button>
-            ) : (
-              <a href={link || "weixin://"} className={PAY_BTN_CLS}>
-                去小程序支付
-              </a>
-            )}
-          </div>
+      <div className="flex items-center gap-3 rounded-xl bg-paper-3 p-3">
+        <img
+          src={qr || "/mp-qrcode.jpg"}
+          alt="对脉名鉴小程序支付码"
+          className="size-24 shrink-0 rounded-lg bg-paper-3"
+          onClick={() => track("mp_qr_click", { where: trackWhere })}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm leading-relaxed text-ink-soft">{mpHint || QR_HINT[qrEnv]}</p>
+          {qrEnv === "mp" ? (
+            <button
+              type="button"
+              className={PAY_BTN_CLS}
+              onClick={async () => {
+                // 站内直接用桥接跳到原生充值页：web-view 里打不开 URL Link，点链接只会卡加载
+                if (!(await openMpRechargePage(ticket))) {
+                  setMpHint("当前小程序版本较旧：请长按左侧二维码完成支付");
+                }
+              }}
+            >
+              去小程序支付
+            </button>
+          ) : (
+            <a href={link || "weixin://"} className={PAY_BTN_CLS}>
+              去小程序支付
+            </a>
+          )}
         </div>
-      ) : null}
+      </div>
       {skus === null ? <p className="text-xs text-ink-faint">档位加载中…</p> : null}
       {skus !== null && !list.length ? (
         <p className="text-xs text-ink-faint">档位暂不可用，可稍后重试或在小程序内购买</p>
